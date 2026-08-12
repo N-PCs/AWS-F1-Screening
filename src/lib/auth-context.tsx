@@ -19,7 +19,7 @@ import {
   type User,
 } from "firebase/auth";
 import { auth, isFirebaseConfigured } from "./firebase";
-import { ALLOWED_DOMAIN } from "./event-config";
+import { ADMIN_EMAILS, ALLOWED_DOMAIN } from "./event-config";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -30,7 +30,7 @@ type AuthContextValue = {
   user: User | null;
   /** True while the initial auth state is being resolved. */
   loading: boolean;
-  /** Sign in with a Google account (@vitbhopal.ac.in only). */
+  /** Sign in with a Google account (@vitbhopal.ac.in or admin email). */
   signInWithGoogle: () => Promise<void>;
   /** Sign out. */
   signOut: () => Promise<void>;
@@ -43,7 +43,9 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 /* ------------------------------------------------------------------ */
 
 function isDomainAllowed(email: string | null | undefined): boolean {
-  return Boolean(email && email.toLowerCase().endsWith(`@${ALLOWED_DOMAIN}`));
+  if (!email) return false;
+  const lower = email.toLowerCase();
+  return lower.endsWith(`@${ALLOWED_DOMAIN}`) || ADMIN_EMAILS.includes(lower);
 }
 
 /* ------------------------------------------------------------------ */
