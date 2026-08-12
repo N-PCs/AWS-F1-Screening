@@ -2,10 +2,12 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import { AuthGate } from "@/components/f1/AuthGate";
 import { SeatLegend, SeatMap } from "@/components/f1/SeatMap";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/lib/auth-context";
 import { EVENT, UPI } from "@/lib/event-config";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import { TIERS, TOTAL_SEATS, tierForSeat, totalPrice } from "@/lib/seat-layout";
@@ -43,6 +45,7 @@ const MAX_FILE_BYTES = 4 * 1024 * 1024;
 const HOLD_RENEW_MS = 90_000;
 
 function BookPage() {
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [selected, setSelected] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
@@ -58,6 +61,25 @@ function BookPage() {
     regNo: "",
     upiRef: "",
   });
+
+  // Auto-fill email from the signed-in user.
+  useEffect(() => {
+    if (user?.email) {
+      setForm((prev) => ({ ...prev, email: user.email! }));
+    }
+  }, [user?.email]);
+
+  // If not signed in, show the auth gate.
+  if (!authLoading && !user) {
+    return <AuthGate />;
+  }
+  if (authLoading) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-20 text-center">
+        <p className="text-sm text-muted-foreground">Checking sign-in…</p>
+      </div>
+    );
+  }
 
   const availability = useQuery({
     queryKey: ["availability"],
@@ -339,6 +361,7 @@ function BookPage() {
                   value={form.email}
                   error={errors["email"]}
                   onChange={(v) => setForm({ ...form, email: v })}
+                  readOnly={Boolean(user?.email)}
                 />
                 <Field
                   id="phone"
@@ -359,9 +382,9 @@ function BookPage() {
 
             <div className="border-t border-border pt-4">
               <h2 className="text-lg font-bold uppercase">Pay ₹{amount} by UPI</h2>
-              <div className="mt-3 flex items-center gap-4">
+              <div className="mt-3 flex flex-col sm:flex-row items-center sm:items-start gap-4">
                 <QrPanel />
-                <div className="text-sm">
+                <div className="text-sm text-center sm:text-left">
                   <p className="font-semibold">{UPI.payeeName}</p>
                   <p className="font-mono text-xs break-all text-muted-foreground">{UPI.id}</p>
                   <p className="mt-2 text-xs text-muted-foreground">
@@ -439,6 +462,7 @@ function Field({
   onChange,
   error,
   type = "text",
+  readOnly,
 }: {
   id: string;
   label: string;
@@ -446,6 +470,7 @@ function Field({
   onChange: (v: string) => void;
   error?: string | undefined;
   type?: string;
+  readOnly?: boolean;
 }) {
   return (
     <div>
@@ -455,8 +480,13 @@ function Field({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="mt-1.5"
+        className={`mt-1.5${readOnly ? " cursor-not-allowed opacity-70" : ""}`}
+        readOnly={readOnly}
+        tabIndex={readOnly ? -1 : undefined}
       />
+      {readOnly && (
+        <p className="mt-1 text-[0.65rem] text-muted-foreground">Auto-filled from your sign-in</p>
+      )}
       {error && <p className="mt-1 text-xs text-destructive">{error}</p>}
     </div>
   );

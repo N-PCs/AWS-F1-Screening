@@ -22,6 +22,10 @@ export function SeatMap({ taken, held, selected, onToggle, disabled }: Props) {
 
   return (
     <div className="overflow-x-auto">
+      {/* Mobile scroll hint */}
+      <p className="mb-2 text-center text-[0.65rem] text-muted-foreground sm:hidden">
+        ← Scroll sideways to see all seats →
+      </p>
       <div className="min-w-[720px] space-y-4 pb-2">
         <div className="mx-auto w-3/4">
           <div className="rounded-t-[50%] border-t-2 border-primary/70 bg-linear-to-b from-primary/25 to-transparent py-3 text-center text-xs font-semibold tracking-[0.35em] uppercase">

@@ -3,6 +3,9 @@
  * Backend keys live in .env as VITE_FIREBASE_* (see firebase/README.md).
  */
 
+/** Only @vitbhopal.ac.in accounts are allowed to sign in and book. */
+export const ALLOWED_DOMAIN = "vitbhopal.ac.in";
+
 /** Only these Google accounts can open /admin and read registrations. */
 export const ADMIN_EMAILS = [
   "neel.24bce10303@vitbhopal.ac.in",
