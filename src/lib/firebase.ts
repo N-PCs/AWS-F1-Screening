@@ -1,6 +1,5 @@
 /**
  * Firebase client. Fill the VITE_FIREBASE_* values in .env (see firebase/README.md).
- * Everything lives in YOUR Firebase project — no Lovable services involved.
  */
 import { initializeApp, getApps, type FirebaseApp } from "firebase/app";
 import { getFirestore, type Firestore } from "firebase/firestore";

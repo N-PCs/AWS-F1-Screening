@@ -1,7 +1,6 @@
 # Firebase setup (free Spark plan, your own Google account)
 
-The site talks straight to **your** Firebase project. No Lovable services, no
-Apps Script. Firestore gives you real transactions, so a seat — and a
+The site talks straight to your Firebase project. Firestore gives you real transactions, so a seat — and a
 registration number — can only ever be claimed once.
 
 ## 1. Create the project
@@ -32,8 +31,7 @@ data, not the keys.
 
 1. **Build → Authentication → Get started → Google → Enable → Save**.
 2. **Authentication → Settings → Authorized domains → Add domain** for your
-   Lovable preview domain and your published domain (e.g.
-   `id-preview--65409284-3b58-4329-9766-8a8e1d5bccbf.lovable.app`).
+   published domain (e.g. `your-domain.vercel.app` or `localhost`).
 
 Organiser accounts are the two Google accounts listed in
 `src/lib/event-config.ts` (`ADMIN_EMAILS`). Nobody else can open `/admin`
