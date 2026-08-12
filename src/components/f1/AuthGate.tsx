@@ -1,21 +1,17 @@
 /**
  * Full-page sign-in gate shown on the /book page when the user is not
- * authenticated. Supports Google sign-in and email magic link.
+ * authenticated. Supports Google sign-in only.
  */
 import { useState } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth-context";
 import { ALLOWED_DOMAIN } from "@/lib/event-config";
 import { isFirebaseConfigured } from "@/lib/firebase";
 
 export function AuthGate() {
-  const { signInWithGoogle, sendEmailLink, loading } = useAuth();
-  const [email, setEmail] = useState("");
+  const { signInWithGoogle, loading } = useAuth();
   const [busy, setBusy] = useState(false);
-  const [linkSent, setLinkSent] = useState(false);
 
   async function handleGoogle() {
     setBusy(true);
@@ -23,25 +19,6 @@ export function AuthGate() {
       await signInWithGoogle();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Google sign-in failed");
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleEmailLink(e: React.FormEvent) {
-    e.preventDefault();
-    const trimmed = email.trim().toLowerCase();
-    if (!trimmed.endsWith(`@${ALLOWED_DOMAIN}`)) {
-      toast.error(`Only @${ALLOWED_DOMAIN} emails are allowed.`);
-      return;
-    }
-    setBusy(true);
-    try {
-      await sendEmailLink(trimmed);
-      setLinkSent(true);
-      toast.success("Magic link sent! Check your inbox.");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not send sign-in link");
     } finally {
       setBusy(false);
     }
@@ -58,7 +35,7 @@ export function AuthGate() {
           Sign in to book
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Only <span className="font-semibold text-primary">@{ALLOWED_DOMAIN}</span> accounts
+          Only <span className="font-semibold text-primary">@{ALLOWED_DOMAIN}</span> Google accounts
           can book seats for the screening.
         </p>
 
@@ -68,68 +45,15 @@ export function AuthGate() {
           </p>
         )}
 
-        {linkSent ? (
-          <div className="mt-6 rounded-md border border-primary/40 bg-primary/10 p-4 text-sm">
-            <p className="font-bold">Check your inbox!</p>
-            <p className="mt-1 text-muted-foreground">
-              We sent a sign-in link to{" "}
-              <span className="font-semibold text-foreground">{email}</span>.
-              Click the link in the email to continue booking.
-            </p>
-            <button
-              type="button"
-              className="mt-3 text-xs text-primary underline hover:text-primary/80"
-              onClick={() => setLinkSent(false)}
-            >
-              Use a different email
-            </button>
-          </div>
-        ) : (
-          <>
-            {/* Google sign-in */}
-            <Button
-              className="mt-6 w-full gap-2 font-bold uppercase tracking-wide"
-              disabled={disabled}
-              onClick={() => void handleGoogle()}
-            >
-              <GoogleIcon />
-              Sign in with Google
-            </Button>
-
-            {/* Divider */}
-            <div className="my-5 flex items-center gap-3">
-              <span className="h-px flex-1 bg-border" />
-              <span className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
-                or
-              </span>
-              <span className="h-px flex-1 bg-border" />
-            </div>
-
-            {/* Email link */}
-            <form onSubmit={(e) => void handleEmailLink(e)} className="space-y-3">
-              <div>
-                <Label htmlFor="signin-email">VIT Bhopal email</Label>
-                <Input
-                  id="signin-email"
-                  type="email"
-                  placeholder={`yourname@${ALLOWED_DOMAIN}`}
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1.5"
-                  required
-                />
-              </div>
-              <Button
-                type="submit"
-                variant="outline"
-                className="w-full font-bold uppercase tracking-wide"
-                disabled={disabled || !email.trim()}
-              >
-                Send magic link
-              </Button>
-            </form>
-          </>
-        )}
+        {/* Google sign-in */}
+        <Button
+          className="mt-6 w-full gap-2 font-bold uppercase tracking-wide"
+          disabled={disabled}
+          onClick={() => void handleGoogle()}
+        >
+          <GoogleIcon />
+          Sign in with Google
+        </Button>
 
         <p className="mt-5 text-center text-[0.7rem] text-muted-foreground">
           We only use your email to verify you're a VIT Bhopal student.

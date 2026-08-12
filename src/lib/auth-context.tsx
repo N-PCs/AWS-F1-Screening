@@ -1,7 +1,6 @@
 /**
  * User authentication context.
- * Supports Google sign-in and email link (passwordless magic link).
- * Only @vitbhopal.ac.in emails are allowed.
+ * Supports Google sign-in (@vitbhopal.ac.in only).
  *
  * NOTE: Admin auth (in booking-api.ts) is completely separate and unchanged.
  */
@@ -14,10 +13,7 @@ import {
 } from "react";
 import {
   GoogleAuthProvider,
-  isSignInWithEmailLink,
   onAuthStateChanged,
-  sendSignInLinkToEmail,
-  signInWithEmailLink,
   signInWithPopup,
   signOut as fbSignOut,
   type User,
@@ -36,10 +32,6 @@ type AuthContextValue = {
   loading: boolean;
   /** Sign in with a Google account (@vitbhopal.ac.in only). */
   signInWithGoogle: () => Promise<void>;
-  /** Send a magic link to an @vitbhopal.ac.in email address. */
-  sendEmailLink: (email: string) => Promise<void>;
-  /** Complete the email-link flow after the user clicks the link. */
-  completeEmailLink: () => Promise<void>;
   /** Sign out. */
   signOut: () => Promise<void>;
 };
@@ -49,8 +41,6 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 /* ------------------------------------------------------------------ */
 /*  Helpers                                                            */
 /* ------------------------------------------------------------------ */
-
-const EMAIL_LINK_KEY = "f1-signin-email";
 
 function isDomainAllowed(email: string | null | undefined): boolean {
   return Boolean(email && email.toLowerCase().endsWith(`@${ALLOWED_DOMAIN}`));
@@ -83,19 +73,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => unsubscribe();
   }, []);
 
-  // On mount, check if this is an email-link return redirect.
-  useEffect(() => {
-    if (!isFirebaseConfigured) return;
-    if (isSignInWithEmailLink(auth(), window.location.href)) {
-      const email = window.localStorage.getItem(EMAIL_LINK_KEY);
-      if (email) {
-        signInWithEmailLink(auth(), email, window.location.href)
-          .then(() => window.localStorage.removeItem(EMAIL_LINK_KEY))
-          .catch((err) => console.error("Email link sign-in failed:", err));
-      }
-    }
-  }, []);
-
   async function handleGoogleSignIn() {
     if (!isFirebaseConfigured) throw new Error("Firebase not configured");
     const provider = new GoogleAuthProvider();
@@ -105,29 +82,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await fbSignOut(auth());
       throw new Error(`Only @${ALLOWED_DOMAIN} accounts are allowed.`);
     }
-  }
-
-  async function handleSendEmailLink(email: string) {
-    if (!isFirebaseConfigured) throw new Error("Firebase not configured");
-    const trimmed = email.trim().toLowerCase();
-    if (!isDomainAllowed(trimmed)) {
-      throw new Error(`Only @${ALLOWED_DOMAIN} emails are allowed.`);
-    }
-    const actionCodeSettings = {
-      url: window.location.origin + "/book",
-      handleCodeInApp: true,
-    };
-    await sendSignInLinkToEmail(auth(), trimmed, actionCodeSettings);
-    window.localStorage.setItem(EMAIL_LINK_KEY, trimmed);
-  }
-
-  async function handleCompleteEmailLink() {
-    if (!isFirebaseConfigured) throw new Error("Firebase not configured");
-    if (!isSignInWithEmailLink(auth(), window.location.href)) return;
-    const email = window.localStorage.getItem(EMAIL_LINK_KEY);
-    if (!email) throw new Error("Could not find the email used for sign-in. Please try again.");
-    await signInWithEmailLink(auth(), email, window.location.href);
-    window.localStorage.removeItem(EMAIL_LINK_KEY);
   }
 
   async function handleSignOut() {
@@ -141,8 +95,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         loading,
         signInWithGoogle: handleGoogleSignIn,
-        sendEmailLink: handleSendEmailLink,
-        completeEmailLink: handleCompleteEmailLink,
         signOut: handleSignOut,
       }}
     >
