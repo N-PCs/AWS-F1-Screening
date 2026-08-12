@@ -291,7 +291,6 @@ export function isAdminEmail(email: string | null | undefined) {
 export async function adminSignIn() {
   requireBackend();
   const provider = new GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: "select_account" });
   const cred = await signInWithPopup(auth(), provider);
   if (!isAdminEmail(cred.user.email)) {
     await signOut(auth());

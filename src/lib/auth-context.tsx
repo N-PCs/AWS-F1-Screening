@@ -76,7 +76,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function handleGoogleSignIn() {
     if (!isFirebaseConfigured) throw new Error("Firebase not configured");
     const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({ hd: ALLOWED_DOMAIN, prompt: "select_account" });
     const cred = await signInWithPopup(auth(), provider);
     if (!isDomainAllowed(cred.user.email)) {
       await fbSignOut(auth());
