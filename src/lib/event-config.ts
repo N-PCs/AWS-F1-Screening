@@ -21,7 +21,7 @@ export const EVENT = {
   startsAt: "2026-09-06T17:30:00+05:30",
   dateLabel: "Sunday, 6 September",
   timeLabel: "5:30 PM IST",
-  maxSeatsPerBooking: 6,
+  maxSeatsPerBooking: 10,
 };
 
 export const UPI = {

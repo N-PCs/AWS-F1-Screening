@@ -62,6 +62,10 @@ function BookPage() {
     upiRef: "",
   });
 
+  // Stable ref for selected seats to avoid stale closure issues during fast toggles.
+  const selectedRef = useRef<string[]>([]);
+  selectedRef.current = selected;
+
   // Auto-fill email from the signed-in user.
   useEffect(() => {
     if (user?.email) {
@@ -89,16 +93,22 @@ function BookPage() {
     enabled: isFirebaseConfigured,
   });
 
-  const taken = useMemo(
-    () => new Set(availability.data?.taken ?? []),
-    [availability.data],
-  );
-
   useEffect(() => {
     holdIdRef.current = getHoldId();
   }, []);
 
-  /** Seats another visitor is holding right now (our own holds excluded). */
+  // Serialize taken array to maintain stable Set reference unless taken seats actually change.
+  const takenKey = (availability.data?.taken ?? []).slice().sort().join(",");
+  const taken = useMemo(() => {
+    return new Set(availability.data?.taken ?? []);
+  }, [takenKey]);
+
+  // Serialize heldByOthers array to maintain stable Set reference.
+  const heldKey = (availability.data?.held ?? [])
+    .filter((h) => h.holdId !== holdIdRef.current && h.expiresAt > Date.now())
+    .map((h) => h.seat)
+    .sort()
+    .join(",");
   const heldByOthers = useMemo(() => {
     const mine = holdIdRef.current;
     const now = Date.now();
@@ -107,18 +117,22 @@ function BookPage() {
         .filter((h) => h.holdId !== mine && h.expiresAt > now)
         .map((h) => h.seat),
     );
-  }, [availability.data]);
+  }, [heldKey]);
 
-  // Drop any selection that someone else just booked.
+  // Drop any selection that someone else just booked/held.
   useEffect(() => {
+    if (!availability.data) return;
     setSelected((prev) => {
       const kept = prev.filter((id) => !taken.has(id) && !heldByOthers.has(id));
-      if (kept.length !== prev.length) {
-        toast.error("Some of your seats were just taken by someone else.");
+      if (kept.length === prev.length) {
+        return prev; // Skip state mutation if nothing changed
       }
+      toast.error("Some of your seats were just taken by someone else.", {
+        id: "seats-taken-toast",
+      });
       return kept;
     });
-  }, [taken, heldByOthers]);
+  }, [taken, heldByOthers, availability.data]);
 
   const amount = totalPrice(selected);
 
@@ -137,56 +151,77 @@ function BookPage() {
       setHoldExpiresAt(res.expiresAt);
       return true;
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not hold those seats");
+      toast.error(err instanceof Error ? err.message : "Could not hold those seats", {
+        id: "hold-error-toast",
+      });
       return false;
     } finally {
       setHoldBusy(false);
     }
   }, []);
 
+  // Queue to sequence rapid toggle operations cleanly without race conditions.
+  const pendingSyncRef = useRef<Promise<boolean> | null>(null);
+
   const toggle = useCallback(
     async (id: string) => {
-      const isSelected = selected.includes(id);
+      const current = selectedRef.current;
+      const isSelected = current.includes(id);
       let next: string[];
       if (isSelected) {
-        next = selected.filter((s) => s !== id);
+        next = current.filter((s) => s !== id);
       } else {
-        if (selected.length >= EVENT.maxSeatsPerBooking) {
-          toast.error(`Maximum ${EVENT.maxSeatsPerBooking} seats per booking.`);
+        if (current.length >= EVENT.maxSeatsPerBooking) {
+          toast.error(`Maximum ${EVENT.maxSeatsPerBooking} seats per booking.`, {
+            id: "max-seats-toast",
+          });
           return;
         }
-        next = [...selected, id].sort();
+        next = [...current, id].sort();
       }
-      const previous = selected;
+      const previous = current;
       setSelected(next);
-      const held = await syncHold(next);
+      selectedRef.current = next;
+
+      // Chain hold sync requests sequentially
+      const doSync = async () => {
+        if (pendingSyncRef.current) {
+          await pendingSyncRef.current.catch(() => {});
+        }
+        return syncHold(selectedRef.current);
+      };
+
+      const syncPromise = doSync();
+      pendingSyncRef.current = syncPromise;
+      const held = await syncPromise;
+
       if (!held) {
         setSelected(previous);
+        selectedRef.current = previous;
         void availability.refetch();
       }
     },
-    [selected, syncHold, availability],
+    [syncHold, availability],
   );
 
   // Keep our hold alive while the tab is open, and hand the seats back on close.
   useEffect(() => {
     if (!selected.length || !isFirebaseConfigured) return;
     const timer = window.setInterval(() => {
-      void syncHold(selected);
+      void syncHold(selectedRef.current);
     }, HOLD_RENEW_MS);
     return () => window.clearInterval(timer);
-  }, [selected, syncHold]);
+  }, [selected.length, syncHold]);
 
   useEffect(() => {
     function handleUnload() {
       const holdId = holdIdRef.current;
-      if (!holdId || !isFirebaseConfigured || !selected.length) return;
-      // best-effort release so the seats free up as soon as the tab closes
+      if (!holdId || !isFirebaseConfigured || !selectedRef.current.length) return;
       void releaseSeats(holdId).catch(() => {});
     }
     window.addEventListener("pagehide", handleUnload);
     return () => window.removeEventListener("pagehide", handleUnload);
-  }, [selected]);
+  }, []);
 
   // Local countdown; when it hits zero the hold is gone server-side too.
   const [now, setNow] = useState(() => Date.now());
@@ -201,8 +236,11 @@ function BookPage() {
   useEffect(() => {
     if (holdExpiresAt && secondsLeft === 0 && !submitting) {
       setSelected([]);
+      selectedRef.current = [];
       setHoldExpiresAt(null);
-      toast.error("Your seat hold expired. Please pick your seats again.");
+      toast.error("Your seat hold expired. Please pick your seats again.", {
+        id: "hold-expired-toast",
+      });
       void availability.refetch();
     }
   }, [secondsLeft, holdExpiresAt, submitting, availability]);
@@ -212,7 +250,7 @@ function BookPage() {
     setErrors({});
 
     if (!selected.length) {
-      toast.error("Pick at least one seat first.");
+      toast.error("Pick at least one seat first.", { id: "submit-no-seats" });
       return;
     }
     const parsed = attendeeSchema.safeParse(form);
@@ -222,12 +260,12 @@ function BookPage() {
         next[String(issue.path[0])] = issue.message;
       }
       setErrors(next);
-      toast.error("Please fix the highlighted fields.");
+      toast.error("Please fix the highlighted fields.", { id: "submit-validation" });
       return;
     }
     if (!file) {
       setErrors({ screenshot: "Upload your UPI payment screenshot" });
-      toast.error("Payment screenshot is required.");
+      toast.error("Payment screenshot is required.", { id: "submit-no-screenshot" });
       return;
     }
     if (!file.type.startsWith("image/")) {
@@ -253,7 +291,7 @@ function BookPage() {
       await navigate({ to: "/booking/$code", params: { code: result.code } });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Booking failed";
-      toast.error(message);
+      toast.error(message, { id: "submit-error" });
       void availability.refetch();
     } finally {
       setSubmitting(false);
@@ -297,7 +335,7 @@ function BookPage() {
             held={heldByOthers}
             selected={selected}
             onToggle={(id) => void toggle(id)}
-            disabled={submitting || holdBusy}
+            disabled={submitting}
           />
           <div className="mt-6 border-t border-border pt-4">
             <SeatLegend />
@@ -306,7 +344,22 @@ function BookPage() {
 
         <aside className="space-y-6">
           <div className="rounded-md border border-border bg-card p-5">
-            <h2 className="text-lg font-bold uppercase">Your selection</h2>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-bold uppercase">Your selection</h2>
+              {selected.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelected([]);
+                    selectedRef.current = [];
+                    void syncHold([]);
+                  }}
+                  className="text-xs text-muted-foreground underline hover:text-foreground"
+                >
+                  Clear all ({selected.length})
+                </button>
+              )}
+            </div>
             {holdExpiresAt && secondsLeft > 0 && (
               <p className="mt-2 rounded-sm border border-primary/50 bg-primary/10 px-3 py-2 text-xs font-semibold">
                 Seats held for you · <span className="tabular-nums">{holdClock}</span> left to

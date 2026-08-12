@@ -146,6 +146,8 @@ export async function holdSeats(holdId: string, seats: string[]) {
   await runTransaction(db(), async (tx) => {
     const now = Date.now();
     const current = await Promise.all(seats.map((s) => tx.get(doc(db(), SEATS, s))));
+    const staleSnaps = await Promise.all(stale.map((d) => tx.get(d.ref)));
+
     const clash: string[] = [];
     current.forEach((snap, i) => {
       if (!snap.exists()) return;
@@ -160,10 +162,13 @@ export async function holdSeats(holdId: string, seats: string[]) {
     for (const s of seats) {
       tx.set(doc(db(), SEATS, s), { status: "held", holdId, expiresAt });
     }
-    for (const d of stale) {
+    staleSnaps.forEach((d) => {
+      if (!d.exists()) return;
       const data = d.data() as SeatDoc;
-      if (data.status === "held") tx.delete(d.ref);
-    }
+      if (data.status === "held" && data.holdId === holdId) {
+        tx.delete(d.ref);
+      }
+    });
   });
 
   return { seats, expiresAt, holdTtlMs: HOLD_TTL_MS };
