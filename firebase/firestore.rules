@@ -1,0 +1,47 @@
+rules_version = '2';
+
+// F1 Grand Prix Screening — AWS Club VITB
+// Organiser emails: keep this list identical to ADMIN_EMAILS in src/lib/event-config.ts
+service cloud.firestore {
+  function isAdmin() {
+    return request.auth != null && request.auth.token.email.lower() in [
+      'neel.24bce10303@vitbhopal.ac.in',
+      'neelpandeyofficial@gmail.com'
+    ];
+  }
+
+  match /databases/{database}/documents {
+
+    // Seat map: anyone can see what's free; holds/bookings are written by the
+    // booking transaction. A booked seat can only be changed by an organiser.
+    match /seats/{seat} {
+      allow read: if true;
+      allow create: if true;
+      allow update, delete: if isAdmin()
+        || resource.data.status == 'held'
+        || (resource.data.status == 'booked' && false);
+    }
+
+    // One registration number = one booking. Create-only, never overwritten.
+    match /registrations/{regNo} {
+      allow get, list: if isAdmin();
+      allow create: if request.auth == null || request.auth != null;
+      allow update, delete: if isAdmin();
+    }
+
+    // A visitor can create their booking and read it back by its code,
+    // but only organisers can list every registration.
+    match /bookings/{code} {
+      allow get: if true;
+      allow list: if isAdmin();
+      allow create: if request.resource.data.status == 'pending';
+      allow update, delete: if isAdmin();
+    }
+
+    // Payment screenshots: write-only for visitors, readable by organisers.
+    match /screenshots/{code} {
+      allow create: if true;
+      allow get, list, update, delete: if isAdmin();
+    }
+  }
+}
