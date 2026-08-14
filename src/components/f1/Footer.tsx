@@ -6,70 +6,83 @@ export function SiteFooter() {
   return (
     <footer className="relative border-t border-border/80 bg-background/95 backdrop-blur-xs">
       {/* Top Chequered Trim */}
-      <div className="checkers h-1.5 w-full opacity-80" aria-hidden />
+      <div className="  h-1.5 w-full opacity-80" aria-hidden />
 
-      {/* Interactive / Animated F1 Track & Racecar animation */}
-      <div className="relative w-full overflow-hidden bg-black/40 py-3 border-b border-border/40">
+      {/* Interactive / Animated Full-Width F1 Track & Racecar animation */}
+      <div className="relative w-full overflow-hidden bg-black/60 py-4 border-b border-border/40">
         {/* Track asphalt grid lines */}
-        <div className="absolute inset-0 opacity-20 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px)] bg-[size:24px_100%]" />
+        <div className="absolute inset-0 opacity-25 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px)] bg-[size:28px_100%]" />
         
-        {/* Start Line */}
-        <div className="absolute left-4 top-0 bottom-0 flex flex-col justify-between py-1 z-10">
-          <div className="text-[9px] font-mono tracking-widest text-muted-foreground/60 uppercase">START</div>
-          <div className="w-1.5 h-full bg-linear-to-b from-red-600 via-white to-red-600 rounded-xs opacity-70" />
-        </div>
+        {/* Full-width Racecar track container */}
+        <div className="relative w-full h-12 flex items-center px-4 sm:px-8">
+          
+          {/* Road Asphalt Background Strip (Attached from START to FINISH) */}
+          <div className="absolute inset-x-4 sm:inset-x-8 top-1/2 -translate-y-1/2 h-9 bg-zinc-900/90 rounded-xs border border-zinc-800 shadow-inner" />
 
-        {/* Finish Line (Chequered Flag) */}
-        <div className="absolute right-4 top-0 bottom-0 flex items-center gap-1.5 z-10">
-          <div className="checkers h-full w-4 rounded-xs opacity-90 shadow-xs shadow-white/20" />
-          <span className="text-[10px] font-display font-bold italic tracking-wider text-primary uppercase hidden sm:inline-block">
-            FINISH
-          </span>
-        </div>
+          {/* Track kerb lines (Top & Bottom Red/White borders attached end-to-end) */}
+          <div className="absolute inset-x-4 sm:inset-x-8 h-[3px] bg-[repeating-linear-gradient(90deg,#e10600,#e10600_12px,#ffffff_12px,#ffffff_24px)] top-1 z-10" />
+          <div className="absolute inset-x-4 sm:inset-x-8 h-[3px] bg-[repeating-linear-gradient(90deg,#e10600,#e10600_12px,#ffffff_12px,#ffffff_24px)] bottom-1 z-10" />
+          
+          {/* Track Center Dashed White Line */}
+          <div className="absolute inset-x-4 sm:inset-x-8 h-[1px] border-t border-dashed border-white/40 top-1/2 -translate-y-1/2 z-10" />
 
-        {/* Racecar track route */}
-        <div className="relative mx-auto max-w-6xl px-12 h-8 flex items-center">
-          {/* Track kerb lines */}
-          <div className="absolute inset-x-12 h-[2px] bg-linear-to-r from-red-600/30 via-white/20 to-red-600/30 top-1" />
-          <div className="absolute inset-x-12 h-[2px] bg-linear-to-r from-red-600/30 via-white/20 to-red-600/30 bottom-1" />
-          <div className="absolute inset-x-12 h-[1px] border-t border-dashed border-white/20 top-1/2 -translate-y-1/2" />
+          {/* START Line (Attached at the left edge of the road) */}
+          <div className="absolute left-4 sm:left-8 top-1 bottom-1 flex items-center z-20">
+            <div className="h-full w-4 sm:w-5 bg-linear-to-b from-red-600 via-white to-red-600 border-x border-black/50 shadow-[0_0_10px_rgba(255,255,255,0.6)] flex items-center justify-center">
+              <span className="text-[10px] sm:text-xs font-mono font-black text-black rotate-90 tracking-wider">
+                START
+              </span>
+            </div>
+          </div>
 
-          {/* Animated F1 Racecar reaching its endpoint */}
-          <div className="relative w-full h-full flex items-center">
-            <div className="animate-[f1Drive_6s_cubic-bezier(0.4,0,0.2,1)_infinite] flex items-center gap-1">
-              {/* Speed / Flame Exhaust Trail */}
-              <div className="h-1.5 w-8 rounded-l-full bg-linear-to-r from-transparent via-amber-500/60 to-red-600 animate-pulse" />
+          {/* FINISH Line (Attached at the right edge of the road with vertical text) */}
+          <div className="absolute right-4 sm:right-8 top-1 bottom-1 flex items-center gap-1 z-20">
+            <div className="checkers h-full w-6 sm:w-6 border border-white/40 shadow-md shadow-white/30" />
+            <div className="h-full w-4 sm:w-5 bg-white border-x border-black/50 shadow-[0_0_10px_rgba(255,255,255,0.6)] flex items-center justify-center">
+              <span className="text-[9px] sm:text-[10px] font-mono font-black text-black rotate-90 tracking-widest uppercase">
+                FINISH
+              </span>
+            </div>
+          </div>
+
+          {/* Animated F1 Racecar Path (Drives from START line through FINISH line) */}
+          <div className="absolute left-4 sm:left-8 right-4 sm:right-8 h-full z-30 pointer-events-none overflow-hidden">
+            <div className="f1-car-anim flex items-center gap-1">
+              {/* Exhaust Flame & Speed Blur Trail */}
+              <div className="h-2.5 w-14 rounded-l-full bg-linear-to-r from-transparent via-amber-500 to-red-600 animate-pulse shadow-[0_0_12px_rgba(225,6,0,0.9)]" />
               
-              {/* F1 Car SVG */}
+              {/* Large Detailed F1 Car SVG */}
               <svg
-                className="w-10 h-6 text-primary drop-shadow-[0_0_8px_rgba(225,6,0,0.8)] transition-transform"
+                className="w-16 h-10 text-primary drop-shadow-[0_0_14px_rgba(225,6,0,1)] shrink-0"
                 viewBox="0 0 64 32"
                 fill="currentColor"
               >
                 {/* Rear Wing */}
-                <path d="M4 8h6v10H4z" fill="#e10600" />
-                <path d="M2 6h10v3H2z" fill="#ffffff" />
+                <path d="M3 5h8v16H3z" fill="#e10600" />
+                <path d="M0 3h14v4H0z" fill="#ffffff" />
                 
-                {/* Car Chassis Body */}
-                <path d="M8 14h28l14 2 10 2v3H8z" fill="#e10600" />
-                <path d="M16 12h14l8 4H16z" fill="#111111" />
+                {/* Chassis Body */}
+                <path d="M8 12h28l14 2 10 3v5H8z" fill="#e10600" />
+                <path d="M16 10h14l8 4H16z" fill="#111111" />
                 
-                {/* Cockpit & Driver Halo */}
-                <path d="M22 10h8v4h-8z" fill="#e10600" />
-                <circle cx="27" cy="11" r="2.5" fill="#ffffff" />
+                {/* Cockpit & Driver Helmet */}
+                <path d="M22 8h8v6h-8z" fill="#e10600" />
+                <circle cx="27" cy="9" r="3.5" fill="#ffffff" />
+                <path d="M25 8h5v2h-5z" fill="#fbbf24" />
                 
                 {/* Front Nose & Wing */}
-                <path d="M46 16l14 2v2H46z" fill="#e10600" />
-                <path d="M56 16h6v5h-6z" fill="#ffffff" />
+                <path d="M46 14l14 2v4H46z" fill="#e10600" />
+                <path d="M54 14h10v7H54z" fill="#ffffff" />
 
-                {/* Wheels */}
-                <circle cx="14" cy="21" r="5" fill="#18181b" stroke="#ffffff" strokeWidth="1.5" />
-                <circle cx="14" cy="21" r="2" fill="#e10600" />
-                <circle cx="48" cy="21" r="5" fill="#18181b" stroke="#ffffff" strokeWidth="1.5" />
-                <circle cx="48" cy="21" r="2" fill="#e10600" />
+                {/* Wheels (Pirelli Tyres) */}
+                <circle cx="14" cy="22" r="6.5" fill="#09090b" stroke="#ffffff" strokeWidth="1.5" />
+                <circle cx="14" cy="22" r="2.5" fill="#e10600" />
+                <circle cx="48" cy="22" r="6.5" fill="#09090b" stroke="#ffffff" strokeWidth="1.5" />
+                <circle cx="48" cy="22" r="2.5" fill="#e10600" />
               </svg>
             </div>
           </div>
+
         </div>
       </div>
 
@@ -83,8 +96,6 @@ export function SiteFooter() {
               <span className="font-display font-black tracking-widest text-sm uppercase text-foreground">
                 {EVENT.club}
               </span>
-              <span className="h-3 w-[1px] bg-border" />
-              <span className="text-xs text-muted-foreground font-mono">AWS Cloud Club</span>
             </div>
             <p className="text-xs text-muted-foreground">
               This website was made with 💜 by{" "}
@@ -92,7 +103,7 @@ export function SiteFooter() {
                 href="https://github.com/N-PCs/AWS-F1-Screening"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-semibold text-primary italic hover:underline transition-colors"
+                className="font-semibold text-white italic hover:underline transition-colors"
               >
                 N-PCs
               </a>{" "}
@@ -105,7 +116,7 @@ export function SiteFooter() {
             {/* Social Media Links */}
             <div className="flex items-center gap-3">
               <a
-                href="https://www.instagram.com/aws_vitb/"
+                href="https://www.instagram.com/awsbuilders.vitb/"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Official Instagram"
@@ -116,7 +127,7 @@ export function SiteFooter() {
               </a>
 
               <a
-                href="https://www.linkedin.com/company/aws-vitb/"
+                href="https://www.linkedin.com/company/aws-cloud-club-vitbhopaluniveristy"
                 target="_blank"
                 rel="noopener noreferrer"
                 aria-label="Official LinkedIn"
@@ -142,9 +153,8 @@ export function SiteFooter() {
         </div>
 
         {/* Bottom Legal / Copyright Bar */}
-        <div className="mt-6 border-t border-border/40 pt-4 flex flex-col sm:flex-row items-center justify-between text-[11px] text-muted-foreground/70 gap-2 font-mono">
+        <div className="mt-6 border-t border-border/40 pt-4 flex flex-col sm:flex-row items-center justify-center text-[11px] text-muted-foreground/70 gap-2 font-mono">
           <p>© {new Date().getFullYear()} {EVENT.club}. All rights reserved.</p>
-          <p className="tracking-wide">LIGHTS OUT • GRANDSTAND EXPERIENCE</p>
         </div>
       </div>
     </footer>

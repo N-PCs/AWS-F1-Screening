@@ -251,19 +251,28 @@
   color: var(--primary);
 }
 
+.f1-car-anim {
+  position: absolute;
+  top: 50%;
+  animation: f1Drive 3.8s linear infinite;
+  will-change: left, transform;
+}
+
 @keyframes f1Drive {
   0% {
-    transform: translateX(0%);
+    left: 0%;
+    transform: translate(-100%, -50%);
     opacity: 0;
   }
-  5% {
+  3% {
     opacity: 1;
   }
-  95% {
+  97% {
     opacity: 1;
   }
   100% {
-    transform: translateX(calc(100% - 48px));
+    left: 100%;
+    transform: translate(60px, -50%);
     opacity: 1;
   }
 }
