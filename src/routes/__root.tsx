@@ -142,6 +142,8 @@ function RootComponent() {
 const NAV_ITEMS = [
   { to: "/", label: "Home" },
   { to: "/f1", label: "F1 101" },
+  { to: "/teams", label: "Teams" },
+  { to: "/drivers", label: "Drivers" },
   { to: "/book", label: "Book Seats" },
 ] as const;
 
