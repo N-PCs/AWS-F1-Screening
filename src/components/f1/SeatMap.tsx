@@ -36,34 +36,36 @@ export function SeatMap({ room, taken, held, selected, onToggle, disabled }: Pro
   }, []);
 
   return (
-    <div className="overflow-x-auto">
+    <div className="overflow-x-auto scroll-smooth overscroll-x-contain">
       {/* Mobile scroll hint */}
-      <p className="mb-2 text-center text-[0.65rem] text-muted-foreground sm:hidden">
-        ← Scroll sideways to see all seats →
-      </p>
+      <div className="mb-2 flex items-center justify-center gap-2 rounded-md border border-border bg-secondary/50 py-1.5 text-[0.65rem] text-muted-foreground sm:hidden">
+        <span aria-hidden>←</span>
+        <span>Scroll sideways to see all seats</span>
+        <span aria-hidden>→</span>
+      </div>
 
       {/* Room banner — room accent makes AB02-127 / AB02-128 instantly distinct */}
       <div
         className={cn(
-          "mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-sm border px-3 py-2",
+          "mb-3 flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 rounded-sm border px-2 sm:px-3 py-1.5 sm:py-2",
           roomPanel[roomInfo.tone],
         )}
       >
         <span
           className={cn(
-            "flex items-center gap-2 text-xs font-bold tracking-[0.2em] uppercase",
+            "flex items-center gap-1.5 sm:gap-2 text-[0.6rem] sm:text-xs font-bold tracking-[0.2em] uppercase",
             roomText[roomInfo.tone],
           )}
         >
           <span className={cn("h-2 w-2 rounded-full", roomDot[roomInfo.tone])} aria-hidden />
           {roomInfo.label} · {roomInfo.name}
         </span>
-        <span className="ml-auto text-[0.65rem] tracking-widest text-muted-foreground uppercase">
+        <span className="ml-auto text-[0.55rem] sm:text-[0.65rem] tracking-widest text-muted-foreground uppercase">
           {ROOM_SEAT_COUNT} seats
         </span>
       </div>
 
-      <div className="min-w-[720px] space-y-4 pb-2">
+      <div className="min-w-[680px] space-y-4 pb-2">
         <div className="mx-auto w-3/4">
           <div
             className={cn(
@@ -278,24 +280,24 @@ function Seat({
 
 export function SeatLegend() {
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
+    <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-5 gap-y-1.5 sm:gap-y-2 text-[0.65rem] sm:text-xs">
       {Object.values(TIERS).map((t) => (
-        <span key={t.id} className="flex items-center gap-2">
-          <span className={cn("h-4 w-4 rounded-t-md border", tierClass[t.id])} aria-hidden />
-          {t.name} · ₹{t.price}
+        <span key={t.id} className="flex items-center gap-1.5 sm:gap-2">
+          <span className={cn("h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border", tierClass[t.id])} aria-hidden />
+          {t.name} ₹{t.price}
         </span>
       ))}
-      <span className="flex items-center gap-2">
-        <span className="h-4 w-4 rounded-t-md border border-foreground bg-foreground" aria-hidden />
+      <span className="flex items-center gap-1.5 sm:gap-2">
+        <span className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border border-foreground bg-foreground" aria-hidden />
         Selected
       </span>
-      <span className="flex items-center gap-2">
-        <span className="h-4 w-4 rounded-t-md border border-border bg-seat-taken" aria-hidden />
+      <span className="flex items-center gap-1.5 sm:gap-2">
+        <span className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border border-border bg-seat-taken" aria-hidden />
         Booked
       </span>
-      <span className="flex items-center gap-2">
+      <span className="flex items-center gap-1.5 sm:gap-2">
         <span
-          className="h-4 w-4 rounded-t-md border border-dashed border-accent/70 bg-accent/15"
+          className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border border-dashed border-accent/70 bg-accent/15"
           aria-hidden
         />
         On hold

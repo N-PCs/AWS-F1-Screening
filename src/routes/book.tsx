@@ -322,39 +322,39 @@ function BookPage() {
   const holdClock = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <header className="border-b border-border pb-6">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:py-10 pb-24 lg:pb-10">
+      <header className="border-b border-border pb-4 sm:pb-6">
         <p className="text-xs font-bold tracking-[0.3em] text-primary uppercase">Grid Selection</p>
-        <h1 className="mt-2 text-3xl font-bold uppercase sm:text-4xl">Book your seat</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
+        <h1 className="mt-2 text-2xl font-bold uppercase sm:text-4xl">Book your seat</h1>
+        <p className="mt-1.5 sm:mt-2 text-xs sm:text-sm text-muted-foreground">
           {EVENT.venue} · {EVENT.dateLabel} · {EVENT.timeLabel} · {TOTAL_SEATS} seats total ·{" "}
           {ROOMS.map((r) => r.name).join(" & ")}
         </p>
       </header>
 
       {!isFirebaseConfigured && (
-        <p className="mt-6 rounded-md border border-accent/50 bg-accent/10 p-4 text-sm">
+        <p className="mt-4 sm:mt-6 rounded-md border border-accent/50 bg-accent/10 p-3 sm:p-4 text-xs sm:text-sm">
           <strong className="font-bold">Setup pending:</strong> the organiser still has to add the
           Firebase keys (<code>VITE_FIREBASE_*</code>) — see <code>firebase/README.md</code>. Seat
           availability and bookings stay offline until then.
         </p>
       )}
       {isFirebaseConfigured && !isCloudinaryConfigured && (
-        <p className="mt-6 rounded-md border border-accent/50 bg-accent/10 p-4 text-sm">
+        <p className="mt-4 sm:mt-6 rounded-md border border-accent/50 bg-accent/10 p-3 sm:p-4 text-xs sm:text-sm">
           <strong className="font-bold">Setup pending:</strong> the organiser still has to add the
           Cloudinary keys (<code>VITE_CLOUDINARY_*</code>) — see <code>firebase/README.md</code>.
           Bookings stay disabled until then.
         </p>
       )}
       {availability.isError && (
-        <p className="mt-6 rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm">
+        <p className="mt-4 sm:mt-6 rounded-md border border-destructive/50 bg-destructive/10 p-3 sm:p-4 text-xs sm:text-sm">
           Could not load seat availability. Refresh the page, or contact the organisers if it keeps
           failing.
         </p>
       )}
 
       {/* Room switcher — each room gets its own accent colour */}
-      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+      <div className="mt-4 sm:mt-6 grid gap-2 sm:gap-3 grid-cols-2">
         {ROOMS.map((room) => {
           const isActive = activeRoom === room.id;
           const takenInRoom = [...taken].filter((id) => id.startsWith(room.id + "-")).length;
@@ -367,32 +367,34 @@ function BookPage() {
               onClick={() => setActiveRoom(room.id)}
               aria-pressed={isActive}
               className={cn(
-                "rounded-md border-2 bg-card p-4 text-left transition",
+                "rounded-md border-2 bg-card p-3 sm:p-4 text-left transition",
                 isActive ? roomActive[room.tone] : "border-border hover:border-foreground/40",
               )}
             >
               <span
                 className={cn(
-                  "flex items-center gap-2 text-[0.65rem] font-bold tracking-[0.25em] uppercase",
+                  "flex items-center gap-1.5 sm:gap-2 text-[0.6rem] sm:text-[0.65rem] font-bold tracking-[0.25em] uppercase",
                   isActive ? roomText[room.tone] : "text-muted-foreground",
                 )}
               >
                 <span className={cn("h-2 w-2 rounded-full", roomDot[room.tone])} aria-hidden />
                 {room.label}
               </span>
-              <span className="mt-1 flex items-baseline justify-between gap-2">
-                <span className="text-xl font-bold">{room.name}</span>
-                <span className="text-xs text-muted-foreground">250 seats · {openInRoom} open</span>
+              <span className="mt-1 flex items-baseline justify-between gap-1 sm:gap-2">
+                <span className="text-base sm:text-xl font-bold">{room.name}</span>
+                <span className="text-[0.6rem] sm:text-xs text-muted-foreground">{openInRoom} open</span>
               </span>
             </button>
           );
         })}
       </div>
 
-      <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_22rem]">
+      <div className="mt-4 sm:mt-6 grid gap-6 sm:gap-8 lg:grid-cols-[1fr_22rem]">
+        {/* Seat map section */}
         <section
+          id="seat-map-section"
           className={cn(
-            "rounded-md border border-border bg-card p-4 sm:p-6",
+            "rounded-md border border-border bg-card p-3 sm:p-6 order-2 lg:order-1",
             roomTop[activeRoomInfo.tone],
           )}
         >
@@ -404,15 +406,24 @@ function BookPage() {
             onToggle={(id) => void toggle(id)}
             disabled={submitting}
           />
-          <div className="mt-6 border-t border-border pt-4">
+          <div className="mt-4 sm:mt-6 border-t border-border pt-3 sm:pt-4">
             <SeatLegend />
           </div>
         </section>
 
-        <aside className="space-y-6">
-          <div className="rounded-md border border-border bg-card p-5">
+        {/* Selection + form aside */}
+        <aside className="space-y-4 sm:space-y-6 order-1 lg:order-2">
+          {/* Quick mobile CTA to jump to seat map */}
+          <a
+            href="#seat-map-section"
+            className="flex items-center justify-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-4 py-3 text-sm font-bold text-primary uppercase tracking-wider lg:hidden"
+          >
+            ↓ Pick seats on the map below
+          </a>
+
+          <div className="rounded-md border border-border bg-card p-4 sm:p-5">
             <div className="flex items-center justify-between">
-              <h2 className="text-lg font-bold uppercase">Your selection</h2>
+              <h2 className="text-base sm:text-lg font-bold uppercase">Your selection</h2>
               {selected.length > 0 && (
                 <button
                   type="button"
@@ -434,39 +445,43 @@ function BookPage() {
               </p>
             )}
             {selected.length === 0 ? (
-              <p className="mt-2 text-sm text-muted-foreground">
+              <p className="mt-2 text-xs sm:text-sm text-muted-foreground">
                 No seats picked yet. Front rows are the premium spots.
               </p>
             ) : (
-              <ul className="mt-3 space-y-1.5 text-sm">
+              <ul className="mt-3 space-y-1.5 text-xs sm:text-sm">
                 {selected.map((id) => (
-                  <li key={id} className="flex items-center justify-between">
-                    <span className="font-semibold">
-                      Seat {id}{" "}
-                      <span className="font-normal text-muted-foreground">
+                  <li key={id} className="flex items-center justify-between gap-2">
+                    <span className="font-semibold min-w-0">
+                      <span className="sm:hidden">Seat {id}</span>
+                      <span className="hidden sm:inline">Seat {id}</span>{" "}
+                      <span className="font-normal text-muted-foreground hidden sm:inline">
                         · {roomForSeat(id)?.name} · {tierForSeat(id)?.name}
                       </span>
+                      <span className="font-normal text-muted-foreground sm:hidden text-[0.65rem]">
+                        {tierForSeat(id)?.name}
+                      </span>
                     </span>
-                    <span>₹{tierForSeat(id)?.price}</span>
+                    <span className="shrink-0">₹{tierForSeat(id)?.price}</span>
                   </li>
                 ))}
               </ul>
             )}
-            <div className="mt-4 flex items-center justify-between border-t border-border pt-3 text-base font-bold">
+            <div className="mt-3 sm:mt-4 flex items-center justify-between border-t border-border pt-3 text-sm sm:text-base font-bold">
               <span>Total</span>
               <span className="text-primary">₹{amount}</span>
             </div>
-            <p className="mt-3 text-xs text-muted-foreground">
+            <p className="mt-2 sm:mt-3 text-[0.65rem] sm:text-xs text-muted-foreground">
               {Object.values(TIERS)
                 .map((t) => `${t.name} ₹${t.price}`)
                 .join(" · ")}
             </p>
           </div>
 
-          <form onSubmit={submit} className="space-y-5 rounded-md border border-border bg-card p-5">
+          <form id="booking-form" onSubmit={submit} className="space-y-4 sm:space-y-5 rounded-md border border-border bg-card p-4 sm:p-5">
             <div>
-              <h2 className="text-lg font-bold uppercase">Your details</h2>
-              <div className="mt-4 space-y-3">
+              <h2 className="text-base sm:text-lg font-bold uppercase">Your details</h2>
+              <div className="mt-3 sm:mt-4 space-y-3">
                 <Field
                   id="name"
                   label="Full name"
@@ -501,19 +516,19 @@ function BookPage() {
             </div>
 
             <div className="border-t border-border pt-4">
-              <h2 className="text-lg font-bold uppercase">Pay ₹{amount} by UPI</h2>
-              <div className="mt-3 flex flex-col sm:flex-row items-center sm:items-start gap-4">
+              <h2 className="text-base sm:text-lg font-bold uppercase">Pay ₹{amount} by UPI</h2>
+              <div className="mt-3 flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:gap-4">
                 <QrPanel />
-                <div className="text-sm text-center sm:text-left">
+                <div className="text-xs sm:text-sm text-center sm:text-left">
                   <p className="font-semibold">{UPI.payeeName}</p>
-                  <p className="font-mono text-xs break-all text-muted-foreground">{UPI.id}</p>
-                  <p className="mt-2 text-xs text-muted-foreground">
+                  <p className="font-mono text-[0.65rem] sm:text-xs break-all text-muted-foreground">{UPI.id}</p>
+                  <p className="mt-1.5 sm:mt-2 text-[0.65rem] sm:text-xs text-muted-foreground">
                     Scan, pay the exact amount, then upload the screenshot below.
                   </p>
                 </div>
               </div>
 
-              <div className="mt-4 space-y-3">
+              <div className="mt-3 sm:mt-4 space-y-3">
                 <Field
                   id="upiRef"
                   label="UPI transaction / reference ID"
@@ -546,12 +561,49 @@ function BookPage() {
                 ? "Confirming…"
                 : `Confirm ${selected.length || ""} seat${selected.length === 1 ? "" : "s"}`}
             </Button>
-            <p className="text-xs text-muted-foreground">
+            <p className="text-[0.65rem] sm:text-xs text-muted-foreground">
               Picking a seat locks it for you for a few minutes — nobody else can book it while your
               timer runs. Leave the page or let the timer run out and it goes back on sale.
             </p>
           </form>
         </aside>
+      </div>
+
+      {/* ── Sticky mobile bottom bar ── */}
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-border bg-card/95 backdrop-blur-md px-4 py-3 lg:hidden">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-xs text-muted-foreground">
+              {selected.length === 0
+                ? "No seats selected"
+                : `${selected.length} seat${selected.length > 1 ? "s" : ""} selected`}
+            </p>
+            <p className="text-base font-bold text-primary">₹{amount}</p>
+          </div>
+          <div className="flex gap-2 shrink-0">
+            <a
+              href="#seat-map-section"
+              className="rounded-md border border-border bg-secondary px-3 py-2 text-xs font-bold uppercase tracking-wider text-foreground"
+            >
+              Map
+            </a>
+            {selected.length > 0 ? (
+              <a
+                href="#booking-form"
+                className="rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-wider text-primary-foreground"
+              >
+                Checkout →
+              </a>
+            ) : (
+              <a
+                href="#seat-map-section"
+                className="rounded-md bg-primary px-4 py-2 text-xs font-bold uppercase tracking-wider text-primary-foreground"
+              >
+                Pick seats
+              </a>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
