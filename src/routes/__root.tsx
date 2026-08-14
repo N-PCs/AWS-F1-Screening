@@ -15,6 +15,7 @@ import { EVENT } from "@/lib/event-config";
 import { AuthProvider } from "@/lib/auth-context";
 import { UserBadge } from "@/components/f1/UserBadge";
 import { LoadingScreen } from "@/components/f1/LoadingScreen";
+import { SiteFooter } from "@/components/f1/Footer";
 
 function NotFoundComponent() {
   return (
@@ -229,19 +230,5 @@ function SiteHeader() {
   );
 }
 
-function SiteFooter() {
-  return (
-    <footer className="border-t border-border/80">
-      <div className="checkers h-1.5 w-full opacity-70" aria-hidden />
-      <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-        <p>
-          {EVENT.club} - This website was made with 💜 by <a href="https://github.com/N-PCs/AWS-F1-Screening" target="_blank" rel="noopener noreferrer" style={{fontStyle:"italic", fontWeight:"600",color:"#6e00ff"}}>N-PCs</a> & Tech Team  
-        </p>
-        <Link to="/admin" className="hover:text-foreground">
-          Organiser access
-        </Link>
-      </div>
-    </footer>
-  );
-}
+
 
