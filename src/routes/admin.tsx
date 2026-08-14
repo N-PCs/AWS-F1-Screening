@@ -1,12 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { TIERS, TOTAL_SEATS, tierForSeat } from "@/lib/seat-layout";
 import { ADMIN_EMAILS } from "@/lib/event-config";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import {
+  adminDeleteBooking,
   adminList,
   adminScreenshot,
   adminSetStatus,
@@ -42,6 +53,7 @@ function AdminPage() {
   const [busy, setBusy] = useState(false);
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [filter, setFilter] = useState("");
+  const [deleteCode, setDeleteCode] = useState<string | null>(null);
 
   useEffect(() => {
     const stop = watchAdmin((user) => {
@@ -93,6 +105,20 @@ function AdminPage() {
       toast.error(err instanceof Error ? err.message : "Update failed");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function removeBooking(code: string) {
+    setBusy(true);
+    try {
+      await adminDeleteBooking(code);
+      setBookings((prev) => prev.filter((b) => b.code !== code));
+      toast.success(`Booking ${code} deleted. Seats released.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Delete failed");
+    } finally {
+      setBusy(false);
+      setDeleteCode(null);
     }
   }
 
@@ -294,6 +320,15 @@ function AdminPage() {
                     >
                       Reject
                     </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={busy}
+                      className="text-destructive hover:text-destructive"
+                      onClick={() => setDeleteCode(b.code)}
+                    >
+                      Delete
+                    </Button>
                   </div>
                 </td>
               </tr>
@@ -310,7 +345,34 @@ function AdminPage() {
       </div>
       <p className="mt-4 text-xs text-muted-foreground">
         Rejecting a booking releases its seats back onto the public seat map.
+        Deleting a booking removes it entirely so the person can register again.
       </p>
+
+      <AlertDialog open={Boolean(deleteCode)} onOpenChange={(open) => !open && setDeleteCode(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete booking {deleteCode}?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This permanently removes the booking, its screenshot link and the
+              registration-number lock, and releases its seats. The person will
+              be able to register again with the same registration number.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              disabled={busy}
+              onClick={(e) => {
+                e.preventDefault();
+                if (deleteCode) void removeBooking(deleteCode);
+              }}
+            >
+              {busy ? "Deleting…" : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

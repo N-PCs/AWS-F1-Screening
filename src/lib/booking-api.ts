@@ -371,6 +371,32 @@ export async function adminSetStatus(code: string, status: BookingRecord["status
   return { code, status };
 }
 
+/**
+ * Organiser-only: fully remove a booking so the person can register again.
+ * Deletes the booking, its screenshot link and the registration-number lock,
+ * and frees its seats — all in one transaction. The Cloudinary image itself is
+ * left in place (deleting it needs the Admin API secret); remove it from the
+ * Cloudinary dashboard if needed.
+ */
+export async function adminDeleteBooking(code: string) {
+  requireBackend();
+  const bookingRef = doc(db(), BOOKINGS, code);
+  const snap = await getDoc(bookingRef);
+  if (!snap.exists()) throw new Error("Booking not found");
+  const data = snap.data() as { regNo?: string; seats?: string[] };
+  const regNo = data.regNo ?? "";
+  const seats = data.seats ?? [];
+
+  await runTransaction(db(), async (tx) => {
+    tx.delete(bookingRef);
+    tx.delete(doc(db(), SHOTS, code));
+    if (regNo) tx.delete(doc(db(), REGS, regNo));
+    for (const s of seats) tx.delete(doc(db(), SEATS, s));
+  });
+
+  return { code };
+}
+
 /* ---------------- screenshot helper ---------------- */
 
 /**

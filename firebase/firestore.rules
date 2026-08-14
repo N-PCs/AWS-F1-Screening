@@ -22,10 +22,14 @@ service cloud.firestore {
         || (resource.data.status == 'booked' && false);
     }
 
-    // One registration number = one booking. Create-only, never overwritten.
+    // One registration number = one booking. Signed-in visitors may fetch one
+    // registration doc to check whether a reg number is already taken (the
+    // booking transaction reads this doc); only organisers can list, update
+    // or delete them.
     match /registrations/{regNo} {
-      allow get, list: if isAdmin();
-      allow create: if request.auth == null || request.auth != null;
+      allow get: if request.auth != null;
+      allow list: if isAdmin();
+      allow create: if request.auth != null;
       allow update, delete: if isAdmin();
     }
 
