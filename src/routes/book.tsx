@@ -11,7 +11,18 @@ import { useAuth } from "@/lib/auth-context";
 import { isCloudinaryConfigured, uploadImage } from "@/lib/cloudinary";
 import { EVENT, UPI } from "@/lib/event-config";
 import { isFirebaseConfigured } from "@/lib/firebase";
-import { TIERS, TOTAL_SEATS, tierForSeat, totalPrice } from "@/lib/seat-layout";
+import {
+  ROOMS,
+  ROOM_SEAT_COUNT,
+  TIERS,
+  TOTAL_SEATS,
+  roomForId,
+  roomForSeat,
+  tierForSeat,
+  totalPrice,
+  type RoomId,
+} from "@/lib/seat-layout";
+import { cn } from "@/lib/utils";
 import {
   attendeeSchema,
   compressImage,
@@ -30,7 +41,7 @@ export const Route = createFileRoute("/book")({
       {
         name: "description",
         content:
-          "Pick your seat for the AWS Club VITB Formula 1 Grand Prix screening in AB-02. Front rows ₹199, mid ₹149, rear ₹99. Pay by UPI.",
+          "Pick your seat for the AWS Club VITB Formula 1 Grand Prix screening across AB02-127 & AB02-128. Front rows ₹199, mid ₹149, rear ₹99. Pay by UPI.",
       },
       { property: "og:title", content: "Book Your Seat — F1 Grand Prix Screening" },
       {
@@ -55,6 +66,7 @@ function BookPage() {
   const holdIdRef = useRef<string>("");
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [file, setFile] = useState<File | null>(null);
+  const [activeRoom, setActiveRoom] = useState<RoomId>("R1");
   const [form, setForm] = useState<Attendee>({
     name: "",
     email: "",
@@ -306,46 +318,86 @@ function BookPage() {
     }
   }
 
-  const bookedCount = taken.size;
+  const activeRoomInfo = roomForId(activeRoom);
   const holdClock = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
       <header className="border-b border-border pb-6">
-        <p className="text-xs font-bold tracking-[0.3em] text-primary uppercase">
-          Grid Selection
-        </p>
+        <p className="text-xs font-bold tracking-[0.3em] text-primary uppercase">Grid Selection</p>
         <h1 className="mt-2 text-3xl font-bold uppercase sm:text-4xl">Book your seat</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          {EVENT.venue} · {EVENT.dateLabel} · {EVENT.timeLabel} · {TOTAL_SEATS} seats total
-          {availability.data ? ` · ${TOTAL_SEATS - bookedCount} still open` : ""}
+          {EVENT.venue} · {EVENT.dateLabel} · {EVENT.timeLabel} · {TOTAL_SEATS} seats total ·{" "}
+          {ROOMS.map((r) => r.name).join(" & ")}
         </p>
       </header>
 
       {!isFirebaseConfigured && (
         <p className="mt-6 rounded-md border border-accent/50 bg-accent/10 p-4 text-sm">
-          <strong className="font-bold">Setup pending:</strong> the organiser still has to add
-          the Firebase keys (<code>VITE_FIREBASE_*</code>) — see{" "}
-          <code>firebase/README.md</code>. Seat availability and bookings stay offline until then.
+          <strong className="font-bold">Setup pending:</strong> the organiser still has to add the
+          Firebase keys (<code>VITE_FIREBASE_*</code>) — see <code>firebase/README.md</code>. Seat
+          availability and bookings stay offline until then.
         </p>
       )}
       {isFirebaseConfigured && !isCloudinaryConfigured && (
         <p className="mt-6 rounded-md border border-accent/50 bg-accent/10 p-4 text-sm">
-          <strong className="font-bold">Setup pending:</strong> the organiser still has to add
-          the Cloudinary keys (<code>VITE_CLOUDINARY_*</code>) — see{" "}
-          <code>firebase/README.md</code>. Bookings stay disabled until then.
+          <strong className="font-bold">Setup pending:</strong> the organiser still has to add the
+          Cloudinary keys (<code>VITE_CLOUDINARY_*</code>) — see <code>firebase/README.md</code>.
+          Bookings stay disabled until then.
         </p>
       )}
       {availability.isError && (
         <p className="mt-6 rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm">
-          Could not load seat availability. Refresh the page, or contact the organisers if it
-          keeps failing.
+          Could not load seat availability. Refresh the page, or contact the organisers if it keeps
+          failing.
         </p>
       )}
 
-      <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_22rem]">
-        <section className="rounded-md border border-border bg-card p-4 sm:p-6">
+      {/* Room switcher — each room gets its own accent colour */}
+      <div className="mt-6 grid gap-3 sm:grid-cols-2">
+        {ROOMS.map((room) => {
+          const isActive = activeRoom === room.id;
+          const takenInRoom = [...taken].filter((id) => id.startsWith(room.id + "-")).length;
+          const heldInRoom = [...heldByOthers].filter((id) => id.startsWith(room.id + "-")).length;
+          const openInRoom = ROOM_SEAT_COUNT - takenInRoom - heldInRoom;
+          return (
+            <button
+              key={room.id}
+              type="button"
+              onClick={() => setActiveRoom(room.id)}
+              aria-pressed={isActive}
+              className={cn(
+                "rounded-md border-2 bg-card p-4 text-left transition",
+                isActive ? roomActive[room.tone] : "border-border hover:border-foreground/40",
+              )}
+            >
+              <span
+                className={cn(
+                  "flex items-center gap-2 text-[0.65rem] font-bold tracking-[0.25em] uppercase",
+                  isActive ? roomText[room.tone] : "text-muted-foreground",
+                )}
+              >
+                <span className={cn("h-2 w-2 rounded-full", roomDot[room.tone])} aria-hidden />
+                {room.label}
+              </span>
+              <span className="mt-1 flex items-baseline justify-between gap-2">
+                <span className="text-xl font-bold">{room.name}</span>
+                <span className="text-xs text-muted-foreground">250 seats · {openInRoom} open</span>
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="mt-6 grid gap-8 lg:grid-cols-[1fr_22rem]">
+        <section
+          className={cn(
+            "rounded-md border border-border bg-card p-4 sm:p-6",
+            roomTop[activeRoomInfo.tone],
+          )}
+        >
           <SeatMap
+            room={activeRoom}
             taken={taken}
             held={heldByOthers}
             selected={selected}
@@ -392,7 +444,7 @@ function BookPage() {
                     <span className="font-semibold">
                       Seat {id}{" "}
                       <span className="font-normal text-muted-foreground">
-                        · {tierForSeat(id)?.name}
+                        · {roomForSeat(id)?.name} · {tierForSeat(id)?.name}
                       </span>
                     </span>
                     <span>₹{tierForSeat(id)?.price}</span>
@@ -490,11 +542,13 @@ function BookPage() {
               disabled={submitting || !selected.length}
               className="w-full font-bold tracking-wide uppercase"
             >
-              {submitting ? "Confirming…" : `Confirm ${selected.length || ""} seat${selected.length === 1 ? "" : "s"}`}
+              {submitting
+                ? "Confirming…"
+                : `Confirm ${selected.length || ""} seat${selected.length === 1 ? "" : "s"}`}
             </Button>
             <p className="text-xs text-muted-foreground">
-              Picking a seat locks it for you for a few minutes — nobody else can book it while
-              your timer runs. Leave the page or let the timer run out and it goes back on sale.
+              Picking a seat locks it for you for a few minutes — nobody else can book it while your
+              timer runs. Leave the page or let the timer run out and it goes back on sale.
             </p>
           </form>
         </aside>
@@ -502,6 +556,26 @@ function BookPage() {
     </div>
   );
 }
+
+const roomTop: Record<string, string> = {
+  "room-1": "border-t-[3px] border-t-room-1",
+  "room-2": "border-t-[3px] border-t-room-2",
+};
+
+const roomActive: Record<string, string> = {
+  "room-1": "border-room-1 bg-room-1/10",
+  "room-2": "border-room-2 bg-room-2/10",
+};
+
+const roomText: Record<string, string> = {
+  "room-1": "text-room-1",
+  "room-2": "text-room-2",
+};
+
+const roomDot: Record<string, string> = {
+  "room-1": "bg-room-1",
+  "room-2": "bg-room-2",
+};
 
 function QrPanel() {
   const [broken, setBroken] = useState(false);

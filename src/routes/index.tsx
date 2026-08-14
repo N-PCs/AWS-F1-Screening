@@ -14,13 +14,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Lights out at VIT Bhopal. AWS Club VITB screens the Formula 1 Grand Prix live in the AB-02 auditorium — 250 seats, tiered pricing from ₹99, book your seat now.",
+          "Lights out at VIT Bhopal. AWS Club VITB screens the Formula 1 Grand Prix live across AB02-127 & AB02-128 — 500 seats, tiered pricing from ₹99, book your seat now.",
       },
       { property: "og:title", content: "F1 Grand Prix Screening — AWS Club VITB" },
       {
         property: "og:description",
         content:
-          "250 seats, big screen, full race weekend energy in AB-02. Pick your seat from ₹99.",
+          "500 seats, two rooms, big screens and full race weekend energy in AB-02. Pick your seat from ₹99.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -66,8 +66,8 @@ function Hero() {
           {EVENT.title}
         </h1>
         <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
-          Lights out on the big screen. {TOTAL_SEATS} seats, tiered like a real grandstand —
-          the closer you sit, the louder the engines.
+          Lights out on the big screens of AB02-127 & AB02-128. {TOTAL_SEATS} seats, tiered like a
+          real grandstand — the closer you sit, the louder the engines.
         </p>
         <dl className="mt-8 flex flex-wrap gap-x-10 gap-y-4 text-sm">
           <Fact label="Date" value={EVENT.dateLabel} />
@@ -119,9 +119,7 @@ function RaceStrip() {
         {STRIP.map(([value, label]) => (
           <div key={value}>
             <p className="text-2xl font-bold text-primary">{value}</p>
-            <p className="mt-1 text-xs tracking-widest text-muted-foreground uppercase">
-              {label}
-            </p>
+            <p className="mt-1 text-xs tracking-widest text-muted-foreground uppercase">{label}</p>
           </div>
         ))}
       </div>

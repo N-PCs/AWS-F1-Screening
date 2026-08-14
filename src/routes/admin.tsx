@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { TIERS, TOTAL_SEATS, tierForSeat } from "@/lib/seat-layout";
+import { ROOMS, TIERS, TOTAL_SEATS, roomForSeat, tierForSeat } from "@/lib/seat-layout";
 import { ADMIN_EMAILS } from "@/lib/event-config";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import {
@@ -97,9 +97,7 @@ function AdminPage() {
     setBusy(true);
     try {
       await adminSetStatus(code, status);
-      setBookings((prev) =>
-        prev.map((b) => (b.code === code ? { ...b, status } : b)),
-      );
+      setBookings((prev) => prev.map((b) => (b.code === code ? { ...b, status } : b)));
       toast.success(`Booking ${code} marked ${status}.`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Update failed");
@@ -136,6 +134,7 @@ function AdminPage() {
   const stats = useMemo(() => {
     const active = bookings.filter((b) => b.status !== "rejected");
     const perTier: Record<string, number> = { premium: 0, standard: 0, economy: 0 };
+    const perRoom: Record<string, number> = {};
     let seats = 0;
     let revenue = 0;
     for (const b of active) {
@@ -144,9 +143,11 @@ function AdminPage() {
       for (const s of b.seats) {
         const t = tierForSeat(s);
         if (t) perTier[t.id] = (perTier[t.id] ?? 0) + 1;
+        const room = roomForSeat(s);
+        if (room) perRoom[room.name] = (perRoom[room.name] ?? 0) + 1;
       }
     }
-    return { seats, revenue, perTier, remaining: TOTAL_SEATS - seats };
+    return { seats, revenue, perTier, perRoom, remaining: TOTAL_SEATS - seats };
   }, [bookings]);
 
   function exportCsv() {
@@ -192,8 +193,8 @@ function AdminPage() {
       <div className="mx-auto max-w-sm px-4 py-20">
         <h1 className="text-2xl font-bold uppercase">Organiser access</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Sign in with your organiser Google account. Only{" "}
-          {ADMIN_EMAILS.join(" and ")} can read registrations.
+          Sign in with your organiser Google account. Only {ADMIN_EMAILS.join(" and ")} can read
+          registrations.
         </p>
         {!isFirebaseConfigured && (
           <p className="mt-4 rounded-md border border-accent/50 bg-accent/10 p-3 text-xs">
@@ -248,6 +249,9 @@ function AdminPage() {
         {Object.values(TIERS)
           .map((t) => `${t.name}: ${stats.perTier[t.id] ?? 0}`)
           .join(" · ")}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        {ROOMS.map((r) => `${r.name}: ${stats.perRoom[r.name] ?? 0} sold`).join(" · ")}
       </p>
 
       <Input
@@ -344,8 +348,8 @@ function AdminPage() {
         </table>
       </div>
       <p className="mt-4 text-xs text-muted-foreground">
-        Rejecting a booking releases its seats back onto the public seat map.
-        Deleting a booking removes it entirely so the person can register again.
+        Rejecting a booking releases its seats back onto the public seat map. Deleting a booking
+        removes it entirely so the person can register again.
       </p>
 
       <AlertDialog open={Boolean(deleteCode)} onOpenChange={(open) => !open && setDeleteCode(null)}>
@@ -353,9 +357,9 @@ function AdminPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete booking {deleteCode}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This permanently removes the booking, its screenshot link and the
-              registration-number lock, and releases its seats. The person will
-              be able to register again with the same registration number.
+              This permanently removes the booking, its screenshot link and the registration-number
+              lock, and releases its seats. The person will be able to register again with the same
+              registration number.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -380,9 +384,7 @@ function AdminPage() {
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-md border border-border bg-card p-4">
-      <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
-        {label}
-      </p>
+      <p className="text-xs font-bold tracking-widest text-muted-foreground uppercase">{label}</p>
       <p className="mt-1 text-2xl font-bold">{value}</p>
     </div>
   );

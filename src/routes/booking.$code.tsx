@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { EVENT } from "@/lib/event-config";
 import { isFirebaseConfigured } from "@/lib/firebase";
-import { tierForSeat } from "@/lib/seat-layout";
+import { roomForSeat, tierForSeat } from "@/lib/seat-layout";
 import { getBooking } from "@/lib/booking-api";
 
 export const Route = createFileRoute("/booking/$code")({
@@ -66,7 +66,11 @@ function BookingPage() {
           <Row
             label="Seats"
             value={query.data.seats
-              .map((s) => `${s} (${tierForSeat(s)?.name ?? "—"})`)
+              .map((s) => {
+                const room = roomForSeat(s)?.name;
+                const tier = tierForSeat(s)?.name;
+                return `${s} (${[room, tier].filter(Boolean).join(" · ") || "—"})`;
+              })
               .join(", ")}
           />
           <Row label="Amount paid" value={`₹${query.data.amount}`} />
@@ -107,9 +111,7 @@ function BookingPage() {
 function Row({ label, value }: { label: string; value: string }) {
   return (
     <div className="grid gap-1 py-3 sm:grid-cols-[10rem_1fr] sm:gap-4">
-      <dt className="text-xs font-bold tracking-widest text-muted-foreground uppercase">
-        {label}
-      </dt>
+      <dt className="text-xs font-bold tracking-widest text-muted-foreground uppercase">{label}</dt>
       <dd className="text-sm">{value}</dd>
     </div>
   );

@@ -93,5 +93,6 @@ Admin API (needs your API secret, keep it server-side).
 
 ## Changing the seat layout or prices
 
-Edit `ROWS` / `TIERS` in `src/lib/seat-layout.ts` — prices are computed from
-that file, so nothing else has to change.
+Edit `ROOM_ROWS` / `TIERS` in `src/lib/seat-layout.ts`. Seat ids are room-prefixed
+(`R1-A1` = AB02-127, `R2-A1` = AB02-128) and prices are computed from that file,
+so nothing else has to change.
