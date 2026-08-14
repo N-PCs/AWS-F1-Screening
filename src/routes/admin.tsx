@@ -81,16 +81,6 @@ function AdminPage() {
     }
   }
 
-  async function openScreenshot(code: string) {
-    try {
-      const dataUrl = await adminScreenshot(code);
-      const w = window.open();
-      if (w) w.document.write(`<img src="${dataUrl}" alt="Payment screenshot ${code}" />`);
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "No screenshot found");
-    }
-  }
-
   async function setStatus(code: string, status: BookingRecord["status"]) {
     setBusy(true);
     try {
@@ -145,6 +135,7 @@ function AdminPage() {
       "Amount",
       "UPI Ref",
       "Status",
+      "Screenshot URL",
     ];
     const rows = visible.map((b) => [
       b.code,
@@ -157,6 +148,7 @@ function AdminPage() {
       String(b.amount),
       b.upiRef,
       b.status,
+      b.screenshotUrl,
     ]);
     const csv = [header, ...rows]
       .map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
@@ -271,13 +263,7 @@ function AdminPage() {
                 <td className="px-3 py-3">₹{b.amount}</td>
                 <td className="px-3 py-3 text-xs">
                   <span className="block font-mono">{b.upiRef}</span>
-                  <button
-                    type="button"
-                    className="text-primary underline"
-                    onClick={() => void openScreenshot(b.code)}
-                  >
-                    View screenshot
-                  </button>
+                  <ScreenshotCell code={b.code} initialUrl={b.screenshotUrl} />
                 </td>
                 <td className="px-3 py-3">
                   <span
@@ -337,5 +323,58 @@ function Stat({ label, value }: { label: string; value: string }) {
       </p>
       <p className="mt-1 text-2xl font-bold">{value}</p>
     </div>
+  );
+}
+
+/**
+ * Shows the Cloudinary screenshot as a clickable thumbnail. New bookings carry
+ * the URL on the booking doc; older ones fall back to reading the screenshots
+ * collection directly.
+ */
+function ScreenshotCell({ code, initialUrl }: { code: string; initialUrl: string }) {
+  const [url, setUrl] = useState(initialUrl);
+  const [missing, setMissing] = useState(Boolean(initialUrl));
+
+  useEffect(() => {
+    if (url) return;
+    let alive = true;
+    adminScreenshot(code)
+      .then((u) => {
+        if (!alive) return;
+        setUrl(u);
+        setMissing(Boolean(u));
+      })
+      .catch(() => {
+        if (alive) setMissing(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [code, url]);
+
+  if (!url) {
+    return (
+      <span className="mt-1 block text-muted-foreground">
+        {missing ? "Loading…" : "No screenshot"}
+      </span>
+    );
+  }
+
+  return (
+    <a
+      href={url}
+      target="_blank"
+      rel="noreferrer"
+      className="mt-1 inline-flex items-center gap-2 text-primary underline"
+      title={`Open payment screenshot for ${code}`}
+    >
+      <img
+        src={url}
+        alt={`Payment screenshot ${code}`}
+        className="h-12 w-12 rounded-sm border border-border bg-background object-cover"
+        loading="lazy"
+      />
+      View
+    </a>
   );
 }

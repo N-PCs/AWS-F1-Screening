@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useAuth } from "@/lib/auth-context";
+import { isCloudinaryConfigured, uploadImage } from "@/lib/cloudinary";
 import { EVENT, UPI } from "@/lib/event-config";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import { TIERS, TOTAL_SEATS, tierForSeat, totalPrice } from "@/lib/seat-layout";
@@ -276,14 +277,21 @@ function BookPage() {
       setErrors({ screenshot: "Image must be under 4 MB" });
       return;
     }
+    if (!isCloudinaryConfigured) {
+      toast.error("Screenshot uploads are not configured yet.", {
+        id: "submit-no-cloudinary",
+      });
+      return;
+    }
 
     setSubmitting(true);
     try {
-      const screenshotDataUrl = await compressImage(file);
+      const screenshotBlob = await compressImage(file);
+      const screenshot = await uploadImage(screenshotBlob);
       const result = await createBooking({
         seats: selected,
         attendee: parsed.data,
-        screenshotDataUrl,
+        screenshot,
         holdId: holdIdRef.current,
       });
       setHoldExpiresAt(null);
@@ -319,6 +327,13 @@ function BookPage() {
           <strong className="font-bold">Setup pending:</strong> the organiser still has to add
           the Firebase keys (<code>VITE_FIREBASE_*</code>) — see{" "}
           <code>firebase/README.md</code>. Seat availability and bookings stay offline until then.
+        </p>
+      )}
+      {isFirebaseConfigured && !isCloudinaryConfigured && (
+        <p className="mt-6 rounded-md border border-accent/50 bg-accent/10 p-4 text-sm">
+          <strong className="font-bold">Setup pending:</strong> the organiser still has to add
+          the Cloudinary keys (<code>VITE_CLOUDINARY_*</code>) — see{" "}
+          <code>firebase/README.md</code>. Bookings stay disabled until then.
         </p>
       )}
       {availability.isError && (

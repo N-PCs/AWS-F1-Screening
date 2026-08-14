@@ -48,17 +48,48 @@ emails, change them in *both* that file and `src/lib/event-config.ts`.
 | Collection       | What's inside                                                        |
 | ---------------- | -------------------------------------------------------------------- |
 | `seats`          | one doc per claimed seat (`A1`, `B7`…): `held` + expiry, or `booked`  |
-| `bookings`       | booking code, name, email, phone, reg no., seats, amount, UPI ref, status |
+| `bookings`       | booking code, name, email, phone, reg no., seats, amount, UPI ref, **screenshot URL**, status |
 | `registrations`  | one doc per registration number — the "one booking per student" lock  |
-| `screenshots`    | the UPI payment screenshot (compressed JPEG), organiser-readable only |
+| `screenshots`    | links the Cloudinary payment screenshot (`screenshotUrl` + `cloudinaryPublicId`) to the booking code, organiser-readable only |
 
 Flow: browser picks seats → Firestore transaction holds them for 8 minutes →
-form + compressed screenshot are written in a second transaction that also
+screenshot is uploaded to **Cloudinary** (so Firestore never holds images) →
+form + the returned Cloudinary URL are written in a second transaction that also
 creates the `registrations/<REGNO>` lock → `/admin` (Google sign-in) verifies
 or rejects each booking. Rejecting frees the seats again.
 
-Everything above stays inside the Spark free tier: no Cloud Storage, no Blaze
-card, no server to keep alive.
+Everything above stays inside the free tier: no Cloud Storage, no Blaze card,
+no server to keep alive — Cloudinary has its own free plan.
+
+---
+
+## 6. Cloudinary setup (payment screenshots)
+
+The site uploads payment screenshots straight to Cloudinary and stores *only the
+URL* in Firestore, so admins can view them without hitting Firestore's 1 MB doc
+limit. Uploads use an **unsigned preset**, so no API secret is ever exposed.
+
+1. Sign up at <https://cloudinary.com> (free plan).
+2. On the dashboard, copy your **Cloud Name** (e.g. `aws-f1-vitb`) into `.env`:
+   ```
+   VITE_CLOUDINARY_CLOUD_NAME=aws-f1-vitb
+   ```
+3. Create the upload preset:
+   **Settings → Upload → Upload presets → Add upload preset → Enable unsigned**.
+   Recommended settings: **Folder** = `f1-screening/screenshots`,
+   **Allowed formats** = jpg / png / webp, **Transformation** = optional auto-optimisation.
+   Copy the preset **name** (which you chose, e.g. `f1_screenshots`) into `.env`:
+   ```
+   VITE_CLOUDINARY_UPLOAD_PRESET=f1_screenshots
+   ```
+4. `npm run dev`, then restart the dev server so it picks up the new `.env`.
+   The "Setup pending" warning on `/book` disappears.
+
+Note on privacy: the uploaded images are unlisted (random `public_id`s), but
+Cloudinary serves them at guess-proof URLs. Firestore rules decide who may *see
+that a screenshot exists* — the organiser-only `screenshots` collection. To
+delete an image later, either remove it in the Cloudinary dashboard or use the
+Admin API (needs your API secret, keep it server-side).
 
 ## Changing the seat layout or prices
 
