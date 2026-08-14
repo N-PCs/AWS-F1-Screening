@@ -19,8 +19,8 @@
  */
 
 @theme inline {
-  --font-display: "Chakra Petch", ui-sans-serif, system-ui, sans-serif;
-  --font-body: "Barlow", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Montserrat", ui-sans-serif, system-ui, sans-serif;
+  --font-body: "Titillium Web", ui-sans-serif, system-ui, sans-serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -169,7 +169,10 @@
   h3,
   .display {
     font-family: var(--font-display);
-    letter-spacing: -0.01em;
+    font-weight: 900;
+    font-style: italic;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 }
 
@@ -207,4 +210,43 @@
       transparent 70%
     ),
     linear-gradient(180deg, var(--background), color-mix(in oklab, var(--background) 80%, black));
+}
+
+/* ── Loading screen ───────────────────────────────────────────── */
+.loading-screen {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: oklch(0.12 0.01 264);
+  opacity: 1;
+  transition: opacity 0.6s ease-out;
+}
+
+.loading-screen--fade-out {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loading-screen__content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.loading-screen__lottie {
+  width: min(420px, 80vw);
+  height: auto;
+}
+
+.loading-screen__text {
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--primary);
 }

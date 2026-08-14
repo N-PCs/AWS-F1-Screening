@@ -14,6 +14,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { EVENT } from "@/lib/event-config";
 import { AuthProvider } from "@/lib/auth-context";
 import { UserBadge } from "@/components/f1/UserBadge";
+import { LoadingScreen } from "@/components/f1/LoadingScreen";
 
 function NotFoundComponent() {
   return (
@@ -86,11 +87,12 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
         rel: "stylesheet",
         href: appCss,
       },
+
       { rel: "preconnect", href: "https://fonts.googleapis.com" },
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       {
         rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@600;700&family=Barlow:wght@400;500;600;700&display=swap",
+        href: "https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,700;0,800;0,900;1,700;1,800;1,900&family=Titillium+Web:wght@300;400;600;700&display=swap",
       },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
     ],
@@ -121,6 +123,7 @@ function RootComponent() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
+        <LoadingScreen />
         <div className="flex min-h-screen flex-col">
           <SiteHeader />
           <main className="flex-1">

@@ -54,7 +54,7 @@ function Hero() {
         className="absolute inset-0 h-full w-full object-cover opacity-100"
       />
       <div
-        className="absolute inset-0 bg-linear-to-t from-background via-background/80 to-background/40"
+        className="absolute inset-0 bg-linear-to-t from-background via-background/60 to-background/20"
         aria-hidden
       />
       <div className="relative mx-auto max-w-5xl px-4 py-24 sm:py-32">
