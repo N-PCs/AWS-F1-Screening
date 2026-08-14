@@ -51,7 +51,7 @@ function Hero() {
         alt="Formula 1 car racing at speed under floodlights on a night circuit"
         width={1920}
         height={1088}
-        className="absolute inset-0 h-full w-full object-cover opacity-45"
+        className="absolute inset-0 h-full w-full object-cover opacity-100"
       />
       <div
         className="absolute inset-0 bg-linear-to-t from-background via-background/80 to-background/40"

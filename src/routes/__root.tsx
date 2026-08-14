@@ -232,7 +232,7 @@ function SiteFooter() {
       <div className="checkers h-1.5 w-full opacity-70" aria-hidden />
       <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
         <p>
-          {EVENT.club} — {EVENT.title}, {EVENT.venue}, {EVENT.campus}.
+          {EVENT.club} - This website was made with 💜 by <a href="https://github.com/N-PCs/AWS-F1-Screening" target="_blank" rel="noopener noreferrer" style={{fontStyle:"italic", fontWeight:"600",color:"#6e00ff"}}>N-PCs</a> & Tech Team  
         </p>
         <Link to="/admin" className="hover:text-foreground">
           Organiser access
