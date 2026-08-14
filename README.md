@@ -1,38 +1,52 @@
-# 🏎️ AWS F1 Screening - Ticket Booking System
+# 🏎️ AWS F1 Screening — Ticket Booking System
 
-[![TanStack Start](https://img.shields.io/badge/Framework-TanStack%20Start-ff4154?style=flat-square&logo=react)](https://tanstack.com/router)
-[![React 19](https://img.shields.io/badge/React-19.0-61dafb?style=flat-square&logo=react)](https://react.dev/)
-[![Vite](https://img.shields.io/badge/Bundler-Vite%206-646cff?style=flat-square&logo=vite)](https://vitejs.dev/)
-[![Tailwind CSS v4](https://img.shields.io/badge/Styling-Tailwind%20v4-38bdf8?style=flat-square&logo=tailwindcss)](https://tailwindcss.com/)
-[![Firebase](https://img.shields.io/badge/Backend-Firebase%20Firestore-ffca28?style=flat-square&logo=firebase)](https://firebase.google.com/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=flat-square)](LICENSE)
+<div align="center">
 
-A full-stack, high-performance ticket booking web application designed for the **F1 Grand Prix Screening** event hosted by **AWS Club VITB**. Built on modern full-stack web standards, the system delivers real-time seat reservation, double-booking prevention using Firebase Firestore ACID transactions, instant client-side image compression for UPI payment screenshots, and a secure Google-authenticated admin verification dashboard.
+![React 19](https://img.shields.io/badge/React-19-61DAFB?style=flat&logo=react&logoColor=white)
+![TanStack Start](https://img.shields.io/badge/TanStack-Start-ff4154?style=flat&logo=react&logoColor=white)
+![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=flat&logo=vite&logoColor=white)
+![Tailwind CSS](https://img.shields.io/badge/Tailwind-v4-38BDF8?style=flat&logo=tailwindcss&logoColor=white)
+![Firebase](https://img.shields.io/badge/Firebase-Firestore-FFCA28?style=flat&logo=firebase&logoColor=black)
+![Cloudinary](https://img.shields.io/badge/Cloudinary-Image%20Upload-3448C5?style=flat&logo=cloudinary&logoColor=white)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.8-3178C6?style=flat&logo=typescript&logoColor=white)
+![Zod](https://img.shields.io/badge/Zod-Validation-3068B7?style=flat&logo=zod&logoColor=white)
+![License](https://img.shields.io/badge/License-MIT-yellow?style=flat)
+
+<br />
+
+A full-stack ticket booking system for the **F1 Grand Prix Screening** hosted by **AWS Club VITB** at VIT Bhopal. Real-time seat reservation with ACID transactions, Cloudinary-powered payment screenshot uploads, and a secure organiser verification dashboard.
+
+**Live → [your-deployed-domain.vercel.app](https://your-deployed-domain.vercel.app)**
+
+</div>
 
 ---
 
 ## 🌟 Key Features
 
-- **⚡ Real-Time Seat Reservation with Locks**: Interactive screening hall seating grid with tiered pricing (VIP, Executive, General). Seats are temporarily locked for 8 minutes during checkout using atomic Firestore transactions to avoid double bookings.
-- **🔒 Single Booking Enforcement**: Enforces a strict "one booking per registration number" lock at the database level to prevent duplicate ticket claims.
-- **🎓 Email Domain Verification**: Restricts participant authentication and ticket booking exclusively to `@vitbhopal.ac.in` Google accounts.
-- **📸 Compressed UPI Screenshot Uploads**: Client-side image canvas compression reduces payment verification screenshots down to ~80KB before storing, ensuring high speed and remaining well within free tier limits.
-- **🛡️ Secure Admin Verification Dashboard**: Role-based access control allowing designated organizers to review incoming bookings, inspect payment screenshots, approve bookings, or reject invalid claims (releasing seats back to the pool).
-- **🎨 Glassmorphic Modern UI**: Dynamic F1-themed UI built with Tailwind CSS v4, Lucide icons, Radix UI primitives, smooth micro-interactions, and toast alerts via Sonner.
+- **⚡ Real-Time Seat Reservation** — Interactive 250-seat grid (Pit Lane / Grandstand / Back Straight tiers) with 8-minute atomic Firestore locks to prevent double-booking.
+- **🔒 One Registration, One Booking** — Database-level uniqueness lock per registration number — no duplicate claims possible.
+- **🎓 VIT Bhopal Only** — Sign-in restricted to `@vitbhopal.ac.in` Google accounts.
+- **📸 Cloudinary Screenshot Uploads** — Client-side compression + unsigned upload to Cloudinary; Firestore stores only the URL, not the image, keeping docs tiny and free-tier friendly.
+- **🛡️ Admin Dashboard** — Google-authenticated organiser panel to verify/reject bookings, view screenshot thumbnails, delete registrants, and export CSV with Cloudinary links.
+- **🎨 F1-Themed UI** — Glassmorphic design with Tailwind CSS v4, Radix UI, Lucide icons, and Sonner toast alerts.
 
 ---
 
-## 🛠️ Tech Stack & Architecture
+## 🛠️ Tech Stack
 
-| Layer | Technology | Description |
+| Layer | Technology | Purpose |
 | :--- | :--- | :--- |
-| **Framework** | [TanStack Start](https://tanstack.com/router/latest/docs/framework/react/overview) | Full-stack SSR framework powered by TanStack Router |
-| **UI Library** | [React 19](https://react.dev/) | Component architecture with modern hooks |
-| **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) & Radix UI | Modern utility-first styling with accessible UI primitives |
-| **Database & Auth** | [Firebase Firestore](https://firebase.google.com/docs/firestore) & Auth | Atomic transaction locks and OAuth Google Sign-In |
-| **State & API** | [@tanstack/react-query](https://tanstack.com/query) | Async state fetching, caching, and cache invalidation |
-| **Validation** | [Zod](https://zod.dev/) & React Hook Form | Schema validation for forms and payload integrity |
-| **Build System** | [Vite 6](https://vitejs.dev/) | Instant HMR dev server and optimized production bundler |
+| **Framework** | [TanStack Start](https://tanstack.com/router) | Full-stack SSR framework powered by TanStack Router |
+| **UI** | [React 19](https://react.dev/) + [Radix UI](https://www.radix-ui.com/) | Component architecture with accessible primitives |
+| **Styling** | [Tailwind CSS v4](https://tailwindcss.com/) | Utility-first CSS with custom F1 theme tokens |
+| **Database** | [Firebase Firestore](https://firebase.google.com/docs/firestore) | Atomic transactions, seat locks, registration uniqueness |
+| **Auth** | [Firebase Auth](https://firebase.google.com/docs/auth) (Google OAuth) | Domain-restricted sign-in, organiser role gating |
+| **Image Upload** | [Cloudinary](https://cloudinary.com/) (unsigned preset) | Payment screenshot hosting, URL-linked to Firestore |
+| **State** | [@tanstack/react-query](https://tanstack.com/query) | Real-time availability polling, cache management |
+| **Validation** | [Zod](https://zod.dev/) + React Hook Form | Schema validation for attendee forms |
+| **Build** | [Vite 6](https://vitejs.dev/) | HMR dev server, production bundler |
+| **Deploy** | [Vercel](https://vercel.com/) | Edge SSR, automatic previews |
 
 ---
 
@@ -41,31 +55,86 @@ A full-stack, high-performance ticket booking web application designed for the *
 ```
 AWS-F1-Screening/
 ├── firebase/
-│   ├── firestore.rules       # Security rules enforcing auth & transaction constraints
-│   └── README.md             # Firebase project & database setup guide
+│   ├── firestore.rules           # Security rules (auth, transactions, admin gating)
+│   └── README.md                 # Firebase + Cloudinary setup walkthrough
 ├── src/
 │   ├── components/
-│   │   ├── f1/               # Core F1 domain components (SeatMap, AuthGate, UserBadge)
-│   │   └── ui/               # Reusable UI primitives (Button, Card, Dialog, Toast, etc.)
-│   ├── hooks/                # Custom React hooks (useAuth, useSeatSelection)
+│   │   ├── f1/                   # Domain components (SeatMap, AuthGate, UserBadge)
+│   │   └── ui/                   # Reusable primitives (Button, Card, Dialog, etc.)
+│   ├── hooks/                    # Custom hooks (useMobile)
 │   ├── lib/
-│   │   ├── auth-context.tsx  # React Context for Firebase Google Auth state
-│   │   ├── booking-api.ts    # Firestore transaction logic & database operations
-│   │   ├── error-capture.ts  # Centralized error logging & diagnostic utilities
-│   │   ├── event-config.ts   # Main event metadata, admin emails & UPI config
-│   │   ├── firebase.ts       # Firebase app initialization & SDK export
-│   │   └── seat-layout.ts    # Seat tier definitions, prices & layout geometry
+│   │   ├── auth-context.tsx      # Firebase Auth React Context
+│   │   ├── booking-api.ts        # Firestore transactions, booking CRUD, screenshot helpers
+│   │   ├── cloudinary.ts         # Cloudinary unsigned upload client
+│   │   ├── event-config.ts       # Event metadata, admin emails, UPI config
+│   │   ├── firebase.ts           # Firebase app initialization
+│   │   ├── seat-layout.ts        # 250-seat grid, tiers, pricing
+│   │   └── error-capture.ts      # Centralized error logging
 │   ├── routes/
-│   │   ├── __root.tsx        # Top-level app shell with Header, AuthGate & Toaster
-│   │   ├── index.tsx         # Landing page / hero section
-│   │   ├── book.tsx          # Seat selection & checkout flow page
-│   │   ├── admin.tsx         # Organizer verification dashboard
-│   │   └── booking.$code.tsx # Ticket view & booking confirmation status
-│   ├── routeTree.gen.ts      # Auto-generated TanStack Router tree
-│   └── styles.css            # Tailwind CSS v4 directives & custom utilities
-├── .env.example              # Environment variables template
-├── package.json              # Dependencies and scripts
-└── vite.config.ts            # Vite & TanStack Router configuration
+│   │   ├── __root.tsx            # App shell, Header, AuthGate, Toaster
+│   │   ├── index.tsx             # Landing page / hero section
+│   │   ├── book.tsx              # Seat selection + checkout + Cloudinary upload
+│   │   ├── admin.tsx             # Organiser dashboard (verify / reject / delete / CSV)
+│   │   └── booking.$code.tsx     # Booking confirmation status page
+│   └── styles.css                # Tailwind CSS v4 + custom F1 theme
+├── .env.example                  # Environment variables template
+├── package.json
+└── vite.config.ts
+```
+
+---
+
+## 🔄 Workflow Diagram
+
+```
+┌─────────────────────────────────────────────────────────────────────┐
+│                        STUDENT FLOW                                │
+└─────────────────────────────────────────────────────────────────────┘
+
+  / (Landing)
+       │
+       ▼
+  Sign in with @vitbhopal.ac.in Google account (Firebase Auth)
+       │
+       ▼
+  /book ──────────────────────────────────────────────────────┐
+  │  1. Real-time seat map (react-query polls Firestore)     │
+  │  2. Select seats (max 10) ──► Firestore holds (8 min)    │
+  │  3. Fill form (name, email, phone, reg no, UPI ref)      │
+  │  4. Upload UPI screenshot ──► compressImage (canvas)      │
+  │     ──► uploadImage (Cloudinary unsigned preset)          │
+  │     ──► returns { secureUrl, publicId }                   │
+  │  5. Confirm booking ──► createBooking()                   │
+  └─────────────────────────────────────┬─────────────────────┘
+                                        │
+                                        ▼
+                              Firestore Transaction
+                    ┌─────────────────────────────────┐
+                    │  • seats/<id>  → status: booked  │
+                    │  • registrations/<regNo> → code  │
+                    │  • bookings/<code> → details     │
+                    │    + screenshotUrl (Cloudinary)   │
+                    │  • screenshots/<code> → URL       │
+                    └─────────────────────────────────┘
+                                        │
+                                        ▼
+                              /booking/$code ──► Confirmation page
+
+
+┌─────────────────────────────────────────────────────────────────────┐
+│                        ORGANISER FLOW                               │
+└─────────────────────────────────────────────────────────────────────┘
+
+  /admin ──► Sign in with Google (must be in ADMIN_EMAILS)
+       │
+       ▼
+  Dashboard
+  ├─ View all bookings (thumbnail + Cloudinary URL)
+  ├─ Search / filter by name, email, reg no, seat, UPI ref
+  ├─ Verify  ──► marks booking verified (seats stay booked)
+  ├─ Reject  ──► marks rejected (seats released back to map)
+  ├─ Delete  ──► full removal (booking + reg lock + seats freed)
+  └─ Export CSV ──► includes Cloudinary screenshot URLs
 ```
 
 ---
@@ -74,95 +143,93 @@ AWS-F1-Screening/
 
 ### Prerequisites
 
-Make sure you have the following installed on your machine:
-- **Node.js**: `v18.0.0` or higher
-- **npm**: `v9.0.0` or higher (or `pnpm` / `yarn`)
+- **Node.js** ≥ 18
+- **npm** ≥ 9 (or pnpm / yarn)
+- A **Firebase** project (Firestore + Google Auth enabled)
+- A **Cloudinary** account (free plan)
 
----
+### 1. Clone & Install
 
-### Step-by-Step Setup
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/AWS-Club-VITB/AWS-F1-Screening.git
-   cd AWS-F1-Screening
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   npm install
-   ```
-
-3. **Configure Environment Variables**:
-   Copy `.env.example` to create a `.env` file:
-   ```bash
-   cp .env.example .env
-   ```
-
-   Fill in your Firebase project credentials in `.env`:
-   ```env
-   VITE_FIREBASE_API_KEY=your_api_key
-   VITE_FIREBASE_AUTH_DOMAIN=your_project.firebaseapp.com
-   VITE_FIREBASE_PROJECT_ID=your_project_id
-   VITE_FIREBASE_STORAGE_BUCKET=your_project.appspot.com
-   VITE_FIREBASE_SENDER_ID=your_sender_id
-   VITE_FIREBASE_APP_ID=your_app_id
-   ```
-
-   > 💡 Refer to [firebase/README.md](file:///firebase/README.md) for step-by-step instructions on setting up your Firebase project and deploying Security Rules.
-
-4. **Start Development Server**:
-   ```bash
-   npm run dev
-   ```
-   Open `http://localhost:3000` (or the URL printed in the terminal) in your browser.
-
----
-
-## 📜 Available NPM Scripts
-
-- `npm run dev` — Launches the Vite development server with Hot Module Replacement (HMR).
-- `npm run build` — Builds the application for production deployment.
-- `npm run preview` — Locally previews the compiled production build.
-- `npm run lint` — Runs ESLint across all TypeScript files.
-- `npm run format` — Formats source code using Prettier.
-
----
-
-## ⚙️ Configuration & Customization
-
-All event-specific metadata is centralized in [`src/lib/event-config.ts`](file:///src/lib/event-config.ts):
-
-```typescript
-export const ALLOWED_DOMAIN = "vitbhopal.ac.in"; // Domain restriction for sign-in
-
-export const ADMIN_EMAILS = [
-  "neel.24bce10303@vitbhopal.ac.in",
-  "neelpandeyofficial@gmail.com",
-]; // Organizers authorized to open /admin
-
-export const EVENT = {
-  club: "AWS Club VITB",
-  title: "F1 Grand Prix Screening",
-  venue: "Auditorium, AB-02",
-  campus: "VIT Bhopal",
-  startsAt: "2026-09-06T17:30:00+05:30",
-  dateLabel: "Sunday, 6 September",
-  timeLabel: "5:30 PM IST",
-  maxSeatsPerBooking: 10,
-};
+```bash
+git clone https://github.com/N-PCs/AWS-F1-Screening.git
+cd AWS-F1-Screening
+npm install
 ```
 
-To modify seat grid layout or tier pricing, edit [`src/lib/seat-layout.ts`](file:///src/lib/seat-layout.ts).
+### 2. Configure Environment
+
+```bash
+cp .env.example .env
+```
+
+Fill in `.env` with your credentials:
+
+```env
+# Firebase (from Firebase console → Project settings → Your apps)
+VITE_FIREBASE_API_KEY=
+VITE_FIREBASE_AUTH_DOMAIN=
+VITE_FIREBASE_PROJECT_ID=
+VITE_FIREBASE_APP_ID=
+VITE_FIREBASE_STORAGE_BUCKET=
+VITE_FIREBASE_SENDER_ID=
+
+# Cloudinary (from Cloudinary dashboard)
+VITE_CLOUDINARY_CLOUD_NAME=
+VITE_CLOUDINARY_UPLOAD_PRESET=
+```
+
+### 3. Set Up Firebase
+
+1. Create a Firestore database (Standard edition, `asia-south1`, production mode)
+2. Enable Google sign-in (Authentication → Sign-in method → Google)
+3. Paste `firebase/firestore.rules` into the Rules tab → **Publish**
+4. Add your domain to Authorized Domains
+
+> Full walkthrough: [`firebase/README.md`](firebase/README.md)
+
+### 4. Set Up Cloudinary
+
+1. Sign up at [cloudinary.com](https://cloudinary.com)
+2. Note your **Cloud name** → set as `VITE_CLOUDINARY_CLOUD_NAME`
+3. Create an **unsigned** upload preset (Settings → Upload → Upload presets → Add)
+4. Set the preset name as `VITE_CLOUDINARY_UPLOAD_PRESET`
+
+### 5. Start Dev Server
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`.
+
+### Scripts
+
+| Command | Description |
+| :--- | :--- |
+| `npm run dev` | Vite dev server with HMR |
+| `npm run build` | Production build (Vercel preset) |
+| `npm run preview` | Preview production build locally |
+| `npm run lint` | ESLint |
+| `npm run format` | Prettier |
 
 ---
 
 ## 🤝 Contributing
 
-We welcome contributions! Please refer to [CONTRIBUTING.md](file:///CONTRIBUTING.md) for code standards, branch naming conventions, and pull request guidelines.
+We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for branch naming, code standards, and PR guidelines.
+
+<div align="center">
+
+<!-- contributor avatars — add <img> tags for each contributor -->
+
+<a href="https://github.com/N-PCs/AWS-F1-Screening/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=N-PCs/AWS-F1-Screening" />
+</a>
+
+</div>
 
 ---
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](file:///LICENSE) file for details.
+This project is licensed under the MIT License — see [LICENSE](LICENSE) for details.
