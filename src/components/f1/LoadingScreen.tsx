@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 
-const MINIMUM_DISPLAY_MS = 2800;
+const MINIMUM_DISPLAY_MS = 1500;
 
 export function LoadingScreen() {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -8,7 +8,7 @@ export function LoadingScreen() {
   const [fadeOut, setFadeOut] = useState(false);
 
   useEffect(() => {
-    let anim: { destroy: () => void } | null = null;
+    let anim: { destroy: () => void; setSpeed: (speed: number) => void } | null = null;
 
     // Dynamically import lottie-web and the animation data (client-only)
     Promise.all([
@@ -23,6 +23,7 @@ export function LoadingScreen() {
           autoplay: true,
           animationData: animData.default,
         });
+        anim.setSpeed(1.5);
       }
     });
 
