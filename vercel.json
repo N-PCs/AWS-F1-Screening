@@ -1,8 +1,8 @@
 {
   "rewrites": [
     {
-      "source": "/((?!api|_vercel|assets).*)",
-      "destination": "/index.html"
+      "source": "/(.*)",
+  "destination": "/index.html"
     }
   ]
 }
