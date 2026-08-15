@@ -32,5 +32,5 @@ export const UPI = {
    * EDIT ME — put your QR image at public/upi-qr.png (or set a full URL).
    * Until then a generated placeholder is shown.
    */
-  qrImage: "/upi-qr.png",
+  qrImage: "/f1logo.png",
 };
