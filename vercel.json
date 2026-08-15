@@ -1,10 +1,8 @@
 {
-  "headers": [],
-  "redirects": [
+  "rewrites": [
     {
       "source": "/((?!api|_vercel|assets).*)",
-      "destination": "/",
-      "permanent": false
+      "destination": "/index.html"
     }
   ]
 }
