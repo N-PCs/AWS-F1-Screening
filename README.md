@@ -297,7 +297,7 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for bran
 <div align="center">
 
 <a href="https://github.com/N-PCs/AWS-F1-Screening/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=N-PCs/AWS-F1-Screening" />
+    <img src="https://contrib.rocks/image?repo=naiteekpapriwal/AWS-F1-Screening" />
 </a>
 
 </div>
