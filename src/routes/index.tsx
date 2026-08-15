@@ -1,9 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import heroImage from "@/assets/hero.png";
-import pitstopImage from "@/assets/pitstop.png";
-import lightsImage from "@/assets/lights.png";
-import tyresImage from "@/assets/tire.png";
+import heroImage from "@/assets/hero.webp";
+import pitstopImage from "@/assets/pitstop.webp";
+import lightsImage from "@/assets/lights.webp";
+import tyresImage from "@/assets/tire.webp";
 import { EVENT } from "@/lib/event-config";
 import { ROWS, TIERS, TOTAL_SEATS } from "@/lib/seat-layout";
 import { ScrollyMonza } from "@/components/f1/ScrollyMonza";
