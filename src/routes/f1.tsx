@@ -42,6 +42,8 @@ export const Route = createFileRoute("/f1")({
   }),
   component: F1Page,
 });
+ 
+
 
 /* -------------------------------------------------------------------------- */
 /* DATA DEFINITIONS                                                           */
@@ -83,12 +85,12 @@ const WEEKEND_STAGES = [
     day: "Sunday",
     title: "The Grand Prix Race",
     subtitle: "Lights Out & Wheel-to-Wheel Strategy",
-    badge: "305 km Distance",
+    badge: "57 Laps · 308.5 km",
     description:
-      "Five red lights illuminate, then go OUT. Drivers sprint into Turn 1 at 300+ km/h. Laps of wheel-to-wheel battles, mandatory pit stops, undercut calls over team radio, and 5G braking forces until the checkered flag.",
+      "Five red lights illuminate, then go OUT. Drivers sprint into Turn 1 at 320+ km/h. Laps of wheel-to-wheel battles, mandatory pit stops, undercut calls over team radio, and 5G braking forces until the checkered flag.",
     keyTakeaway: "Mandatory pit stop using at least 2 distinct slick compounds.",
     stats: [
-      { label: "Race Dist.", value: "~305 km" },
+      { label: "Race Dist.", value: "~308.5 km" },
       { label: "Avg Pitstop", value: "2.3 - 2.8s" },
       { label: "Max Points", value: "25 + 1 FL" },
     ],
@@ -315,47 +317,51 @@ function HeroHeader() {
       <div className="relative mx-auto grid max-w-6xl items-center gap-12 px-4 lg:grid-cols-12">
         <div className="lg:col-span-7">
 
+          {/* Spain arrival kicker */}
+          <p className="flex flex-wrap items-center gap-2.5 text-xs font-bold uppercase tracking-[0.35em]">
+             <span className="text-amber-400">¡Bienvenidos a Madrid!</span>
+           </p>
 
-          <h1 className="mt-4 text-4xl font-extrabold uppercase tracking-tight sm:text-5xl lg:text-6xl">
+          <h1 className="mt-3 text-4xl font-extrabold uppercase tracking-tight sm:text-5xl lg:text-6xl">
  <span className="bg-gradient-to-r from-primary via-red-500 to-amber-500 bg-clip-text text-transparent">F1 101 Handbook</span>
           </h1>
 
           <p className="mt-4 max-w-2xl text-base text-muted-foreground sm:text-lg leading-relaxed">
-            Zero experience required. 22 high-tech race cars, 1000+ hybrid horsepower, 350 km/h wheel-to-wheel battles, and strategic pit stop masterclasses. Here is everything you need to know before the <span className="font-semibold text-foreground">{EVENT.venue}</span> screening!
+            Zero experience required. 22 high-tech race cars, 1000+ hybrid horsepower, 340 km/h wheel-to-wheel battles, and strategic pit stop masterclasses. Here is everything you need to know before the <span className="font-semibold text-foreground">{EVENT.venue}</span> screening!
           </p>
 
           {/* Quick Stat Badges */}
           <div className="mt-8 grid grid-cols-3 gap-3 max-w-lg">
-            <div className="rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur-xs">
+            <div className="rounded-md border border-white/10 bg-white/5 p-3 backdrop-blur-xs">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wider">
                 <Gauge className="h-3.5 w-3.5 text-primary" /> Top Speed
               </div>
-              <p className="mt-1 text-xl font-bold">351 km/h</p>
+              <p className="mt-1 text-xl font-bold">340 km/h</p>
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur-xs">
+            <div className="rounded-md border border-white/10 bg-white/5 p-3 backdrop-blur-xs">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wider">
                 <Clock className="h-3.5 w-3.5 text-primary" /> Pit Stop
               </div>
               <p className="mt-1 text-xl font-bold">1.80 sec</p>
             </div>
-            <div className="rounded-xl border border-white/10 bg-white/5 p-3 backdrop-blur-xs">
+            <div className="rounded-md border border-white/10 bg-white/5 p-3 backdrop-blur-xs">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground uppercase tracking-wider">
-                <Flame className="h-3.5 w-3.5 text-primary" /> Max Load
+                <Flame className="h-3.5 w-3.5 text-primary" /> Braking Drop
               </div>
-              <p className="mt-1 text-xl font-bold">5.5 G</p>
+              <p className="mt-1 text-xl font-bold">340→80 km/h</p>
             </div>
           </div>
 
           <div className="mt-8 flex flex-wrap items-center gap-4">
             <a
               href="#lights-out-game"
-              className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25"
+              className="inline-flex items-center gap-2 rounded-sm bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wider text-primary-foreground transition-all duration-300 hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/25"
             >
               <Zap className="h-4 w-4" /> Test Reaction Speed
             </a>
             <Link
               to="/book"
-              className="inline-flex items-center gap-2 rounded-lg border border-border bg-card px-6 py-3 text-sm font-bold uppercase tracking-wider text-foreground transition-all hover:bg-secondary"
+              className="inline-flex items-center gap-2 rounded-sm border border-border bg-card px-6 py-3 text-sm font-bold uppercase tracking-wider text-foreground transition-all hover:bg-secondary"
             >
               Book Screening Seats <ChevronRight className="h-4 w-4" />
             </Link>
@@ -364,8 +370,8 @@ function HeroHeader() {
 
         {/* Hero Card Image Showcase (Using public/random/random4.jpeg & public/random1.avif) */}
         <div className="relative lg:col-span-5">
-          <div className="relative overflow-hidden rounded-2xl border border-white/15 bg-card/60 p-2 shadow-2xl shadow-primary/10">
-            <div className="relative aspect-4/3 overflow-hidden rounded-xl">
+          <div className="relative overflow-hidden rounded-md border border-white/15 bg-card/60 p-2 shadow-2xl shadow-primary/10">
+            <div className="relative aspect-4/3 overflow-hidden">
               <img
                 src="/random/random4.jpeg"
                 alt="Formula 1 car driving at ultra high speed"
@@ -373,12 +379,12 @@ function HeroHeader() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               
-              <div className="absolute bottom-4 left-4 right-4 rounded-xl border border-white/10 bg-black/60 p-3.5 backdrop-blur-md">
-                <div className="flex items-center justify-center text-xs text-zinc-300">
-                  <span className="flex items-center gap-1.5 font-semibold text-primary uppercase tracking-widest">
-                                     <span>Monza </span></span>
-
-                </div>
+              <div className="absolute bottom-3 left-3 right-3 rounded-sm border border-white/10 bg-black/60 p-3 backdrop-blur-md">
+                <div className="flex items-center justify-center gap-2 text-xs text-zinc-300">
+                   <span className="flex items-center gap-1.5 font-semibold text-primary uppercase tracking-widest">
+                    <span>Madrid </span>
+                  </span>                
+                  </div>
               </div>
             </div>
           </div>
@@ -462,7 +468,7 @@ function LightsOutSimulator() {
   };
 
   return (
-    <div id="lights-out-game" className="overflow-hidden rounded-2xl border border-primary/30 bg-card/60 p-6 sm:p-8 backdrop-blur-md shadow-2xl">
+    <div id="lights-out-game" className="overflow-hidden rounded-md border border-primary/30 bg-card/60 p-6 sm:p-8 backdrop-blur-md shadow-2xl">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/80 pb-6">
         <div>
           <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-widest">
@@ -477,7 +483,7 @@ function LightsOutSimulator() {
         </div>
 
         {bestTime !== null && (
-          <div className="flex items-center gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-amber-400">
+          <div className="flex items-center gap-3 rounded-md border border-amber-500/30 bg-amber-500/10 px-4 py-2 text-amber-400">
             <Trophy className="h-5 w-5" />
             <div>
               <p className="text-[10px] uppercase font-bold tracking-wider opacity-80">Personal Best</p>
@@ -489,13 +495,13 @@ function LightsOutSimulator() {
 
       {/* Light Gantry Graphics */}
       <div className="my-8 flex justify-center">
-        <div className="flex items-center gap-2 sm:gap-4 rounded-2xl border border-zinc-700 bg-zinc-950 p-4 shadow-inner">
+        <div className="flex items-center gap-2 sm:gap-4 rounded-md border border-zinc-700 bg-zinc-950 p-4 shadow-inner">
           {[1, 2, 3, 4, 5].map((index) => {
             const isLit = lightsLit >= index;
             return (
               <div
                 key={index}
-                className="flex flex-col gap-2 rounded-xl border border-zinc-800 bg-zinc-900 p-2.5 sm:p-3"
+                className="flex flex-col gap-2 rounded-md border border-zinc-800 bg-zinc-900 p-2.5 sm:p-3"
               >
                 <div
                   className={`h-7 w-7 sm:h-10 sm:w-10 rounded-full transition-all duration-200 ${
@@ -521,7 +527,7 @@ function LightsOutSimulator() {
       <div className="text-center">
         <button
           onClick={handlePadClick}
-          className={`group relative w-full overflow-hidden rounded-xl border p-8 font-bold uppercase tracking-wider transition-all duration-200 active:scale-[0.99] ${
+          className={`group relative w-full overflow-hidden rounded-sm border p-8 font-bold uppercase tracking-wider transition-all duration-200 active:scale-[0.99] ${
             gameState === "idle" || gameState === "finished" || gameState === "jumpstart"
               ? "border-primary/50 bg-primary/10 hover:bg-primary/20 text-foreground"
               : gameState === "go"
@@ -556,7 +562,7 @@ function LightsOutSimulator() {
 
           {gameState === "finished" && reactionTime !== null && (
             <div className="space-y-2">
-              <div className="inline-flex items-center gap-2 rounded-full bg-black/40 px-4 py-1 text-sm font-mono text-zinc-300">
+              <div className="inline-flex items-center gap-2 rounded-sm bg-black/40 px-4 py-1 text-sm font-mono text-zinc-300">
                 Reaction Time: <span className="font-bold text-white text-lg">{reactionTime} ms</span>
               </div>
               <p className={`text-base sm:text-lg font-bold ${getVerdict(reactionTime).color}`}>
@@ -587,22 +593,21 @@ function WeekendBreakdown() {
     <div className="mx-auto max-w-6xl px-4">
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
         <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-primary">Race Weekend Architecture</p>
-          <h2 className="mt-1 text-3xl font-extrabold uppercase sm:text-4xl">
+           <h2 className="mt-1 text-3xl font-extrabold uppercase sm:text-4xl">
             How a Grand Prix Unfolds
           </h2>
           <p className="mt-2 max-w-xl text-sm text-muted-foreground">
-            3 days of intense tactical warfare. From setup calibration on Friday to 3-part knockout qualifying on Saturday and 305 km race distance on Sunday.
+            3 days of intense tactical warfare. From setup calibration on Friday to 3-part knockout qualifying on Saturday and 57-lap, 308.5 km race distance on Sunday.
           </p>
         </div>
 
         {/* Tab Switcher Buttons */}
-        <div className="flex rounded-xl border border-border bg-card p-1">
+        <div className="flex rounded-sm border border-border bg-card p-1">
           {WEEKEND_STAGES.map((s) => (
             <button
               key={s.id}
               onClick={() => setActiveTab(s.id)}
-              className={`rounded-lg px-4 py-2 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all ${
+              className={`rounded-sm px-4 py-2 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all ${
                 activeTab === s.id
                   ? "bg-primary text-primary-foreground shadow-md"
                   : "text-muted-foreground hover:text-foreground"
@@ -615,9 +620,11 @@ function WeekendBreakdown() {
       </div>
 
       {/* Active Stage Card */}
-      <div className="mt-8 grid gap-8 lg:grid-cols-12 items-center rounded-2xl border border-border bg-card p-6 lg:p-8">
+      <div className="relative mt-8 grid gap-8 lg:grid-cols-12 items-center overflow-hidden rounded-md border border-border bg-card p-6 lg:p-8">
+        {/* Spanish tricolour accent bar */}
+        <div className="absolute inset-x-0 top-0 h-1 bg-linear-to-r from-red-600 via-amber-400 to-red-600" aria-hidden="true" />
         <div className="lg:col-span-7 space-y-5">
-          <div className="inline-flex items-center gap-2 rounded-md bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-bold text-primary uppercase tracking-widest">
+          <div className="inline-flex items-center gap-2 rounded-sm bg-primary/10 border border-primary/20 px-3 py-1 text-xs font-bold text-primary uppercase tracking-widest">
             {currentStage.badge}
           </div>
 
@@ -630,7 +637,7 @@ function WeekendBreakdown() {
             {currentStage.description}
           </p>
 
-          <div className="rounded-xl border border-amber-500/30 bg-amber-500/10 p-4 text-xs sm:text-sm text-amber-300 flex items-start gap-3">
+          <div className="rounded-md border border-amber-500/30 bg-amber-500/10 p-4 text-xs sm:text-sm text-amber-300 flex items-start gap-3">
             <Info className="h-5 w-5 text-amber-400 shrink-0 mt-0.5" />
             <div>
               <span className="font-bold uppercase">Key Pro Insight: </span>
@@ -641,7 +648,7 @@ function WeekendBreakdown() {
           {/* Stats grid */}
           <div className="grid grid-cols-3 gap-4 pt-2">
             {currentStage.stats.map((st) => (
-              <div key={st.label} className="rounded-xl border border-border bg-background/50 p-3">
+              <div key={st.label} className="rounded-md border border-border bg-background/50 p-3">
                 <p className="text-[11px] font-semibold text-muted-foreground uppercase">{st.label}</p>
                 <p className="mt-1 text-base font-bold text-foreground">{st.value}</p>
               </div>
@@ -651,14 +658,14 @@ function WeekendBreakdown() {
 
         {/* Featured Visual Image (Using public/random/carpitstop.jpeg) */}
         <div className="lg:col-span-5">
-          <div className="relative overflow-hidden rounded-xl border border-border shadow-xl">
+          <div className="relative overflow-hidden rounded-md border border-border shadow-xl">
             <img
               src="/random/carpitstop.jpeg"
               alt="Formula 1 pit stop crew changing tyres"
               className="h-64 w-full object-cover lg:h-80 transition-transform duration-500 hover:scale-105"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent" />
-            <div className="absolute bottom-3 left-3 right-3 rounded-lg border border-white/10 bg-black/70 p-3 backdrop-blur-xs text-xs text-white">
+            <div className="absolute bottom-3 left-3 right-3 rounded-sm border border-white/10 bg-black/70 p-3 backdrop-blur-xs text-xs text-white">
               <p className="font-bold text-primary uppercase">Precision Pit Work</p>
               <p className="text-zinc-300 mt-0.5">20 pit crew mechanics swap 4 tyres in 2.3 seconds.</p>
             </div>
@@ -682,60 +689,61 @@ function CircuitTelemetrySection() {
           Anatomy of a Grand Prix Circuit
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Featuring Monza — "The Temple of Speed". Where low-drag wing setups allow cars to hit 350+ km/h before heavy 5.5G braking zones.
+          Featuring the Madring — Madrid's brand-new 22-turn hybrid street circuit around IFEMA. Cars top 340 km/h down Ribera del Sena before sweeping through the 24%-banked La Monumental corner.
         </p>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-12 items-center rounded-2xl border border-border bg-card/50 p-6 lg:p-8 backdrop-blur-md">
+      <div className="relative grid gap-8 lg:grid-cols-12 items-center overflow-hidden rounded-md border border-border bg-card/50 p-6 lg:p-8 backdrop-blur-md">
+
         {/* SVG Track Graphic */}
         <div className="lg:col-span-6 flex justify-center relative group">
-          <div className="relative w-full max-w-md overflow-hidden rounded-xl border border-white/10 bg-zinc-950/80 p-6 shadow-inner">
+          <div className="relative w-full max-w-md overflow-hidden rounded-md border border-white/10 bg-zinc-950/80 p-6 shadow-inner">
             <img
               src="/random/italiangrandprix.svg"
-              alt="Italian Grand Prix Monza Track Layout"
+              alt="Spanish Grand Prix Madrid Madring Track Layout"
               className="h-auto w-full transition-transform duration-500"
             />
             
             {/* SVG Overlay Telemetry Badges */}
-            <div className="absolute top-4 left-4 rounded-lg bg-red-600/20 border border-red-500/40 px-2.5 py-1 text-[11px] font-bold text-red-400 uppercase tracking-widest">
-              Monza Autodromo
+            <div className="absolute top-4 left-4 flex items-center gap-1.5 rounded-sm bg-red-600/20 border border-red-500/40 px-2.5 py-1 text-[11px] font-bold text-red-400 uppercase tracking-widest">
+               Madring, Madrid
             </div>
             
-            <div className="absolute bottom-4 right-4 rounded-lg bg-amber-500/20 border border-amber-500/40 px-2.5 py-1 text-[11px] font-mono font-bold text-amber-400">
-              Lap Record: 1:21.046
+            <div className="absolute bottom-4 right-4 rounded-sm bg-amber-500/20 border border-amber-500/40 px-2.5 py-1 text-[11px] font-mono font-bold text-amber-400">
+              5.416 km · 22 Corners
             </div>
           </div>
         </div>
 
         {/* Telemetry Breakdown Details */}
         <div className="lg:col-span-6 space-y-4">
-          <div className="rounded-xl border border-border bg-background p-4">
+          <div className="rounded-md border border-border bg-background p-4">
             <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase">
               <Zap className="h-4 w-4" /> DRS Speed Trap Zone
             </div>
-            <p className="mt-1 text-sm font-semibold">Prima Variante Straight</p>
+            <p className="mt-1 text-sm font-semibold">Main Straight & Ribera del Sena</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Rear wing flap opens to shed drag. Acceleration rockets from 280 km/h to 352 km/h in seconds.
+              Rear wing flap opens to shed drag. Cars rocket down the 837 m urban straight at up to 340 km/h — the fastest point of the lap.
             </p>
           </div>
 
-          <div className="rounded-xl border border-border bg-background p-4">
+          <div className="rounded-md border border-border bg-background p-4">
             <div className="flex items-center gap-2 text-xs font-bold text-amber-400 uppercase">
-              <Flame className="h-4 w-4" /> 5.5G Heavy Braking
+              <Flame className="h-4 w-4" /> Ultra-Heavy Braking
             </div>
-            <p className="mt-1 text-sm font-semibold">Turn 1 Retifilo Chicane</p>
+            <p className="mt-1 text-sm font-semibold">Turn 5 Chicane</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Carbon disc brakes reach 1,000°C as speed plummets from 350 km/h to 70 km/h in just 120 meters.
+              After the top-speed stretch, speed plummets from 340 km/h to just 80 km/h under the motorway overpass — the best overtaking spot on the track.
             </p>
           </div>
 
-          <div className="rounded-xl border border-border bg-background p-4">
+          <div className="rounded-md border border-border bg-background p-4">
             <div className="flex items-center gap-2 text-xs font-bold text-emerald-400 uppercase">
-              <TrendingUp className="h-4 w-4" /> High-Speed Cornering
+              <TrendingUp className="h-4 w-4" /> Banked High-Speed Sweep
             </div>
-            <p className="mt-1 text-sm font-semibold">Parabolica / Curva Alboreto</p>
+            <p className="mt-1 text-sm font-semibold">La Monumental (Turn 12)</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Sweeping 180-degree right hander where aerodynamic downforce pins the car to the asphalt at 240 km/h.
+              F1's longest banked corner — 548 m of 24% banking, taken near-flat out in front of 45,000 fans for roughly 6 seconds.
             </p>
           </div>
         </div>
@@ -1001,8 +1009,7 @@ function JargonDecoderSection() {
   return (
     <div className="space-y-8">
       <div>
-        <p className="text-xs font-bold uppercase tracking-widest text-primary">F1 Dictionary</p>
-        <h2 className="mt-1 text-3xl font-extrabold uppercase sm:text-4xl">
+         <h2 className="mt-1 text-3xl font-extrabold uppercase sm:text-4xl">
           Jargon Decoder
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
@@ -1019,7 +1026,7 @@ function JargonDecoderSection() {
             placeholder="Search F1 terms (e.g., DRS, Box, Undercut)..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full rounded-xl border border-border bg-card pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
+            className="w-full rounded-sm border border-border bg-card pl-10 pr-4 py-2.5 text-sm text-foreground placeholder:text-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
           />
         </div>
 
@@ -1029,7 +1036,7 @@ function JargonDecoderSection() {
             <button
               key={cat}
               onClick={() => setSelectedCat(cat)}
-              className={`rounded-lg px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all ${
+              className={`rounded-sm px-3 py-1.5 text-xs font-semibold uppercase tracking-wider transition-all ${
                 selectedCat === cat
                   ? "bg-primary text-primary-foreground"
                   : "bg-card border border-border text-muted-foreground hover:text-foreground"
@@ -1046,11 +1053,11 @@ function JargonDecoderSection() {
         {filteredGlossary.map((g) => (
           <div
             key={g.term}
-            className="rounded-2xl border border-border bg-card/60 p-5 space-y-2 transition-all hover:border-primary/40 hover:bg-card"
+            className="rounded-md border border-border bg-card/60 p-5 space-y-2 transition-all hover:border-primary/40 hover:bg-card"
           >
             <div className="flex items-center justify-between">
               <h3 className="font-bold text-primary text-base">{g.term}</h3>
-              <span className="rounded-md bg-secondary px-2 py-0.5 text-[10px] font-semibold text-muted-foreground uppercase">
+              <span className="rounded-sm bg-secondary px-2 py-0.5 text-[10px] font-semibold text-muted-foreground uppercase">
                 {g.cat}
               </span>
             </div>
@@ -1060,7 +1067,7 @@ function JargonDecoderSection() {
       </div>
 
       {filteredGlossary.length === 0 && (
-        <div className="rounded-xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
+        <div className="rounded-md border border-border bg-card p-8 text-center text-sm text-muted-foreground">
           No F1 terms match your search. Try searching for "DRS" or "Box".
         </div>
       )}
@@ -1075,7 +1082,7 @@ function JargonDecoderSection() {
 function FinalCTASection() {
   return (
     <div className="mx-auto max-w-6xl px-4">
-      <div className="relative overflow-hidden rounded-3xl border border-primary/40 bg-card p-8 lg:p-12 shadow-2xl">
+      <div className="relative overflow-hidden rounded-md border border-primary/40 bg-card p-8 lg:p-12 shadow-2xl">
         {/* Background Image Overlay (Using public/random3.avif) */}
         <img
           src="/random3.avif"
@@ -1083,10 +1090,9 @@ function FinalCTASection() {
           className="absolute inset-0 h-full w-full object-cover opacity-20 filter blur-xs"
         />
         <div className="absolute inset-0 bg-gradient-to-r from-background via-background/90 to-background/50" />
-
-        <div className="relative max-w-2xl space-y-4">
-          <div className="inline-flex items-center gap-2 rounded-full border border-primary/40 bg-primary/20 px-3.5 py-1 text-xs font-bold text-primary uppercase tracking-widest">
-            <Flag className="h-3.5 w-3.5" /> Race Day Experience
+        <div className="relative max-w-2xl space-y-4 pt-4">
+          <div className="inline-flex items-center gap-2 rounded-sm border border-primary/40 bg-primary/20 px-3.5 py-1 text-xs font-bold text-primary uppercase tracking-widest">
+            <Flag className="h-3.5 w-3.5" /> ¡Olé! Race Day Experience
           </div>
 
           <h2 className="text-3xl font-extrabold uppercase sm:text-4xl text-foreground">
@@ -1094,19 +1100,20 @@ function FinalCTASection() {
           </h2>
 
           <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
-            Now that you know the weekend rules, DRS zones, tyre degradation strategies, and team radios — join us live at <span className="font-semibold text-foreground">{EVENT.venue}</span> to experience 500 fans screaming at every overtake!
+            Now that you know the weekend rules, DRS zones, tyre degradation strategies, and team radios — join us live at <span className="font-semibold text-foreground">{EVENT.venue}</span> to experience 500 fans screaming at every overtake, bullring-style!
           </p>
 
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2 pt-2 text-xs font-bold text-zinc-300">
             <span>{EVENT.dateLabel}</span>
             <span>{EVENT.timeLabel}</span>
             <span>{EVENT.venue}, {EVENT.campus}</span>
+
           </div>
 
           <div className="pt-4">
             <Link
               to="/book"
-              className="inline-flex items-center gap-2 rounded-xl bg-primary px-8 py-4 text-base font-extrabold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/25 transition-all duration-300 hover:bg-primary/90 hover:scale-[1.02]"
+              className="inline-flex items-center gap-2 rounded-sm bg-primary px-8 py-4 text-base font-extrabold uppercase tracking-wider text-primary-foreground shadow-lg shadow-primary/25 transition-all duration-300 hover:bg-primary/90 hover:scale-[1.02]"
             >
               Book Your Screening Seat Now <ChevronRight className="h-5 w-5" />
             </Link>

@@ -6,7 +6,7 @@ import lightsImage from "@/assets/lights.webp";
 import tyresImage from "@/assets/tire.webp";
 import { EVENT } from "@/lib/event-config";
 import { ROWS, TIERS, TOTAL_SEATS } from "@/lib/seat-layout";
-import { ScrollyMonza } from "@/components/f1/ScrollyMonza";
+import { ScrollyMadrid } from "@/components/f1/ScrollyMadrid";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -35,7 +35,7 @@ function Index() {
     <div>
       <Hero />
       <Countdown />
-      <ScrollyMonza />
+      <ScrollyMadrid />
       <RaceStrip />
       <Tiers />
       <Steps />
@@ -108,7 +108,7 @@ function Fact({ label, value }: { label: string; value: string }) {
 
 const STRIP = [
   ["1000+ bhp", "Hybrid V6 turbo power units"],
-  ["350 km/h", "Top speed on the long straights"],
+  ["340 km/h", "Top speed down Ribera del Sena"],
   ["2.5 s", "A four-tyre pit stop"],
   ["5 G", "Cornering load on the drivers"],
 ] as const;

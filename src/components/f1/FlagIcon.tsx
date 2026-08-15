@@ -3,14 +3,22 @@ import React from "react";
 type FlagIconProps = {
   country: string;
   className?: string;
+  /** Renders a rectangular flag (bunting/banner style) instead of a circular pin. */
+  round?: boolean;
 };
 
-export const FlagIcon: React.FC<FlagIconProps> = ({ country, className = "w-5 h-5" }) => {
+export const FlagIcon: React.FC<FlagIconProps> = ({
+  country,
+  className = "w-5 h-5",
+  round = true,
+}) => {
   const code = country.toUpperCase();
 
   return (
     <div
-      className={`relative inline-block rounded-full overflow-hidden shrink-0 border border-white/40 shadow-sm ${className}`}
+      className={`relative inline-block shrink-0 border border-white/40 shadow-sm ${
+        round ? "rounded-full overflow-hidden" : "rounded-sm overflow-hidden"
+      } ${className}`}
       title={code}
     >
       <svg viewBox="0 0 32 32" className="w-full h-full block" aria-hidden="true">
