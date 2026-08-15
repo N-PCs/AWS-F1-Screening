@@ -59,6 +59,13 @@ const HOLD_RENEW_MS = 90_000;
 function BookPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+
+  // After successful auth, navigate to /book so the user lands on the booking page
+  useEffect(() => {
+    if (!authLoading && user) {
+      navigate("/book");
+    }
+  }, [authLoading, user, navigate]);
   const [selected, setSelected] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [holdExpiresAt, setHoldExpiresAt] = useState<number | null>(null);
