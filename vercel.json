@@ -1,0 +1,10 @@
+{
+  "headers": [],
+  "redirects": [
+    {
+      "source": "/((?!api|_vercel|assets).*)",
+      "destination": "/",
+      "permanent": false
+    }
+  ]
+}

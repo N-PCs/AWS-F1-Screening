@@ -354,7 +354,7 @@ function BookPage() {
       )}
 
       {/* Room switcher — each room gets its own accent colour */}
-      <div className="mt-4 sm:mt-6 grid gap-2 sm:gap-3 grid-cols-2">
+      <div className="mt-4 sm:mt-6 grid gap-2 sm:gap-3 grid-cols-1 sm:grid-cols-2">
         {ROOMS.map((room) => {
           const isActive = activeRoom === room.id;
           const takenInRoom = [...taken].filter((id) => id.startsWith(room.id + "-")).length;
