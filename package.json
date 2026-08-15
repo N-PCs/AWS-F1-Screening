@@ -12,6 +12,7 @@
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@gsap/react": "^2.1.2",
     "@hookform/resolvers": "^5.2.2",
     "@lottiefiles/dotlottie-react": "^0.19.14",
     "@radix-ui/react-accordion": "^1.2.12",
@@ -51,6 +52,7 @@
     "date-fns": "^4.1.0",
     "embla-carousel-react": "^8.6.0",
     "firebase": "^12.17.1",
+    "gsap": "^3.15.0",
     "input-otp": "^1.4.2",
     "lottie-react": "^2.4.1",
     "lottie-web": "^5.13.0",

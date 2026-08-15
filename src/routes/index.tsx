@@ -1,11 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import heroImage from "@/assets/f1-hero.jpg";
-import pitstopImage from "@/assets/f1-pitstop.jpg";
-import lightsImage from "@/assets/f1-lights.jpg";
-import tyresImage from "@/assets/f1-tyres.jpg";
+import heroImage from "@/assets/hero.png";
+import pitstopImage from "@/assets/pitstop.png";
+import lightsImage from "@/assets/lights.png";
+import tyresImage from "@/assets/tire.png";
 import { EVENT } from "@/lib/event-config";
 import { ROWS, TIERS, TOTAL_SEATS } from "@/lib/seat-layout";
+import { ScrollyMonza } from "@/components/f1/ScrollyMonza";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -34,6 +35,7 @@ function Index() {
     <div>
       <Hero />
       <Countdown />
+      <ScrollyMonza />
       <RaceStrip />
       <Tiers />
       <Steps />
@@ -58,7 +60,6 @@ function Hero() {
         aria-hidden
       />
       <div className="relative mx-auto max-w-5xl px-4 py-24 sm:py-32">
-        <div className="checkers h-2 w-28 opacity-90" aria-hidden />
         <p className="mt-6 text-xs font-bold tracking-[0.4em] text-primary uppercase">
           {EVENT.club} presents
         </p>
