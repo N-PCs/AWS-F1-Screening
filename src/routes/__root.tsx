@@ -15,7 +15,11 @@ import { EVENT } from "@/lib/event-config";
 import { AuthProvider } from "@/lib/auth-context";
 import { UserBadge } from "@/components/f1/UserBadge";
 import { LoadingScreen } from "@/components/f1/LoadingScreen";
+<<<<<<< HEAD
+import { Instagram, Twitter, Globe } from "lucide-react";
+=======
 import { SiteFooter } from "@/components/f1/Footer";
+>>>>>>> origin/main
 
 function NotFoundComponent() {
   return (
@@ -231,6 +235,5 @@ function SiteHeader() {
     </header>
   );
 }
-
 
 
