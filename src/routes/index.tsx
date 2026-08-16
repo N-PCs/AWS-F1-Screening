@@ -6,7 +6,7 @@ import lightsImage from "@/assets/lights.webp";
 import tyresImage from "@/assets/tire.webp";
 import { EVENT } from "@/lib/event-config";
 import { ROWS, TIERS, TOTAL_SEATS } from "@/lib/seat-layout";
-import { ScrollyMonza } from "@/components/f1/ScrollyMonza";
+import { ScrollyMadrid } from "@/components/f1/ScrollyMadrid";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -15,13 +15,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Lights out at VIT Bhopal. AWS Club VITB screens the Formula 1 Grand Prix live in the AB-02 auditorium — 250 seats, tiered pricing from ₹99, book your seat now.",
+          "Lights out at VIT Bhopal. AWS Club VITB screens the Formula 1 Grand Prix live across AB02-127 & AB02-128 — 500 seats, tiered pricing from ₹99, book your seat now.",
       },
       { property: "og:title", content: "F1 Grand Prix Screening — AWS Club VITB" },
       {
         property: "og:description",
         content:
-          "250 seats, big screen, full race weekend energy in AB-02. Pick your seat from ₹99.",
+          "500 seats, two rooms, big screens and full race weekend energy in AB-02. Pick your seat from ₹99.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -35,7 +35,7 @@ function Index() {
     <div>
       <Hero />
       <Countdown />
-      <ScrollyMonza />
+      <ScrollyMadrid />
       <RaceStrip />
       <Tiers />
       <Steps />
@@ -53,7 +53,7 @@ function Hero() {
         alt="Formula 1 car racing at speed under floodlights on a night circuit"
         width={1920}
         height={1088}
-        className="absolute inset-0 h-full w-full object-cover opacity-70"
+        className="absolute inset-0 h-full w-full object-cover opacity-100"
       />
       <div
         className="absolute inset-0 bg-linear-to-t from-background via-background/60 to-background/20"
@@ -67,8 +67,8 @@ function Hero() {
           {EVENT.title}
         </h1>
         <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
-          Lights out on the big screen. {TOTAL_SEATS} seats, tiered like a real grandstand —
-          the closer you sit, the louder the engines.
+          Lights out on the big screens of AB02-127 & AB02-128. {TOTAL_SEATS} seats, tiered like a
+          real grandstand — the closer you sit, the louder the engines.
         </p>
         <dl className="mt-8 flex flex-wrap gap-x-10 gap-y-4 text-sm">
           <Fact label="Date" value={EVENT.dateLabel} />
@@ -108,7 +108,7 @@ function Fact({ label, value }: { label: string; value: string }) {
 
 const STRIP = [
   ["1000+ bhp", "Hybrid V6 turbo power units"],
-  ["350 km/h", "Top speed on the long straights"],
+  ["340 km/h", "Top speed down Ribera del Sena"],
   ["2.5 s", "A four-tyre pit stop"],
   ["5 G", "Cornering load on the drivers"],
 ] as const;
@@ -120,9 +120,7 @@ function RaceStrip() {
         {STRIP.map(([value, label]) => (
           <div key={value}>
             <p className="text-2xl font-bold text-primary">{value}</p>
-            <p className="mt-1 text-xs tracking-widest text-muted-foreground uppercase">
-              {label}
-            </p>
+            <p className="mt-1 text-xs tracking-widest text-muted-foreground uppercase">{label}</p>
           </div>
         ))}
       </div>

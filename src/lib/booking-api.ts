@@ -22,6 +22,7 @@ import {
 import { auth, db, isFirebaseConfigured } from "./firebase";
 import { ADMIN_EMAILS, EVENT } from "./event-config";
 import { priceForSeat } from "./seat-layout";
+import type { CloudinaryUpload } from "./cloudinary";
 
 export class BackendNotConfigured extends Error {
   constructor() {
@@ -87,7 +88,7 @@ export type BookingRecord = {
   seats: string[];
   amount: number;
   upiRef: string;
-  /** data URL of the payment screenshot (stored in Firestore, admin-only) */
+  /** Cloudinary URL of the payment screenshot (admin-only read via Firestore rules) */
   screenshotUrl: string;
   status: "pending" | "verified" | "rejected";
 };
@@ -218,11 +219,12 @@ function newCode() {
 export async function createBooking(input: {
   seats: string[];
   attendee: Attendee;
-  screenshotDataUrl: string;
+  /** Result of uploading the compressed screenshot to Cloudinary. */
+  screenshot: CloudinaryUpload;
   holdId: string;
 }) {
   requireBackend();
-  const { seats, attendee, screenshotDataUrl, holdId } = input;
+  const { seats, attendee, screenshot, holdId } = input;
   if (!seats.length) throw new Error("No seats selected");
   if (seats.length > EVENT.maxSeatsPerBooking) {
     throw new Error(`Maximum ${EVENT.maxSeatsPerBooking} seats per booking`);
@@ -259,7 +261,14 @@ export async function createBooking(input: {
       tx.set(doc(db(), SEATS, s), { status: "booked", code });
     }
     tx.set(regRef, { code, createdAt: serverTimestamp() });
-    tx.set(doc(db(), SHOTS, code), { dataUrl: screenshotDataUrl, createdAt: serverTimestamp() });
+    // Link the Cloudinary image to this booking code. Firestore keeps the access
+    // control: only organisers can read this doc, but the image URL itself is
+    // unlisted (random public id) on Cloudinary.
+    tx.set(doc(db(), SHOTS, code), {
+      screenshotUrl: screenshot.secureUrl,
+      cloudinaryPublicId: screenshot.publicId,
+      createdAt: serverTimestamp(),
+    });
     tx.set(doc(db(), BOOKINGS, code), {
       code,
       createdAt: serverTimestamp(),
@@ -270,6 +279,7 @@ export async function createBooking(input: {
       seats,
       amount,
       upiRef: parsed.upiRef,
+      screenshotUrl: screenshot.secureUrl,
       status: "pending",
     });
   });
@@ -329,7 +339,7 @@ export async function adminList(): Promise<{ bookings: BookingRecord[] }> {
       seats: (data['seats'] as string[]) ?? [],
       amount: Number(data['amount'] ?? 0),
       upiRef: String(data['upiRef'] ?? ""),
-      screenshotUrl: "",
+      screenshotUrl: String(data['screenshotUrl'] ?? ""),
       status: (String(data['status'] ?? "pending") as BookingRecord["status"]),
     };
   });
@@ -337,12 +347,13 @@ export async function adminList(): Promise<{ bookings: BookingRecord[] }> {
   return { bookings };
 }
 
-/** Organiser-only: fetch the stored payment screenshot for one booking. */
+/** Organiser-only: fetch the Cloudinary URL (or legacy data URL) for one booking. */
 export async function adminScreenshot(code: string): Promise<string> {
   requireBackend();
   const snap = await getDoc(doc(db(), SHOTS, code));
   if (!snap.exists()) throw new Error("No screenshot stored for this booking");
-  return String((snap.data() as { dataUrl?: string }).dataUrl ?? "");
+  const data = snap.data() as { screenshotUrl?: string; dataUrl?: string };
+  return data.screenshotUrl ?? data.dataUrl ?? "";
 }
 
 export async function adminSetStatus(code: string, status: BookingRecord["status"]) {
@@ -360,13 +371,39 @@ export async function adminSetStatus(code: string, status: BookingRecord["status
   return { code, status };
 }
 
+/**
+ * Organiser-only: fully remove a booking so the person can register again.
+ * Deletes the booking, its screenshot link and the registration-number lock,
+ * and frees its seats — all in one transaction. The Cloudinary image itself is
+ * left in place (deleting it needs the Admin API secret); remove it from the
+ * Cloudinary dashboard if needed.
+ */
+export async function adminDeleteBooking(code: string) {
+  requireBackend();
+  const bookingRef = doc(db(), BOOKINGS, code);
+  const snap = await getDoc(bookingRef);
+  if (!snap.exists()) throw new Error("Booking not found");
+  const data = snap.data() as { regNo?: string; seats?: string[] };
+  const regNo = data.regNo ?? "";
+  const seats = data.seats ?? [];
+
+  await runTransaction(db(), async (tx) => {
+    tx.delete(bookingRef);
+    tx.delete(doc(db(), SHOTS, code));
+    if (regNo) tx.delete(doc(db(), REGS, regNo));
+    for (const s of seats) tx.delete(doc(db(), SEATS, s));
+  });
+
+  return { code };
+}
+
 /* ---------------- screenshot helper ---------------- */
 
 /**
- * Firestore documents cap at 1 MB, so the screenshot is resized and
- * re-encoded as a JPEG data URL before it is stored.
+ * The screenshot is resized and re-encoded as a JPEG blob before it is sent
+ * to Cloudinary, so uploads stay small and fast.
  */
-export function compressImage(file: File, maxSide = 1200, quality = 0.7): Promise<string> {
+export function compressImage(file: File, maxSide = 1200, quality = 0.7): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.onerror = () => reject(new Error("Could not read that file"));
@@ -381,7 +418,14 @@ export function compressImage(file: File, maxSide = 1200, quality = 0.7): Promis
         const ctx = canvas.getContext("2d");
         if (!ctx) return reject(new Error("Could not process that image"));
         ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        resolve(canvas.toDataURL("image/jpeg", quality));
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) return reject(new Error("Could not compress that image"));
+            resolve(blob);
+          },
+          "image/jpeg",
+          quality,
+        );
       };
       img.src = String(reader.result);
     };

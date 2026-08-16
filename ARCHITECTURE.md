@@ -31,8 +31,8 @@ Firestore collections are organized into 4 primary collections:
 ```
 Firestore Root
 ├── 📁 seats/
-│   └── 📄 {seatId}              (e.g., "A1", "B7")
-│       ├── seatId: string       (e.g. "A1")
+│   └── 📄 {seatId}              (e.g., "R1-A1", "R2-A7")
+│       ├── seatId: string       (e.g. "R1-A1" — R1 = AB02-127, R2 = AB02-128)
 │       ├── row: string          (e.g. "A")
 │       ├── number: number       (e.g. 1)
 │       ├── tier: string         ("VIP" | "Executive" | "General")

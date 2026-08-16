@@ -18,9 +18,9 @@ export const EVENT = {
   venue: "Auditorium, AB-02",
   campus: "VIT Bhopal",
   /** ISO date-time of the screening (local). EDIT ME. */
-  startsAt: "2026-09-06T17:30:00+05:30",
-  dateLabel: "Sunday, 6 September",
-  timeLabel: "5:30 PM IST",
+  startsAt: "2026-09-13T17:30:00+05:30",
+  dateLabel: "Sunday, 13 September",
+  timeLabel: "6:30 PM IST",
   maxSeatsPerBooking: 10,
 };
 
@@ -32,5 +32,5 @@ export const UPI = {
    * EDIT ME — put your QR image at public/upi-qr.png (or set a full URL).
    * Until then a generated placeholder is shown.
    */
-  qrImage: "/upi-qr.png",
+  qrImage: "/f1logo.png",
 };

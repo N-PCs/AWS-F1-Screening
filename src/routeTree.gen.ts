@@ -12,7 +12,9 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as BookRouteImport } from './routes/book'
+import { Route as DriversRouteImport } from './routes/drivers'
 import { Route as F1RouteImport } from './routes/f1'
+import { Route as TeamsRouteImport } from './routes/teams'
 import { Route as BookingCodeRouteImport } from './routes/booking.$code'
 
 const IndexRoute = IndexRouteImport.update({
@@ -30,9 +32,19 @@ const BookRoute = BookRouteImport.update({
   path: '/book',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DriversRoute = DriversRouteImport.update({
+  id: '/drivers',
+  path: '/drivers',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const F1Route = F1RouteImport.update({
   id: '/f1',
   path: '/f1',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamsRoute = TeamsRouteImport.update({
+  id: '/teams',
+  path: '/teams',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BookingCodeRoute = BookingCodeRouteImport.update({
@@ -45,14 +57,18 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/book': typeof BookRoute
+  '/drivers': typeof DriversRoute
   '/f1': typeof F1Route
+  '/teams': typeof TeamsRoute
   '/booking/$code': typeof BookingCodeRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/book': typeof BookRoute
+  '/drivers': typeof DriversRoute
   '/f1': typeof F1Route
+  '/teams': typeof TeamsRoute
   '/booking/$code': typeof BookingCodeRoute
 }
 export interface FileRoutesById {
@@ -60,22 +76,36 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/book': typeof BookRoute
+  '/drivers': typeof DriversRoute
   '/f1': typeof F1Route
+  '/teams': typeof TeamsRoute
   '/booking/$code': typeof BookingCodeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/admin' | '/book' | '/f1' | '/booking/$code'
+  fullPaths:
+    '/' | '/admin' | '/book' | '/drivers' | '/f1' | '/teams' | '/booking/$code'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/admin' | '/book' | '/f1' | '/booking/$code'
-  id: '__root__' | '/' | '/admin' | '/book' | '/f1' | '/booking/$code'
+  to:
+    '/' | '/admin' | '/book' | '/drivers' | '/f1' | '/teams' | '/booking/$code'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/book'
+    | '/drivers'
+    | '/f1'
+    | '/teams'
+    | '/booking/$code'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   BookRoute: typeof BookRoute
+  DriversRoute: typeof DriversRoute
   F1Route: typeof F1Route
+  TeamsRoute: typeof TeamsRoute
   BookingCodeRoute: typeof BookingCodeRoute
 }
 
@@ -102,11 +132,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/drivers': {
+      id: '/drivers'
+      path: '/drivers'
+      fullPath: '/drivers'
+      preLoaderRoute: typeof DriversRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/f1': {
       id: '/f1'
       path: '/f1'
       fullPath: '/f1'
       preLoaderRoute: typeof F1RouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/teams': {
+      id: '/teams'
+      path: '/teams'
+      fullPath: '/teams'
+      preLoaderRoute: typeof TeamsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/booking/$code': {
@@ -123,7 +167,9 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   BookRoute: BookRoute,
+  DriversRoute: DriversRoute,
   F1Route: F1Route,
+  TeamsRoute: TeamsRoute,
   BookingCodeRoute: BookingCodeRoute,
 }
 export const routeTree = rootRouteImport

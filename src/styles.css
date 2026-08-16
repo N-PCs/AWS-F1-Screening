@@ -65,6 +65,8 @@
   --color-tier-standard: var(--tier-standard);
   --color-tier-economy: var(--tier-economy);
   --color-seat-taken: var(--seat-taken);
+  --color-room-1: var(--room-1);
+  --color-room-2: var(--room-2);
 }
 
 :root {
@@ -96,6 +98,10 @@
   --tier-standard: oklch(0.78 0.16 78);
   --tier-economy: oklch(0.72 0.15 175);
   --seat-taken: oklch(0.33 0.012 264);
+
+  /* Rooms — AB02-127 (Room 1) and AB02-128 (Room 2) */
+  --room-1: oklch(0.72 0.14 200);
+  --room-2: oklch(0.66 0.24 320);
 
   --chart-1: oklch(0.585 0.226 26.5);
   --chart-2: oklch(0.78 0.16 78);
@@ -244,3 +250,30 @@
   text-transform: uppercase;
   color: var(--primary);
 }
+
+.f1-car-anim {
+  position: absolute;
+  top: 50%;
+  animation: f1Drive 3.8s linear infinite;
+  will-change: left, transform;
+}
+
+@keyframes f1Drive {
+  0% {
+    left: 0%;
+    transform: translate(-100%, -50%);
+    opacity: 0;
+  }
+  3% {
+    opacity: 1;
+  }
+  97% {
+    opacity: 1;
+  }
+  100% {
+    left: 100%;
+    transform: translate(60px, -50%);
+    opacity: 1;
+  }
+}
+
