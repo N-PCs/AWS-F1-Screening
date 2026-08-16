@@ -699,7 +699,7 @@ function CircuitTelemetrySection() {
         <div className="lg:col-span-6 flex justify-center relative group">
           <div className="relative w-full max-w-md overflow-hidden rounded-md border border-white/10 bg-zinc-950/80 p-6 shadow-inner">
             <img
-              src="/random/italiangrandprix.svg"
+              src="/madring.avif"
               alt="Spanish Grand Prix Madrid Madring Track Layout"
               className="h-auto w-full transition-transform duration-500"
             />

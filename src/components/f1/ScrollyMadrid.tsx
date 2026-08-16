@@ -30,6 +30,14 @@ export function ScrollyMadrid() {
       },
     });
 
+    // start the MADRID text small and grow it across the whole scroll timeline
+    gsap.set(".madring-text", { scale: 0.4, transformOrigin: "50% 50%" });
+    tl.to(
+      ".madring-text",
+      { scale: 1.2, duration: 7, ease: "none" },
+      0
+    );
+
     // The entire animation duration is arbitrarily set to 7 so we can easily map the 7 crossfades.
     // The text block remains fixed in size.
 
