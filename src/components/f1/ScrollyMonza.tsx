@@ -57,17 +57,17 @@ export function ScrollyMonza() {
 
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none bg-black/30">
         <div ref={textWrapperRef} className="relative flex flex-col items-center justify-center w-full h-full">
-          <h2 className="monza-text text-[20vw] font-display font-bold uppercase text-white leading-none tracking-tighter">
-            MONZA
+          <h2 className="monza-text text-[14vw] font-display font-bold uppercase text-white leading-none tracking-tighter">
+            MADRING
           </h2>
           
           <div className="absolute bottom-6 left-6 sm:bottom-10 sm:left-10 text-white/90 font-mono text-sm sm:text-lg tracking-widest">
-            45.6205° N, 9.2816° E
+            40.4653° N, 3.6153° W
           </div>
           
           <div className="absolute bottom-6 right-6 sm:bottom-10 sm:right-10 text-white/90 font-mono text-sm sm:text-lg tracking-widest flex items-center gap-2 uppercase">
             <MapPin className="w-4 h-4 sm:w-5 sm:h-5" />
-            ITALY
+            SPAIN
           </div>
         </div>
       </div>

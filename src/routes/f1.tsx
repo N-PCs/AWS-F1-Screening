@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import pitstopImage from "@/assets/f1-pitstop.jpg";
-import lightsImage from "@/assets/f1-lights.jpg";
-import tyresImage from "@/assets/f1-tyres.jpg";
+import pitstopImage from "@/assets/pitstop.webp";
+import lightsImage from "@/assets/lights.webp";
+import tyresImage from "@/assets/tire.webp";
 import { EVENT } from "@/lib/event-config";
 
 export const Route = createFileRoute("/f1")({

@@ -15,6 +15,7 @@ import { EVENT } from "@/lib/event-config";
 import { AuthProvider } from "@/lib/auth-context";
 import { UserBadge } from "@/components/f1/UserBadge";
 import { LoadingScreen } from "@/components/f1/LoadingScreen";
+import { Instagram, Twitter, Globe } from "lucide-react";
 
 function NotFoundComponent() {
   return (
@@ -231,15 +232,52 @@ function SiteHeader() {
 
 function SiteFooter() {
   return (
-    <footer className="border-t border-border/80">
-      <div className="checkers h-1.5 w-full opacity-70" aria-hidden />
-      <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-6 text-xs text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-        <p>
-          {EVENT.club} — {EVENT.title}, {EVENT.venue}, {EVENT.campus}.
-        </p>
-        <Link to="/admin" className="hover:text-foreground">
-          Organiser access
-        </Link>
+    <footer className="relative mt-20 border-t border-border bg-background/95 pt-16 pb-8">
+      
+      <div className="mx-auto flex max-w-6xl flex-col gap-12 px-4 md:flex-row md:justify-between">
+        
+        {/* Brand */}
+        <div className="flex max-w-sm flex-col gap-4">
+          <h3 className="font-display text-2xl font-bold uppercase tracking-widest text-primary">
+            {EVENT.club}
+          </h3>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            {EVENT.title} at {EVENT.venue}, {EVENT.campus}. Experience the pinnacle of motorsport on the big screen with fellow fans.
+          </p>
+        </div>
+
+        {/* Links */}
+        <div className="flex flex-col gap-4">
+          <h4 className="text-sm font-bold uppercase tracking-widest text-foreground">The Paddock</h4>
+          <nav className="flex flex-col gap-2">
+            <Link to="/" className="text-sm text-muted-foreground transition-colors hover:text-primary">Home</Link>
+            <Link to="/book" className="text-sm text-muted-foreground transition-colors hover:text-primary">Book Seats</Link>
+            <Link to="/f1" className="text-sm text-muted-foreground transition-colors hover:text-primary">New to F1?</Link>
+            <Link to="/admin" className="text-sm text-muted-foreground transition-colors hover:text-primary">Organiser Access</Link>
+          </nav>
+        </div>
+
+        {/* Socials */}
+        <div className="flex flex-col gap-4">
+          <h4 className="text-sm font-bold uppercase tracking-widest text-foreground">Connect</h4>
+          <div className="flex gap-4">
+            <a href="#" className="text-muted-foreground transition-colors hover:text-primary">
+              <Instagram className="h-5 w-5" />
+            </a>
+            <a href="#" className="text-muted-foreground transition-colors hover:text-primary">
+              <Twitter className="h-5 w-5" />
+            </a>
+            <a href="#" className="text-muted-foreground transition-colors hover:text-primary">
+              <Globe className="h-5 w-5" />
+            </a>
+          </div>
+        </div>
+
+      </div>
+
+      <div className="mx-auto mt-16 flex max-w-6xl flex-col items-center justify-between gap-4 border-t border-border/40 px-4 pt-6 text-xs text-muted-foreground/60 sm:flex-row">
+        <p>© {new Date().getFullYear()} {EVENT.club}. All rights reserved.</p>
+        <p className="tracking-widest uppercase">Built for the thrill</p>
       </div>
     </footer>
   );
