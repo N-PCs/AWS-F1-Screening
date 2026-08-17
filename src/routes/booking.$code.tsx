@@ -11,16 +11,16 @@ import { generateTicketPdf } from "@/lib/pdf-ticket";
 export const Route = createFileRoute("/booking/$code")({
   head: () => ({
     meta: [
-      { title: "Your Booking — F1 Grand Prix Screening | AWS Club VITB" },
+      { title: "Your Booking — F1 Grand Prix Screening | AWS SBG VITB" },
       {
         name: "description",
         content:
-          "Your seat confirmation for the AWS Club VITB Formula 1 Grand Prix screening in AB-02.",
+          "Your seat confirmation for the AWS SBG VITB Formula 1 Grand Prix screening in AB-02.",
       },
       { property: "og:title", content: "Your Booking — F1 Grand Prix Screening" },
       {
         property: "og:description",
-        content: "Seat confirmation for the AWS Club VITB F1 screening in AB-02.",
+        content: "Seat confirmation for the AWS SBG VITB F1 screening in AB-02.",
       },
       { name: "robots", content: "noindex" },
     ],

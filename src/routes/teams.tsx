@@ -4,7 +4,7 @@ import { TeamsGrid } from "@/components/f1/TeamsGrid";
 export const Route = createFileRoute("/teams")({
   head: () => ({
     meta: [
-      { title: "2026 F1 Teams & Cars | AWS Club VITB" },
+      { title: "2026 F1 Teams & Cars | AWS SBG VITB" },
       {
         name: "description",
         content:

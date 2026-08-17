@@ -30,7 +30,7 @@ import { generateTicketPdf } from "@/lib/pdf-ticket";
 export const Route = createFileRoute("/tickets")({
   head: () => ({
     meta: [
-      { title: "My Tickets & Status — F1 Grand Prix Screening | AWS Club VITB" },
+      { title: "My Tickets & Status — F1 Grand Prix Screening | AWS SBG VITB" },
       {
         name: "description",
         content:

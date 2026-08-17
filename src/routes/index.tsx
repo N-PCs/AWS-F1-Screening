@@ -11,13 +11,13 @@ import { ScrollyMadrid } from "@/components/f1/ScrollyMadrid";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "F1 Grand Prix Screening — AWS Club VITB, AB-02" },
+      { title: "F1 Grand Prix Screening — AWS SBG VITB, AB-02" },
       {
         name: "description",
         content:
-          "Lights out at VIT Bhopal. AWS Club VITB screens the Formula 1 Grand Prix live across AB02-127 & AB02-128 — 500 seats, tiered pricing from ₹99, book your seat now.",
+          "Lights out at VIT Bhopal. AWS SBG VITB screens the Formula 1 Grand Prix live across AB02-126 & AB02-127 — 500 seats, tiered pricing from ₹99, book your seat now.",
       },
-      { property: "og:title", content: "F1 Grand Prix Screening — AWS Club VITB" },
+      { property: "og:title", content: "F1 Grand Prix Screening — AWS SBG VITB" },
       {
         property: "og:description",
         content:

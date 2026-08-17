@@ -3,8 +3,8 @@
  *
  * Each room has 10 rows (A..J), 25 seats per row, split around a centre
  * aisle. Seat ids are room-prefixed so both rooms can share row letters:
- *   - Room 1 (AB02-127): R1-A1 … R1-J25
- *   - Room 2 (AB02-128): R2-A1 … R2-J25
+ *   - Room 1 (AB02-126): R1-A1 … R1-J25
+ *   - Room 2 (AB02-127): R2-A1 … R2-J25
  * Current total: 500 seats (250 per room).
  */
 export type TierId = "premium" | "standard" | "economy";
@@ -49,15 +49,15 @@ export type Room = {
   id: RoomId;
   /** "Room 1" / "Room 2" — human label */
   label: string;
-  /** AB02-127 / AB02-128 — the actual room number in AB-02 */
+  /** AB02-126 / AB02-127 — the actual room number in AB-02 */
   name: string;
   /** tailwind token used to tint this room's booking flow */
   tone: string;
 };
 
 export const ROOMS: Room[] = [
-  { id: "R1", label: "Room 1", name: "AB02-127", tone: "room-1" },
-  { id: "R2", label: "Room 2", name: "AB02-128", tone: "room-2" },
+  { id: "R1", label: "Room 1", name: "AB02-126", tone: "room-1" },
+  { id: "R2", label: "Room 2", name: "AB02-127", tone: "room-2" },
 ];
 
 export type RowDef = { row: string; count: number; tier: TierId };

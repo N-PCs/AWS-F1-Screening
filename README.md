@@ -14,7 +14,7 @@
 
 <br />
 
-A full-stack ticket booking system for the **F1 Grand Prix Screening** hosted by **AWS Club VITB** at VIT Bhopal. Real-time seat reservation with ACID Firestore transactions, Cloudinary-powered payment screenshot uploads, and a secure organiser verification dashboard.
+A full-stack ticket booking system for the **F1 Grand Prix Screening** hosted by **AWS SBG VITB** at VIT Bhopal. Real-time seat reservation with ACID Firestore transactions, Cloudinary-powered payment screenshot uploads, and a secure organiser verification dashboard.
 
 **Live → [f1gp-aws.vercel.app](https://f1gp-aws.vercel.app)**
 

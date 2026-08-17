@@ -52,16 +52,16 @@ export const Route = createFileRoute("/book")({
   }),
   head: () => ({
     meta: [
-      { title: "Book Your Seat — F1 Grand Prix Screening | AWS Club VITB" },
+      { title: "Book Your Seat — F1 Grand Prix Screening | AWS SBG VITB" },
       {
         name: "description",
         content:
-          "Pick your seat for the AWS Club VITB Formula 1 Grand Prix screening across AB02-127 & AB02-128. Front rows ₹199, mid ₹149, rear ₹99. Pay by UPI.",
+          "Pick your seat for the AWS SBG VITB Formula 1 Grand Prix screening across AB02-126 & AB02-127. Front rows ₹199, mid ₹149, rear ₹99. Pay by UPI.",
       },
       { property: "og:title", content: "Book Your Seat — F1 Grand Prix Screening" },
       {
         property: "og:description",
-        content: "Live seat map for the AWS Club VITB F1 screening in AB-02. Pay by UPI.",
+        content: "Live seat map for the AWS SBG VITB F1 screening in AB-02. Pay by UPI.",
       },
     ],
   }),
@@ -735,18 +735,18 @@ function BookPage() {
         </div>
       </div>
 
-      {/* ── AB02-128 waiting list popup ── */}
+      {/* ── AB02-127 waiting list popup ── */}
       <Dialog open={wlOpen} onOpenChange={(open) => !open && setWlOpen(false)}>
         <DialogContent className="max-w-7.5xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Lock className="h-4 w-4 text-waitlist" aria-hidden />
-              AB02-128 is on the waiting list
+              AB02-127 is on the waiting list
             </DialogTitle>
             <DialogDescription>
               {myWl
                 ? "You're already on the list."
-                : "AB02-128 opens once the waiting list fills up — your seat gets locked in before anyone else can book."}
+                : "AB02-127 opens once the waiting list fills up — your seat gets locked in before anyone else can book."}
             </DialogDescription>
           </DialogHeader>
 
@@ -757,9 +757,9 @@ function BookPage() {
                   Waitlist {waitlistTotal} / {EVENT.waitlistCapacity}
                 </p>
                 <p className="mt-2 text-muted-foreground">
-                  AB02-127 already holds 250 registrations, so AB02-128 is reserved for overflow.
+                  AB02-126 already holds 250 registrations, so AB02-127 is reserved for overflow.
                   Once <strong className="text-foreground">{EVENT.waitlistCapacity} people</strong>{" "}
-                  join, the organisers open AB02-128 and{" "}
+                  join, the organisers open AB02-127 and{" "}
                   <strong className="text-foreground">
                     waitlisted members get their booked seats first
                   </strong>
@@ -775,7 +775,7 @@ function BookPage() {
                   <p className="mt-1 text-sm text-muted-foreground">
                     Your waitlist code is{" "}
                     <span className="font-mono font-semibold text-foreground">{myWl.code}</span>. No
-                    payment is needed yet. When the organisers open AB02-128, your seat is yours
+                    payment is needed yet. When the organisers open AB02-127, your seat is yours
                     first — just follow their payment instructions then.
                   </p>
                 </div>
@@ -790,7 +790,7 @@ function BookPage() {
                   </Button>
                   {waitlistFull && (
                     <p className="self-center text-xs text-waitlist">
-                      The list is full — AB02-128 bookings open soon.
+                      The list is full — AB02-127 bookings open soon.
                     </p>
                   )}
                 </div>
@@ -835,7 +835,7 @@ function BookPage() {
                   {wlPicked && (
                     <p className="rounded-sm border border-waitlist/50 bg-waitlist/10 px-3 py-2 text-xs font-semibold">
                       Reserved: {wlPicked} · {tierForSeat(wlPicked)?.name} · ₹
-                      {tierForSeat(wlPicked)?.price} (pay only when AB02-128 opens)
+                      {tierForSeat(wlPicked)?.price} (pay only when AB02-127 opens)
                     </p>
                   )}
                 </div>
@@ -889,7 +889,7 @@ function BookPage() {
                   />
                   <RowStub
                     label="What happens next"
-                    value="When the list reaches the organisers' target, AB02-128 opens and you pay for this exact seat — it can't be taken by anyone else."
+                    value="When the list reaches the organisers' target, AB02-127 opens and you pay for this exact seat — it can't be taken by anyone else."
                   />
                 </dl>
               </div>

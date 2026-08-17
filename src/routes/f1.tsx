@@ -26,11 +26,11 @@ import { EVENT } from "@/lib/event-config";
 export const Route = createFileRoute("/f1")({
   head: () => ({
     meta: [
-      { title: "F1 101 — Complete Formula 1 Guide | AWS Club VITB" },
+      { title: "F1 101 — Complete Formula 1 Guide | AWS SBG VITB" },
       {
         name: "description",
         content:
-          "New to Formula 1? Master the race weekend format, telemetry, points system, tyre strategy, drivers, and jargon before the AWS Club VITB Grand Prix screening.",
+          "New to Formula 1? Master the race weekend format, telemetry, points system, tyre strategy, drivers, and jargon before the AWS SBG VITB Grand Prix screening.",
       },
       { property: "og:title", content: "F1 101 — Complete Formula 1 Guide" },
       {

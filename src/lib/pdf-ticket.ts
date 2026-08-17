@@ -32,7 +32,7 @@ export function generateTicketPdf(ticket: BookingRecord | WaitlistRecord, isWait
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
-  doc.text("AWS CLUB VITB", 15, 25);
+  doc.text("AWS SBG VITB", 15, 25);
 
   doc.setFontSize(22);
   doc.text("F1 GRAND PRIX SCREENING PASS", 15, 34);
@@ -188,7 +188,7 @@ export function generateTicketPdf(ticket: BookingRecord | WaitlistRecord, isWait
 
   doc.setFontSize(8);
   doc.setTextColor(100, 100, 115);
-  doc.text(`Generated on ${new Date().toLocaleString()} · AWS Club VIT Bhopal`, 105, 275, {
+  doc.text(`Generated on ${new Date().toLocaleString()} · AWS SBG VIT Bhopal`, 105, 275, {
     align: "center",
   });
 

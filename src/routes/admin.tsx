@@ -36,12 +36,12 @@ import {
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Organiser Access — AWS Club VITB Screening" },
+      { title: "Organiser Access — AWS SBG VITB Screening" },
       {
         name: "description",
-        content: "Restricted registrations dashboard for AWS Club VITB screening organisers.",
+        content: "Restricted registrations dashboard for AWS SBG VITB screening organisers.",
       },
-      { property: "og:title", content: "Organiser Access — AWS Club VITB Screening" },
+      { property: "og:title", content: "Organiser Access — AWS SBG VITB Screening" },
       {
         property: "og:description",
         content: "Restricted registrations dashboard for screening organisers.",
