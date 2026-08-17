@@ -145,6 +145,7 @@ const NAV_ITEMS = [
   { to: "/teams", label: "Teams" },
   { to: "/drivers", label: "Drivers" },
   { to: "/book", label: "Book Seats" },
+  { to: "/tickets", label: "My Tickets" },
 ] as const;
 
 function SiteHeader() {

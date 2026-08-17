@@ -324,6 +324,153 @@ export async function getBooking(code: string): Promise<BookingRecord> {
   return { ...d, createdAt: toIso(d.createdAt), screenshotUrl: "" } as BookingRecord;
 }
 
+/** Search bookings and waitlist entries by code, email, or registration number. */
+export async function searchTickets(inputQuery: string): Promise<{
+  bookings: BookingRecord[];
+  waitlists: WaitlistRecord[];
+}> {
+  requireBackend();
+  const q = inputQuery.trim();
+  if (!q) return { bookings: [], waitlists: [] };
+
+  const qUpper = q.toUpperCase();
+  const qLower = q.toLowerCase();
+
+  const bookingsMap = new Map<string, BookingRecord>();
+  const waitlistsMap = new Map<string, WaitlistRecord>();
+
+  // 1. Direct code lookup for Bookings
+  if (qUpper.startsWith("F1-") || qUpper.length >= 6) {
+    try {
+      const snap = await getDoc(doc(db(), BOOKINGS, qUpper));
+      if (snap.exists()) {
+        const d = snap.data() as Record<string, unknown>;
+        bookingsMap.set(snap.id, {
+          code: String(d["code"] ?? snap.id),
+          createdAt: toIso(d["createdAt"]),
+          name: String(d["name"] ?? ""),
+          email: String(d["email"] ?? ""),
+          phone: String(d["phone"] ?? ""),
+          regNo: String(d["regNo"] ?? ""),
+          seats: (d["seats"] as string[]) ?? [],
+          amount: Number(d["amount"] ?? 0),
+          upiRef: String(d["upiRef"] ?? ""),
+          screenshotUrl: String(d["screenshotUrl"] ?? ""),
+          status: String(d["status"] ?? "pending") as BookingRecord["status"],
+        });
+      }
+    } catch {}
+  }
+
+  // 2. Direct code lookup for Waitlist
+  if (qUpper.startsWith("WL-") || qUpper.length >= 6) {
+    try {
+      const snap = await getDoc(doc(db(), WAITLIST, qUpper));
+      if (snap.exists()) {
+        const d = snap.data() as Record<string, unknown>;
+        waitlistsMap.set(snap.id, {
+          code: String(d["code"] ?? snap.id),
+          seat: String(d["seat"] ?? ""),
+          name: String(d["name"] ?? ""),
+          email: String(d["email"] ?? ""),
+          phone: String(d["phone"] ?? ""),
+          regNo: String(d["regNo"] ?? ""),
+          createdAt: toIso(d["createdAt"]),
+        });
+      }
+    } catch {}
+  }
+
+  // 3. Query bookings by email
+  try {
+    const emailSnaps = await getDocs(
+      query(collection(db(), BOOKINGS), where("email", "==", qLower)),
+    );
+    emailSnaps.forEach((d) => {
+      const data = d.data() as Record<string, unknown>;
+      bookingsMap.set(d.id, {
+        code: String(data["code"] ?? d.id),
+        createdAt: toIso(data["createdAt"]),
+        name: String(data["name"] ?? ""),
+        email: String(data["email"] ?? ""),
+        phone: String(data["phone"] ?? ""),
+        regNo: String(data["regNo"] ?? ""),
+        seats: (data["seats"] as string[]) ?? [],
+        amount: Number(data["amount"] ?? 0),
+        upiRef: String(data["upiRef"] ?? ""),
+        screenshotUrl: String(data["screenshotUrl"] ?? ""),
+        status: String(data["status"] ?? "pending") as BookingRecord["status"],
+      });
+    });
+  } catch {}
+
+  // 4. Query bookings by registration number
+  try {
+    const regSnaps = await getDocs(
+      query(collection(db(), BOOKINGS), where("regNo", "==", qUpper)),
+    );
+    regSnaps.forEach((d) => {
+      const data = d.data() as Record<string, unknown>;
+      bookingsMap.set(d.id, {
+        code: String(data["code"] ?? d.id),
+        createdAt: toIso(data["createdAt"]),
+        name: String(data["name"] ?? ""),
+        email: String(data["email"] ?? ""),
+        phone: String(data["phone"] ?? ""),
+        regNo: String(data["regNo"] ?? ""),
+        seats: (data["seats"] as string[]) ?? [],
+        amount: Number(data["amount"] ?? 0),
+        upiRef: String(data["upiRef"] ?? ""),
+        screenshotUrl: String(data["screenshotUrl"] ?? ""),
+        status: String(data["status"] ?? "pending") as BookingRecord["status"],
+      });
+    });
+  } catch {}
+
+  // 5. Query waitlist by email
+  try {
+    const emailWlSnaps = await getDocs(
+      query(collection(db(), WAITLIST), where("email", "==", qLower)),
+    );
+    emailWlSnaps.forEach((d) => {
+      const data = d.data() as Record<string, unknown>;
+      waitlistsMap.set(d.id, {
+        code: String(data["code"] ?? d.id),
+        seat: String(data["seat"] ?? ""),
+        name: String(data["name"] ?? ""),
+        email: String(data["email"] ?? ""),
+        phone: String(data["phone"] ?? ""),
+        regNo: String(data["regNo"] ?? ""),
+        createdAt: toIso(data["createdAt"]),
+      });
+    });
+  } catch {}
+
+  // 6. Query waitlist by registration number
+  try {
+    const regWlSnaps = await getDocs(
+      query(collection(db(), WAITLIST), where("regNo", "==", qUpper)),
+    );
+    regWlSnaps.forEach((d) => {
+      const data = d.data() as Record<string, unknown>;
+      waitlistsMap.set(d.id, {
+        code: String(data["code"] ?? d.id),
+        seat: String(data["seat"] ?? ""),
+        name: String(data["name"] ?? ""),
+        email: String(data["email"] ?? ""),
+        phone: String(data["phone"] ?? ""),
+        regNo: String(data["regNo"] ?? ""),
+        createdAt: toIso(data["createdAt"]),
+      });
+    });
+  } catch {}
+
+  return {
+    bookings: Array.from(bookingsMap.values()),
+    waitlists: Array.from(waitlistsMap.values()),
+  };
+}
+
 /* ---------------- AB02-128 waiting list ---------------- */
 
 /**
