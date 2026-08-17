@@ -15,6 +15,7 @@ import { Route as BookRouteImport } from './routes/book'
 import { Route as DriversRouteImport } from './routes/drivers'
 import { Route as F1RouteImport } from './routes/f1'
 import { Route as TeamsRouteImport } from './routes/teams'
+import { Route as WaitlistRouteImport } from './routes/waitlist'
 import { Route as BookingCodeRouteImport } from './routes/booking.$code'
 
 const IndexRoute = IndexRouteImport.update({
@@ -47,6 +48,11 @@ const TeamsRoute = TeamsRouteImport.update({
   path: '/teams',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WaitlistRoute = WaitlistRouteImport.update({
+  id: '/waitlist',
+  path: '/waitlist',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const BookingCodeRoute = BookingCodeRouteImport.update({
   id: '/booking/$code',
   path: '/booking/$code',
@@ -60,6 +66,7 @@ export interface FileRoutesByFullPath {
   '/drivers': typeof DriversRoute
   '/f1': typeof F1Route
   '/teams': typeof TeamsRoute
+  '/waitlist': typeof WaitlistRoute
   '/booking/$code': typeof BookingCodeRoute
 }
 export interface FileRoutesByTo {
@@ -69,6 +76,7 @@ export interface FileRoutesByTo {
   '/drivers': typeof DriversRoute
   '/f1': typeof F1Route
   '/teams': typeof TeamsRoute
+  '/waitlist': typeof WaitlistRoute
   '/booking/$code': typeof BookingCodeRoute
 }
 export interface FileRoutesById {
@@ -79,15 +87,30 @@ export interface FileRoutesById {
   '/drivers': typeof DriversRoute
   '/f1': typeof F1Route
   '/teams': typeof TeamsRoute
+  '/waitlist': typeof WaitlistRoute
   '/booking/$code': typeof BookingCodeRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
-    '/' | '/admin' | '/book' | '/drivers' | '/f1' | '/teams' | '/booking/$code'
+    | '/'
+    | '/admin'
+    | '/book'
+    | '/drivers'
+    | '/f1'
+    | '/teams'
+    | '/waitlist'
+    | '/booking/$code'
   fileRoutesByTo: FileRoutesByTo
   to:
-    '/' | '/admin' | '/book' | '/drivers' | '/f1' | '/teams' | '/booking/$code'
+    | '/'
+    | '/admin'
+    | '/book'
+    | '/drivers'
+    | '/f1'
+    | '/teams'
+    | '/waitlist'
+    | '/booking/$code'
   id:
     | '__root__'
     | '/'
@@ -96,6 +119,7 @@ export interface FileRouteTypes {
     | '/drivers'
     | '/f1'
     | '/teams'
+    | '/waitlist'
     | '/booking/$code'
   fileRoutesById: FileRoutesById
 }
@@ -106,6 +130,7 @@ export interface RootRouteChildren {
   DriversRoute: typeof DriversRoute
   F1Route: typeof F1Route
   TeamsRoute: typeof TeamsRoute
+  WaitlistRoute: typeof WaitlistRoute
   BookingCodeRoute: typeof BookingCodeRoute
 }
 
@@ -153,6 +178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TeamsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/waitlist': {
+      id: '/waitlist'
+      path: '/waitlist'
+      fullPath: '/waitlist'
+      preLoaderRoute: typeof WaitlistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/booking/$code': {
       id: '/booking/$code'
       path: '/booking/$code'
@@ -170,8 +202,19 @@ const rootRouteChildren: RootRouteChildren = {
   DriversRoute: DriversRoute,
   F1Route: F1Route,
   TeamsRoute: TeamsRoute,
+  WaitlistRoute: WaitlistRoute,
   BookingCodeRoute: BookingCodeRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}

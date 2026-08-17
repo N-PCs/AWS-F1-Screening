@@ -47,6 +47,9 @@ import {
 } from "@/lib/booking-api";
 
 export const Route = createFileRoute("/book")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    wl: search.wl ? String(search.wl) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Book Your Seat — F1 Grand Prix Screening | AWS Club VITB" },
@@ -72,13 +75,6 @@ const WL_KEY = "f1-waitlist-code";
 function BookPage() {
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-
-  // After successful auth, navigate to /book so the user lands on the booking page
-  useEffect(() => {
-    if (!authLoading && user) {
-      navigate("/book");
-    }
-  }, [authLoading, user, navigate]);
   const [selected, setSelected] = useState<string[]>([]);
   const [submitting, setSubmitting] = useState(false);
   const [holdExpiresAt, setHoldExpiresAt] = useState<number | null>(null);
@@ -95,7 +91,6 @@ function BookPage() {
     upiRef: "",
   });
 
-  // ── AB02-128 waiting list ──
   const [wlOpen, setWlOpen] = useState(false);
   const [wlStep, setWlStep] = useState<"info" | "join" | "done">("info");
   const [wlBusy, setWlBusy] = useState(false);
@@ -110,29 +105,6 @@ function BookPage() {
   const [wlResult, setWlResult] = useState<{ code: string; seat: string } | null>(null);
   const [myWl, setMyWl] = useState<WaitlistRecord | null>(null);
 
-  useEffect(() => {
-    if (user?.email) {
-      setForm((prev) => ({ ...prev, email: user.email! }));
-      setWlForm((prev) => ({ ...prev, email: user.email! }));
-    }
-  }, [user?.email]);
-
-  // Stable ref for selected seats to avoid stale closure issues during fast toggles.
-  const selectedRef = useRef<string[]>([]);
-  selectedRef.current = selected;
-
-  // If not signed in, show the auth gate.
-  if (!authLoading && !user) {
-    return <AuthGate />;
-  }
-  if (authLoading) {
-    return (
-      <div className="mx-auto max-w-md px-4 py-20 text-center">
-        <p className="text-sm text-muted-foreground">Checking sign-in…</p>
-      </div>
-    );
-  }
-
   const availability = useQuery({
     queryKey: ["availability"],
     queryFn: getAvailability,
@@ -144,6 +116,35 @@ function BookPage() {
   useEffect(() => {
     holdIdRef.current = getHoldId();
   }, []);
+
+  useEffect(() => {
+    if (user?.email) {
+      setForm((prev) => ({ ...prev, email: user.email! }));
+      setWlForm((prev) => ({ ...prev, email: user.email! }));
+    }
+  }, [user?.email]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && window.location.search.includes("wl=1")) {
+      void openWaitlist();
+    }
+  }, []);
+
+  // Stable ref for selected seats to avoid stale closure issues during fast toggles.
+  const selectedRef = useRef<string[]>([]);
+  selectedRef.current = selected;
+
+  // Auth gate — must come AFTER all hooks so the hook order is stable across renders.
+  if (!authLoading && !user) {
+    return <AuthGate />;
+  }
+  if (authLoading) {
+    return (
+      <div className="mx-auto max-w-md px-4 py-20 text-center">
+        <p className="text-sm text-muted-foreground">Checking sign-in…</p>
+      </div>
+    );
+  }
 
   // Serialize taken array to maintain stable Set reference unless taken seats actually change.
   const takenKey = (availability.data?.taken ?? []).slice().sort().join(",");
