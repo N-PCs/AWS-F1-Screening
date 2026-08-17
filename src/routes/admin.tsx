@@ -14,17 +14,23 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ROOMS, TIERS, TOTAL_SEATS, roomForSeat, tierForSeat } from "@/lib/seat-layout";
-import { ADMIN_EMAILS } from "@/lib/event-config";
+import { ADMIN_EMAILS, EVENT } from "@/lib/event-config";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import {
+  adminAllocateWaitlist,
   adminDeleteBooking,
   adminList,
+  adminRemoveWaitlist,
   adminScreenshot,
+  adminSetRoomOpen,
   adminSetStatus,
   adminSignIn,
   adminSignOut,
+  adminWaitlistList,
+  getRoomState,
   watchAdmin,
   type BookingRecord,
+  type WaitlistRecord,
 } from "@/lib/booking-api";
 
 export const Route = createFileRoute("/admin")({
@@ -54,6 +60,9 @@ function AdminPage() {
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [filter, setFilter] = useState("");
   const [deleteCode, setDeleteCode] = useState<string | null>(null);
+  const [waitlist, setWaitlist] = useState<WaitlistRecord[]>([]);
+  const [r2Open, setR2Open] = useState(false);
+  const [roomBusy, setRoomBusy] = useState(false);
 
   useEffect(() => {
     const stop = watchAdmin((user) => {
@@ -73,8 +82,14 @@ function AdminPage() {
   async function load() {
     setBusy(true);
     try {
-      const data = await adminList();
+      const [data, wl, rooms] = await Promise.all([
+        adminList(),
+        adminWaitlistList(),
+        getRoomState(),
+      ]);
       setBookings(data.bookings);
+      setWaitlist(wl.entries);
+      setR2Open(Boolean(rooms.R2));
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not load registrations");
     } finally {
@@ -117,6 +132,46 @@ function AdminPage() {
     } finally {
       setBusy(false);
       setDeleteCode(null);
+    }
+  }
+
+  async function toggleRoom() {
+    setRoomBusy(true);
+    try {
+      const res = await adminSetRoomOpen("R2", !r2Open);
+      setR2Open(res.open);
+      toast.success(`AB02-128 ${res.open ? "opened for booking." : "locked again."}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Update failed");
+    } finally {
+      setRoomBusy(false);
+    }
+  }
+
+  /** Turn a waitlist entry into a real booking — the seat is already reserved for them. */
+  async function allocateWaitlist(code: string) {
+    setRoomBusy(true);
+    try {
+      const res = await adminAllocateWaitlist(code, email ?? "");
+      toast.success(`Waitlist ${code} → booking ${res.code} (${res.seat}, ₹${res.amount}).`);
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Allocation failed");
+    } finally {
+      setRoomBusy(false);
+    }
+  }
+
+  async function removeWaitlist(code: string) {
+    setRoomBusy(true);
+    try {
+      await adminRemoveWaitlist(code);
+      toast.success(`Waitlist ${code} removed. Seat released.`);
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Removal failed");
+    } finally {
+      setRoomBusy(false);
     }
   }
 
@@ -188,6 +243,27 @@ function AdminPage() {
     URL.revokeObjectURL(url);
   }
 
+  export async function downloadWaitlistCSV() {
+    const { entries } = await adminWaitlistList();
+    const waitlisted = entries.filter((e): e is WaitlistRecord => e.status === "waitlisted");
+    const header = ["Seat", "Registration No", "Waitlist Code", "Created At"];
+    const rows = waitlisted.map((e) => [
+      e.seat,
+      e.regNo,
+      e.code,
+      e.createdAt?.toDate().toISOString?.() ?? "",
+    ]);
+    const csv = [header, ...rows]
+      .map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `f1-screening-waitlist-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   if (!unlocked) {
     return (
       <div className="mx-auto max-w-sm px-4 py-20">
@@ -253,6 +329,108 @@ function AdminPage() {
       <p className="mt-1 text-xs text-muted-foreground">
         {ROOMS.map((r) => `${r.name}: ${stats.perRoom[r.name] ?? 0} sold`).join(" · ")}
       </p>
+
+      {/* ── AB02-128 waiting list ── */}
+      <section className="mt-8 overflow-hidden rounded-md border border-waitlist/40">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-widest">AB02-128 waiting list</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {waitlist.length} / {EVENT.waitlistCapacity} entries ·{" "}
+              {r2Open ? (
+                <span className="font-semibold text-tier-economy">
+                  room is OPEN — waitlisted seats stay reserved until you allocate them
+                </span>
+              ) : (
+                <span className="font-semibold text-waitlist">room locked for now</span>
+              )}
+            </p>
+          </div>
+<Button variant="outline" disabled={roomBusy || busy} onClick={() => void toggleRoom()}>
+            {r2Open ? "Lock AB02-128" : "Open AB02-128 for booking"}
+          </Button>
+        </div>
+        {/* Download waitlist CSV */}
+        <div className="mt-2">
+          <Button variant="outline" onClick={() => downloadWaitlistCSV()} disabled={roomBusy || busy}>
+            Download waitlist CSV
+          </Button>
+        </div>
+      </header>
+
+      <div className="overflow-x-auto">
+          <table className="w-full min-w-[820px] text-sm">
+            <thead className="text-left text-xs tracking-widest uppercase">
+              <tr>
+                <th className="px-3 py-2">Code</th>
+                <th className="px-3 py-2">Person</th>
+                <th className="px-3 py-2">Contact</th>
+                <th className="px-3 py-2">Seat</th>
+                <th className="px-3 py-2">Added</th>
+                <th className="px-3 py-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {waitlist.map((w) => (
+                <tr key={w.code} className="align-top">
+                  <td className="px-3 py-3 font-mono text-xs">
+                    {w.code}
+                    <span className="mt-1 block text-muted-foreground">{w.createdAt}</span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <span className="font-semibold">{w.name}</span>
+                    <span className="block text-xs text-muted-foreground">{w.regNo}</span>
+                  </td>
+                  <td className="px-3 py-3 text-xs">
+                    <span className="block">{w.email}</span>
+                    <span className="block text-muted-foreground">{w.phone}</span>
+                  </td>
+                  <td className="px-3 py-3 text-xs font-mono">
+                    {w.seat}
+                    <span className="block text-muted-foreground">
+                      {tierForSeat(w.seat)?.name} · ₹{tierForSeat(w.seat)?.price}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 text-xs">{w.createdAt}</td>
+                  <td className="px-3 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={roomBusy}
+                        onClick={() => void allocateWaitlist(w.code)}
+                        className="border-tier-economy/60 text-tier-economy hover:text-tier-economy"
+                      >
+                        Allocate booking
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={roomBusy}
+                        onClick={() => void removeWaitlist(w.code)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {waitlist.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">
+                    Nobody on the waiting list yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <p className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
+          "Allocate booking" creates a pending booking for the reserved seat — the person pays later
+          and you verify it. "Remove" frees the seat and the registration number.
+        </p>
+      </section>
 
       <Input
         placeholder="Search name, email, reg no., seat, UPI ref…"

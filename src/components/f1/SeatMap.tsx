@@ -18,14 +18,17 @@ type Props = {
   taken: Set<string>;
   /** seats another visitor is holding right now */
   held?: Set<string>;
+  /** seats reserved through the waiting list (permanently off sale until opened) */
+  waitlisted?: Set<string>;
   selected: string[];
   onToggle: (id: string) => void;
   disabled?: boolean | undefined;
 };
 
-export function SeatMap({ room, taken, held, selected, onToggle, disabled }: Props) {
+export function SeatMap({ room, taken, held, waitlisted, selected, onToggle, disabled }: Props) {
   const selectedSet = new Set(selected);
   const heldSet = held ?? new Set<string>();
+  const waitlistedSet = waitlisted ?? new Set<string>();
   const rows = ROOM_ROWS[room];
   const roomInfo = roomForId(room);
   const bands = rows.reduce<{ tier: TierId; rows: RowDef[] }[]>((acc, def) => {
@@ -85,7 +88,7 @@ export function SeatMap({ room, taken, held, selected, onToggle, disabled }: Pro
               (n, r) =>
                 n +
                 Array.from({ length: r.count }, (_, i) => seatId(room, r.row, i + 1)).filter(
-                  (id) => !taken.has(id) && !heldSet.has(id),
+                  (id) => !taken.has(id) && !heldSet.has(id) && !waitlistedSet.has(id),
                 ).length,
               0,
             );
@@ -120,6 +123,7 @@ export function SeatMap({ room, taken, held, selected, onToggle, disabled }: Pro
                     def={def}
                     taken={taken}
                     heldSet={heldSet}
+                    waitlistedSet={waitlistedSet}
                     selectedSet={selectedSet}
                     onToggle={onToggle}
                     disabled={disabled}
@@ -172,6 +176,7 @@ function SeatRow({
   def,
   taken,
   heldSet,
+  waitlistedSet,
   selectedSet,
   onToggle,
   disabled,
@@ -181,6 +186,7 @@ function SeatRow({
   def: RowDef;
   taken: Set<string>;
   heldSet: Set<string>;
+  waitlistedSet: Set<string>;
   selectedSet: Set<string>;
   onToggle: (id: string) => void;
   disabled?: boolean | undefined;
@@ -201,6 +207,7 @@ function SeatRow({
             label={`${roomName} · ${tier.name} row ${def.row} seat ${n} — ₹${tier.price}`}
             taken={taken.has(seatId(room, def.row, n))}
             held={heldSet.has(seatId(room, def.row, n))}
+            waitlisted={waitlistedSet.has(seatId(room, def.row, n))}
             selected={selectedSet.has(seatId(room, def.row, n))}
             onToggle={onToggle}
             disabled={disabled}
@@ -214,6 +221,7 @@ function SeatRow({
             label={`${roomName} · ${tier.name} row ${def.row} seat ${n} — ₹${tier.price}`}
             taken={taken.has(seatId(room, def.row, n))}
             held={heldSet.has(seatId(room, def.row, n))}
+            waitlisted={waitlistedSet.has(seatId(room, def.row, n))}
             selected={selectedSet.has(seatId(room, def.row, n))}
             onToggle={onToggle}
             disabled={disabled}
@@ -234,11 +242,14 @@ const tierClass: Record<string, string> = {
   economy: "bg-tier-economy/20 border-tier-economy/70 hover:bg-tier-economy/45",
 };
 
+const waitlistedClass = "cursor-not-allowed border-waitlist/70 bg-waitlist/20 text-waitlist";
+
 function Seat({
   id,
   label,
   taken,
   held,
+  waitlisted,
   selected,
   onToggle,
   disabled,
@@ -247,6 +258,7 @@ function Seat({
   label: string;
   taken: boolean;
   held?: boolean;
+  waitlisted?: boolean;
   selected: boolean;
   onToggle: (id: string) => void;
   disabled?: boolean | undefined;
@@ -256,10 +268,16 @@ function Seat({
     <button
       type="button"
       aria-label={
-        taken ? `${label} — already booked` : held ? `${label} — on hold by another visitor` : label
+        taken
+          ? `${label} — already booked`
+          : held
+            ? `${label} — on hold by another visitor`
+            : waitlisted
+              ? `${label} — reserved for the waiting list`
+              : label
       }
       aria-pressed={selected}
-      disabled={taken || held || disabled}
+      disabled={taken || held || waitlisted || disabled}
       onClick={() => onToggle(id)}
       className={cn(
         "h-6 w-6 rounded-t-md border text-[0.55rem] font-bold transition-colors",
@@ -267,7 +285,9 @@ function Seat({
           ? "cursor-not-allowed border-border bg-seat-taken text-muted-foreground/50"
           : held
             ? "cursor-not-allowed border-dashed border-accent/70 bg-accent/15 text-muted-foreground"
-            : tierClass[tier],
+            : waitlisted
+              ? waitlistedClass
+              : tierClass[tier],
         selected &&
           "border-foreground bg-foreground text-background ring-2 ring-primary ring-offset-1 ring-offset-background",
         disabled && !taken && "opacity-60",
@@ -283,16 +303,25 @@ export function SeatLegend() {
     <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-5 gap-y-1.5 sm:gap-y-2 text-[0.65rem] sm:text-xs">
       {Object.values(TIERS).map((t) => (
         <span key={t.id} className="flex items-center gap-1.5 sm:gap-2">
-          <span className={cn("h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border", tierClass[t.id])} aria-hidden />
+          <span
+            className={cn("h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border", tierClass[t.id])}
+            aria-hidden
+          />
           {t.name} ₹{t.price}
         </span>
       ))}
       <span className="flex items-center gap-1.5 sm:gap-2">
-        <span className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border border-foreground bg-foreground" aria-hidden />
+        <span
+          className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border border-foreground bg-foreground"
+          aria-hidden
+        />
         Selected
       </span>
       <span className="flex items-center gap-1.5 sm:gap-2">
-        <span className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border border-border bg-seat-taken" aria-hidden />
+        <span
+          className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border border-border bg-seat-taken"
+          aria-hidden
+        />
         Booked
       </span>
       <span className="flex items-center gap-1.5 sm:gap-2">
@@ -301,6 +330,13 @@ export function SeatLegend() {
           aria-hidden
         />
         On hold
+      </span>
+      <span className="flex items-center gap-1.5 sm:gap-2">
+        <span
+          className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border border-waitlist/70 bg-waitlist/20"
+          aria-hidden
+        />
+        Waitlist reserved
       </span>
     </div>
   );

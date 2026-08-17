@@ -155,8 +155,8 @@ function SiteHeader() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
         {/* Logo */}
         <Link to="/" className="group flex items-center gap-3">
-          <span className="checkers h-7 w-7 rounded-sm opacity-90" aria-hidden />
-          <span className="display text-sm leading-tight font-bold tracking-widest uppercase">
+            <img src="f1logo.png" style={{height:"35px", width:"35px"}}></img><img src="awssbg.png" style={{height:"35px", width:"35px"}}></img>
+            <span className="display text-sm leading-tight font-bold tracking-widest uppercase">
             {EVENT.club}
             <span className="block text-[0.65rem] font-medium tracking-[0.25em] text-muted-foreground">
               Race Screening

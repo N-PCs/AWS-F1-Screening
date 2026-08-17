@@ -67,6 +67,7 @@
   --color-seat-taken: var(--seat-taken);
   --color-room-1: var(--room-1);
   --color-room-2: var(--room-2);
+  --color-waitlist: var(--waitlist);
 }
 
 :root {
@@ -102,6 +103,9 @@
   /* Rooms — AB02-127 (Room 1) and AB02-128 (Room 2) */
   --room-1: oklch(0.72 0.14 200);
   --room-2: oklch(0.66 0.24 320);
+
+  /* Waiting list — seats reserved for AB02-128 once it opens */
+  --waitlist: oklch(0.8 0.16 80);
 
   --chart-1: oklch(0.585 0.226 26.5);
   --chart-2: oklch(0.78 0.16 78);
