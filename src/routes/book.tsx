@@ -250,7 +250,7 @@ function BookPage() {
       // Chain hold sync requests sequentially
       const doSync = async () => {
         if (pendingSyncRef.current) {
-          await pendingSyncRef.current.catch(() => {});
+          await pendingSyncRef.current.catch(() => { });
         }
         return syncHold(selectedRef.current);
       };
@@ -281,7 +281,7 @@ function BookPage() {
     function handleUnload() {
       const holdId = holdIdRef.current;
       if (!holdId || !isFirebaseConfigured || !selectedRef.current.length) return;
-      void releaseSeats(holdId).catch(() => {});
+      void releaseSeats(holdId).catch(() => { });
     }
     window.addEventListener("pagehide", handleUnload);
     return () => window.removeEventListener("pagehide", handleUnload);
@@ -475,9 +475,7 @@ function BookPage() {
               key={room.id}
               type="button"
               onClick={() =>
-                locked
-                  ? window.open(window.location.pathname + "?wl=1", "_blank")
-                  : setActiveRoom(room.id)
+                locked ? void openWaitlist() : setActiveRoom(room.id)
               }
               aria-pressed={isActive}
               className={cn(
@@ -739,7 +737,7 @@ function BookPage() {
 
       {/* ── AB02-128 waiting list popup ── */}
       <Dialog open={wlOpen} onOpenChange={(open) => !open && setWlOpen(false)}>
-        <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
+        <DialogContent className="max-w-7.5xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Lock className="h-4 w-4 text-waitlist" aria-hidden />
