@@ -349,7 +349,6 @@ async function downloadWaitlistCSV() {
 <Button variant="outline" disabled={roomBusy || busy} onClick={() => void toggleRoom()}>
             {r2Open ? "Lock AB02-128" : "Open AB02-128 for booking"}
           </Button>
-        </div>
         {/* Download waitlist CSV */}
         <div className="mt-2">
           <Button variant="outline" onClick={() => downloadWaitlistCSV()} disabled={roomBusy || busy}>
