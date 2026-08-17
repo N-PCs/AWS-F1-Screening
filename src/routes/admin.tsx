@@ -243,7 +243,7 @@ function AdminPage() {
     URL.revokeObjectURL(url);
   }
 
-export async function downloadWaitlistCSV() {
+async function downloadWaitlistCSV() {
     const { entries } = await adminWaitlistList();
     const waitlisted = entries.filter((e): e is WaitlistRecord => e.status === "waitlisted");
     const header = ["Seat", "Registration No", "Waitlist Code", "Created At"];
