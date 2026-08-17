@@ -13,6 +13,7 @@ export function generateTicketPdf(ticket: BookingRecord | WaitlistRecord, isWait
   const isVerified = !isWaitlist && (ticket as BookingRecord).status === "verified";
   const isRejected = !isWaitlist && (ticket as BookingRecord).status === "rejected";
   const isPending = !isWaitlist && (ticket as BookingRecord).status === "pending";
+  const isPendingPayment = !isWaitlist && (ticket as BookingRecord).status === "pending_payment";
 
   const primaryColor = [225, 6, 0]; // F1 Red
   const darkBg = [18, 18, 22]; // Dark sleek theme
@@ -55,6 +56,11 @@ export function generateTicketPdf(ticket: BookingRecord | WaitlistRecord, isWait
 
   if (isWaitlist) {
     badgeText = "WAITLISTED — SEAT RESERVED";
+    badgeR = 168;
+    badgeG = 85;
+    badgeB = 247; // Purple
+  } else if (isPendingPayment) {
+    badgeText = "ALLOCATED — PAYMENT REQUIRED";
     badgeR = 168;
     badgeG = 85;
     badgeB = 247; // Purple

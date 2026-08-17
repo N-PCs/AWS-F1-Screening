@@ -1,11 +1,15 @@
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, XCircle, Clock, Download, Ticket } from "lucide-react";
+import { toast } from "sonner";
+import { CheckCircle2, XCircle, Clock, Download, Ticket, Lock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { EVENT } from "@/lib/event-config";
+import { Input } from "@/components/ui/input";
+import { EVENT, UPI } from "@/lib/event-config";
 import { isFirebaseConfigured } from "@/lib/firebase";
+import { uploadImage } from "@/lib/cloudinary";
 import { roomForSeat, tierForSeat } from "@/lib/seat-layout";
-import { getBooking } from "@/lib/booking-api";
+import { compressImage, getBooking, submitWaitlistPayment } from "@/lib/booking-api";
 import { generateTicketPdf } from "@/lib/pdf-ticket";
 
 export const Route = createFileRoute("/booking/$code")({
@@ -37,9 +41,49 @@ function BookingPage() {
     enabled: isFirebaseConfigured,
   });
 
+  const [upiRef, setUpiRef] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  const isPendingPayment = query.data?.status === "pending_payment";
   const isVerified = query.data?.status === "verified";
   const isRejected = query.data?.status === "rejected";
   const isPending = query.data?.status === "pending";
+
+  const handlePaySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError("");
+    const cleanUpi = upiRef.trim();
+    if (!cleanUpi || cleanUpi.length < 6) {
+      setFormError("Please enter a valid UPI transaction / reference ID (UTR).");
+      return;
+    }
+    if (!file) {
+      setFormError("Please select your payment screenshot image.");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setFormError("The selected file is not an image.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const screenshotBlob = await compressImage(file);
+      const screenshot = await uploadImage(screenshotBlob);
+      await submitWaitlistPayment({
+        code,
+        upiRef: cleanUpi,
+        screenshot,
+      });
+      toast.success("Payment submitted! Organisers will verify your receipt shortly.");
+      void query.refetch();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Payment submission failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="mx-auto max-w-2xl px-4 py-10 sm:py-14 pb-24">
@@ -57,6 +101,12 @@ function BookingPage() {
 
         {query.data && (
           <div>
+            {isPendingPayment && (
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/40 bg-purple-500/10 px-3.5 py-1.5 text-xs font-bold text-purple-400">
+                <Lock className="h-4 w-4" />
+                Allocated — Payment Required
+              </span>
+            )}
             {isVerified && (
               <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-bold text-emerald-400">
                 <CheckCircle2 className="h-4 w-4" />
@@ -106,8 +156,8 @@ function BookingPage() {
                 })
                 .join(", ")}
             />
-            <Row label="Amount paid" value={`₹${query.data.amount}`} />
-            <Row label="UPI reference" value={query.data.upiRef} />
+            <Row label="Amount" value={`₹${query.data.amount}`} />
+            <Row label="UPI reference" value={query.data.upiRef || "Pending Payment"} />
             <Row
               label="Payment status"
               value={
@@ -119,6 +169,10 @@ function BookingPage() {
                   <span className="inline-flex items-center gap-1 font-bold text-red-400">
                     <XCircle className="h-4 w-4" /> Rejected by organiser
                   </span>
+                ) : isPendingPayment ? (
+                  <span className="inline-flex items-center gap-1 font-bold text-purple-400">
+                    <Lock className="h-4 w-4" /> Allocated — Payment Required
+                  </span>
                 ) : (
                   <span className="inline-flex items-center gap-1 font-bold text-amber-400">
                     <Clock className="h-4 w-4" /> Pending verification
@@ -127,6 +181,72 @@ function BookingPage() {
               }
             />
           </dl>
+
+          {/* Allocated Pending Payment Form Section */}
+          {isPendingPayment && (
+            <div className="mt-6 rounded-lg border border-purple-500/30 bg-purple-500/5 p-5">
+              <h3 className="font-bold text-sm uppercase text-purple-400 flex items-center gap-2">
+                <Sparkles className="h-4 w-4" />
+                Seat Allocated! Complete Payment to Confirm Your Pass
+              </h3>
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                Your seat <strong>{query.data.seats.join(", ")}</strong> in AB02-127 has been allocated for you. Please scan the QR code below, pay <strong>₹{query.data.amount}</strong> via UPI, enter your reference number, and upload the payment screenshot to submit for organiser verification.
+              </p>
+
+              <form onSubmit={handlePaySubmit} className="mt-4 space-y-4 border-t border-purple-500/20 pt-4">
+                <div className="flex flex-col sm:flex-row items-center gap-4">
+                  <img
+                    src={UPI.qrImage}
+                    alt={`UPI QR code for ${UPI.payeeName}`}
+                    className="h-28 w-28 shrink-0 rounded-md border border-border bg-background object-contain p-1"
+                  />
+                  <div className="text-xs text-center sm:text-left space-y-1">
+                    <p className="font-bold text-foreground">{UPI.payeeName}</p>
+                    <p className="font-mono text-xs text-muted-foreground">{UPI.id}</p>
+                    <p className="text-purple-400 font-bold text-sm">Amount: ₹{query.data.amount}</p>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label htmlFor="booking-upiRef" className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                      UPI Ref / UTR Number
+                    </label>
+                    <Input
+                      id="booking-upiRef"
+                      type="text"
+                      placeholder="e.g. 423456789012"
+                      value={upiRef}
+                      onChange={(e) => setUpiRef(e.target.value)}
+                      className="text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="booking-screenshot" className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                      Payment Screenshot
+                    </label>
+                    <Input
+                      id="booking-screenshot"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                      className="text-xs"
+                    />
+                  </div>
+                </div>
+
+                {formError && <p className="text-xs text-destructive font-medium">{formError}</p>}
+
+                <Button
+                  type="submit"
+                  disabled={submitting}
+                  className="w-full sm:w-auto bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase text-xs tracking-wider"
+                >
+                  {submitting ? "Uploading & Submitting..." : "Submit Payment for Verification"}
+                </Button>
+              </form>
+            </div>
+          )}
 
           {/* Download PDF section */}
           <div className="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 rounded-md border border-border bg-card p-5">

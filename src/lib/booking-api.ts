@@ -96,7 +96,7 @@ export type BookingRecord = {
   upiRef: string;
   /** Cloudinary URL of the payment screenshot (admin-only read via Firestore rules) */
   screenshotUrl: string;
-  status: "pending" | "verified" | "rejected";
+  status: "pending_payment" | "pending" | "verified" | "rejected";
 };
 
 /* ---------------- collections ---------------- */
@@ -362,7 +362,7 @@ export async function searchTickets(inputQuery: string): Promise<{
     } catch {}
   }
 
-  // 2. Direct code lookup for Waitlist
+  // 2. Direct code lookup for Waitlist (or booking allocated from waitlist)
   if (qUpper.startsWith("WL-") || qUpper.length >= 6) {
     try {
       const snap = await getDoc(doc(db(), WAITLIST, qUpper));
@@ -378,6 +378,28 @@ export async function searchTickets(inputQuery: string): Promise<{
           createdAt: toIso(d["createdAt"]),
         });
       }
+    } catch {}
+
+    try {
+      const allocSnaps = await getDocs(
+        query(collection(db(), BOOKINGS), where("allocatedFromWaitlist", "==", qUpper)),
+      );
+      allocSnaps.forEach((d) => {
+        const data = d.data() as Record<string, unknown>;
+        bookingsMap.set(d.id, {
+          code: String(data["code"] ?? d.id),
+          createdAt: toIso(data["createdAt"]),
+          name: String(data["name"] ?? ""),
+          email: String(data["email"] ?? ""),
+          phone: String(data["phone"] ?? ""),
+          regNo: String(data["regNo"] ?? ""),
+          seats: (data["seats"] as string[]) ?? [],
+          amount: Number(data["amount"] ?? 0),
+          upiRef: String(data["upiRef"] ?? ""),
+          screenshotUrl: String(data["screenshotUrl"] ?? ""),
+          status: String(data["status"] ?? "pending") as BookingRecord["status"],
+        });
+      });
     } catch {}
   }
 
@@ -661,9 +683,9 @@ export async function adminAllocateWaitlist(code: string, allocatorEmail: string
       regNo: regKey,
       seats: [seat],
       amount,
-      upiRef: "WAITLIST",
+      upiRef: "",
       screenshotUrl: "",
-      status: "pending",
+      status: "pending_payment",
       allocatedBy: allocatorEmail,
       allocatedFromWaitlist: code,
     });
@@ -672,6 +694,47 @@ export async function adminAllocateWaitlist(code: string, allocatorEmail: string
   });
 
   return { code: bookingCode, seat, amount };
+}
+
+/**
+ * Submit payment (UPI reference + screenshot) for an allocated waitlist booking.
+ * Changes status from "pending_payment" to "pending" for organiser verification.
+ */
+export async function submitWaitlistPayment(input: {
+  code: string;
+  upiRef: string;
+  screenshot: CloudinaryUpload;
+}) {
+  requireBackend();
+  const { code, upiRef, screenshot } = input;
+  const cleanUpiRef = upiRef.trim();
+  if (!cleanUpiRef || cleanUpiRef.length < 6) {
+    throw new Error("Enter a valid UPI transaction / reference ID");
+  }
+  const bookingRef = doc(db(), BOOKINGS, code);
+  const snap = await getDoc(bookingRef);
+  if (!snap.exists()) throw new Error("Booking not found");
+  const data = snap.data() as Record<string, unknown>;
+  const currentStatus = String(data["status"] ?? "");
+  if (currentStatus === "verified") {
+    throw new Error("This booking has already been verified.");
+  }
+
+  await runTransaction(db(), async (tx) => {
+    tx.update(bookingRef, {
+      upiRef: cleanUpiRef,
+      screenshotUrl: screenshot.secureUrl,
+      status: "pending",
+      paidAt: serverTimestamp(),
+    });
+    tx.set(doc(db(), SHOTS, code), {
+      screenshotUrl: screenshot.secureUrl,
+      cloudinaryPublicId: screenshot.publicId,
+      createdAt: serverTimestamp(),
+    });
+  });
+
+  return { code, status: "pending" };
 }
 
 /** Organiser-only: remove a waitlist entry and free its seat. */

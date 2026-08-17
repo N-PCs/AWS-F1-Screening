@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 import {
   Ticket,
   Search,
@@ -17,11 +18,14 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/lib/auth-context";
-import { EVENT } from "@/lib/event-config";
+import { EVENT, UPI } from "@/lib/event-config";
 import { isFirebaseConfigured } from "@/lib/firebase";
+import { uploadImage } from "@/lib/cloudinary";
 import { roomForSeat, tierForSeat } from "@/lib/seat-layout";
 import {
+  compressImage,
   searchTickets,
+  submitWaitlistPayment,
   type BookingRecord,
   type WaitlistRecord,
 } from "@/lib/booking-api";
@@ -174,7 +178,11 @@ function TicketsPage() {
 
               <div className="grid gap-6">
                 {query.data!.bookings.map((booking) => (
-                  <BookingTicketCard key={booking.code} booking={booking} />
+                  <BookingTicketCard
+                    key={booking.code}
+                    booking={booking}
+                    onRefresh={() => void query.refetch()}
+                  />
                 ))}
               </div>
             </div>
@@ -202,10 +210,56 @@ function TicketsPage() {
 }
 
 /** Component to display a Booked Ticket Card with Status Badge and Download PDF button */
-function BookingTicketCard({ booking }: { booking: BookingRecord }) {
+function BookingTicketCard({
+  booking,
+  onRefresh,
+}: {
+  booking: BookingRecord;
+  onRefresh?: () => void;
+}) {
+  const isPendingPayment = booking.status === "pending_payment";
   const isVerified = booking.status === "verified";
   const isRejected = booking.status === "rejected";
   const isPending = booking.status === "pending";
+
+  const [upiRef, setUpiRef] = useState("");
+  const [file, setFile] = useState<File | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [formError, setFormError] = useState("");
+
+  const handlePaySubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setFormError("");
+    const cleanUpi = upiRef.trim();
+    if (!cleanUpi || cleanUpi.length < 6) {
+      setFormError("Please enter a valid UPI transaction / reference ID (UTR).");
+      return;
+    }
+    if (!file) {
+      setFormError("Please select your payment screenshot image.");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      setFormError("The selected file is not an image.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      const screenshotBlob = await compressImage(file);
+      const screenshot = await uploadImage(screenshotBlob);
+      await submitWaitlistPayment({
+        code: booking.code,
+        upiRef: cleanUpi,
+        screenshot,
+      });
+      toast.success("Payment submitted! Organisers will verify your receipt shortly.");
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      setFormError(err instanceof Error ? err.message : "Payment submission failed.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
 
   return (
     <div className="rounded-xl border border-border bg-card p-5 sm:p-6 shadow-sm transition hover:border-primary/40">
@@ -221,6 +275,13 @@ function BookingTicketCard({ booking }: { booking: BookingRecord }) {
 
         {/* Status Badges */}
         <div className="flex items-center gap-2">
+          {isPendingPayment && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-purple-500/40 bg-purple-500/10 px-3.5 py-1.5 text-xs font-bold text-purple-400">
+              <Lock className="h-4 w-4" />
+              Allocated — Payment Required
+            </span>
+          )}
+
           {isVerified && (
             <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-3.5 py-1.5 text-xs font-bold text-emerald-400">
               <CheckCircle2 className="h-4 w-4" />
@@ -282,7 +343,9 @@ function BookingTicketCard({ booking }: { booking: BookingRecord }) {
             Payment Info
           </span>
           <p className="font-semibold text-foreground">₹{booking.amount}</p>
-          <p className="text-xs text-muted-foreground">UPI Ref: {booking.upiRef}</p>
+          <p className="text-xs text-muted-foreground">
+            UPI Ref: {booking.upiRef || "Pending Payment"}
+          </p>
         </div>
 
         <div>
@@ -303,6 +366,73 @@ function BookingTicketCard({ booking }: { booking: BookingRecord }) {
         </div>
       </div>
 
+      {/* Allocated Pending Payment Form Section */}
+      {isPendingPayment && (
+        <div className="mt-5 rounded-lg border border-purple-500/30 bg-purple-500/5 p-4 sm:p-5">
+          <h3 className="font-bold text-sm uppercase text-purple-400 flex items-center gap-2">
+            <Sparkles className="h-4 w-4" />
+            Seat Allocated! Complete Payment to Confirm Your Ticket
+          </h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Your seat <strong>{booking.seats.join(", ")}</strong> has been allocated from the waitlist.
+            Scan the QR code below, pay <strong>₹{booking.amount}</strong> via UPI, enter your reference number, and upload the payment screenshot to submit for organiser verification.
+          </p>
+
+          <form onSubmit={handlePaySubmit} className="mt-4 space-y-4 border-t border-purple-500/20 pt-4">
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              <img
+                src={UPI.qrImage}
+                alt={`UPI QR code for ${UPI.payeeName}`}
+                className="h-28 w-28 shrink-0 rounded-md border border-border bg-background object-contain p-1"
+              />
+              <div className="text-xs text-center sm:text-left space-y-1">
+                <p className="font-bold text-foreground">{UPI.payeeName}</p>
+                <p className="font-mono text-xs text-muted-foreground">{UPI.id}</p>
+                <p className="text-purple-400 font-bold text-sm">Amount: ₹{booking.amount}</p>
+              </div>
+            </div>
+
+            <div className="grid gap-3 sm:grid-cols-2">
+              <div>
+                <label htmlFor={`upiRef-${booking.code}`} className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                  UPI Ref / UTR Number
+                </label>
+                <Input
+                  id={`upiRef-${booking.code}`}
+                  type="text"
+                  placeholder="e.g. 423456789012"
+                  value={upiRef}
+                  onChange={(e) => setUpiRef(e.target.value)}
+                  className="text-xs"
+                />
+              </div>
+              <div>
+                <label htmlFor={`screenshot-${booking.code}`} className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">
+                  Payment Screenshot
+                </label>
+                <Input
+                  id={`screenshot-${booking.code}`}
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                  className="text-xs"
+                />
+              </div>
+            </div>
+
+            {formError && <p className="text-xs text-destructive font-medium">{formError}</p>}
+
+            <Button
+              type="submit"
+              disabled={submitting}
+              className="w-full sm:w-auto bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase text-xs tracking-wider"
+            >
+              {submitting ? "Uploading & Submitting..." : "Submit Payment for Verification"}
+            </Button>
+          </form>
+        </div>
+      )}
+
       {/* Action Footer */}
       <div className="mt-6 pt-4 border-t border-border flex flex-col sm:flex-row items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground">
@@ -310,11 +440,13 @@ function BookingTicketCard({ booking }: { booking: BookingRecord }) {
             ? "Your payment is verified! Download your official PDF ticket pass below."
             : isRejected
               ? "Payment verification was rejected by organisers. Please contact support if you need assistance."
-              : "Organisers are reviewing your payment screenshot. Check back soon!"}
+              : isPendingPayment
+                ? "Payment required: Complete payment form above to request verification."
+                : "Organisers are reviewing your payment screenshot. Check back soon!"}
         </p>
 
         <div className="flex items-center gap-3 w-full sm:w-auto">
-          {/* Download PDF button (always available or highlighted when verified) */}
+          {/* Download PDF button */}
           <Button
             type="button"
             onClick={() => generateTicketPdf(booking, false)}

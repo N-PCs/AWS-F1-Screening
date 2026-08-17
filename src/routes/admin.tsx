@@ -426,8 +426,7 @@ async function downloadWaitlistCSV() {
           </table>
         </div>
         <p className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
-          "Allocate booking" creates a pending booking for the reserved seat — the person pays later
-          and you verify it. "Remove" frees the seat and the registration number.
+          "Allocate booking" locks the reserved seat and moves the candidate to the overall Registrations list in unpaid status (`pending_payment`). The student completes payment on the Ticket Portal, uploads a screenshot, and you verify it here. "Remove" frees the seat and registration number.
         </p>
       </section>
 
@@ -479,16 +478,23 @@ async function downloadWaitlistCSV() {
                         ? "font-bold text-tier-economy"
                         : b.status === "rejected"
                           ? "font-bold text-destructive"
-                          : "font-bold text-tier-standard"
+                          : b.status === "pending_payment"
+                            ? "font-bold text-purple-400"
+                            : "font-bold text-tier-standard"
                     }
                   >
-                    {b.status}
+                    {b.status === "pending_payment" ? "unpaid (allocated)" : b.status}
                   </span>
                   <div className="mt-2 flex gap-1">
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={busy}
+                      disabled={busy || b.status === "pending_payment" || !b.screenshotUrl}
+                      title={
+                        b.status === "pending_payment" || !b.screenshotUrl
+                          ? "Student must submit payment & screenshot before verification"
+                          : "Verify booking"
+                      }
                       onClick={() => void setStatus(b.code, "verified")}
                     >
                       Verify
