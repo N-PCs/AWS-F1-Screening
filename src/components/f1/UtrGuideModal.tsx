@@ -37,7 +37,7 @@ export function UtrGuideModal({ open, onOpenChange }: UtrGuideModalProps) {
             <img
               src="/utr.jpeg"
               alt="How to find UTR number / UPI transaction ID"
-              className="w-full h-auto max-h-72 object-contain rounded-lg border border-border/50 bg-black/30"
+              className="w-full h-auto max-h-[400px] object-contain rounded-lg border border-border/50 bg-black/30"
             />
           </div>
 
@@ -111,7 +111,7 @@ export function UtrGuideModal({ open, onOpenChange }: UtrGuideModalProps) {
 
               {/* PhonePe */}
               <div className="rounded-lg border border-border bg-card p-3.5 space-y-1.5 shadow-sm">
-                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-primary">
+                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-blue-600">
                   <CheckCircle className="h-3.5 w-3.5 shrink-0" />
                   PhonePe
                 </div>
@@ -125,7 +125,7 @@ export function UtrGuideModal({ open, onOpenChange }: UtrGuideModalProps) {
 
               {/* Paytm */}
               <div className="rounded-lg border border-border bg-card p-3.5 space-y-1.5 shadow-sm">
-                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-primary">
+                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-amber-600">
                   <CheckCircle className="h-3.5 w-3.5 shrink-0" />
                   Paytm
                 </div>
@@ -139,7 +139,7 @@ export function UtrGuideModal({ open, onOpenChange }: UtrGuideModalProps) {
 
               {/* Navi UPI */}
               <div className="rounded-lg border border-border bg-card p-3.5 space-y-1.5 shadow-sm">
-                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-primary">
+                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-green-500">
                   <CheckCircle className="h-3.5 w-3.5 shrink-0" />
                   Navi UPI
                 </div>
@@ -153,7 +153,7 @@ export function UtrGuideModal({ open, onOpenChange }: UtrGuideModalProps) {
 
               {/* Amazon Pay */}
               <div className="rounded-lg border border-border bg-card p-3.5 space-y-1.5 shadow-sm">
-                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-primary">
+                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-orange-500">
                   <CheckCircle className="h-3.5 w-3.5 shrink-0" />
                   Amazon Pay
                 </div>
@@ -167,7 +167,7 @@ export function UtrGuideModal({ open, onOpenChange }: UtrGuideModalProps) {
 
               {/* CRED */}
               <div className="rounded-lg border border-border bg-card p-3.5 space-y-1.5 shadow-sm">
-                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-primary">
+                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-pink-500">
                   <CheckCircle className="h-3.5 w-3.5 shrink-0" />
                   CRED
                 </div>
@@ -181,7 +181,7 @@ export function UtrGuideModal({ open, onOpenChange }: UtrGuideModalProps) {
 
               {/* Official BHIM App */}
               <div className="rounded-lg border border-border bg-card p-3.5 space-y-1.5 sm:col-span-2 shadow-sm">
-                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-primary">
+                <div className="flex items-center gap-2 font-bold text-xs sm:text-sm text-purple-500">
                   <CheckCircle className="h-3.5 w-3.5 shrink-0" />
                   Official BHIM App
                 </div>
