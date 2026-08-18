@@ -1,7 +1,7 @@
 import jsPDF from "jspdf";
 import type { BookingRecord, WaitlistRecord } from "./booking-api";
 import { EVENT } from "./event-config";
-import { roomForSeat, tierForSeat } from "./seat-layout";
+import { roomForSeat, seatDisplayId, tierForSeat } from "./seat-layout";
 
 export function generateTicketPdf(ticket: BookingRecord | WaitlistRecord, isWaitlist = false) {
   const doc = new jsPDF({
@@ -139,12 +139,12 @@ export function generateTicketPdf(ticket: BookingRecord | WaitlistRecord, isWait
   renderField("Phone Number", ticket.phone, col2X, startY + 16);
 
   const seatsList = isWaitlist
-    ? (ticket as WaitlistRecord).seat
+    ? seatDisplayId((ticket as WaitlistRecord).seat)
     : (ticket as BookingRecord).seats
         .map((s) => {
           const rm = roomForSeat(s)?.name;
           const tr = tierForSeat(s)?.name;
-          return `${s} (${[rm, tr].filter(Boolean).join(" · ")})`;
+          return `${seatDisplayId(s)} (${[rm, tr].filter(Boolean).join(" · ")})`;
         })
         .join(", ");
 

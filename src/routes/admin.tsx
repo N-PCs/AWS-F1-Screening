@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ROOMS, TIERS, TOTAL_SEATS, roomForSeat, tierForSeat } from "@/lib/seat-layout";
+import { ROOMS, TIERS, TOTAL_SEATS, roomForSeat, seatDisplayId, tierForSeat } from "@/lib/seat-layout";
 import { ADMIN_EMAILS, EVENT } from "@/lib/event-config";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import {
@@ -166,7 +166,7 @@ function AdminPage() {
     setRoomBusy(true);
     try {
       const res = await adminAllocateWaitlist(code, email ?? "");
-      toast.success(`Waitlist ${code} → booking ${res.code} (${res.seat}, ₹${res.amount}).`);
+      toast.success(`Waitlist ${code} → booking ${res.code} (${seatDisplayId(res.seat)}, ₹${res.amount}).`);
       await load();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Allocation failed");
@@ -239,7 +239,7 @@ function AdminPage() {
       b.email,
       b.phone,
       b.regNo,
-      b.seats.join(" "),
+      b.seats.map(seatDisplayId).join(" "),
       String(b.amount),
       b.upiRef,
       b.status,
@@ -260,7 +260,7 @@ async function downloadWaitlistCSV() {
     const { entries } = await adminWaitlistList();
     const header = ["Seat", "Registration No", "Waitlist Code", "Created At"];
     const rows = entries.map((e) => [
-      e.seat,
+      seatDisplayId(e.seat),
       e.regNo,
       e.code,
       e.createdAt ?? "",
@@ -397,7 +397,7 @@ async function downloadWaitlistCSV() {
                     <span className="block text-muted-foreground">{w.phone}</span>
                   </td>
                   <td className="px-3 py-3 text-xs font-mono">
-                    {w.seat}
+                    {seatDisplayId(w.seat)}
                     <span className="block text-muted-foreground">
                       {tierForSeat(w.seat)?.name} · ₹{tierForSeat(w.seat)?.price}
                     </span>
@@ -477,7 +477,7 @@ async function downloadWaitlistCSV() {
                   <span className="block">{b.email}</span>
                   <span className="block text-muted-foreground">{b.phone}</span>
                 </td>
-                <td className="px-3 py-3 text-xs">{b.seats.join(", ")}</td>
+                <td className="px-3 py-3 text-xs">{b.seats.map(seatDisplayId).join(", ")}</td>
                 <td className="px-3 py-3">₹{b.amount}</td>
                 <td className="px-3 py-3 text-xs">
                   <span className="block font-mono">{b.upiRef}</span>
