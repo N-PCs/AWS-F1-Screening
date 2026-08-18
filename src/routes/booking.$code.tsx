@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { EVENT, UPI } from "@/lib/event-config";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import { uploadImage } from "@/lib/cloudinary";
-import { roomForSeat, tierForSeat } from "@/lib/seat-layout";
+import { roomForSeat, seatDisplayId, tierForSeat } from "@/lib/seat-layout";
 import { compressImage, getBooking, submitWaitlistPayment } from "@/lib/booking-api";
 import { generateTicketPdf } from "@/lib/pdf-ticket";
 
@@ -152,7 +152,7 @@ function BookingPage() {
                 .map((s) => {
                   const room = roomForSeat(s)?.name;
                   const tier = tierForSeat(s)?.name;
-                  return `${s} (${[room, tier].filter(Boolean).join(" · ") || "—"})`;
+                  return `${seatDisplayId(s)} (${[room, tier].filter(Boolean).join(" · ") || "—"})`;
                 })
                 .join(", ")}
             />
@@ -190,7 +190,7 @@ function BookingPage() {
                 Seat Allocated! Complete Payment to Confirm Your Pass
               </h3>
               <p className="mt-1.5 text-xs text-muted-foreground">
-                Your seat <strong>{query.data.seats.join(", ")}</strong> in AB02-127 has been allocated for you. Please scan the QR code below, pay <strong>₹{query.data.amount}</strong> via UPI, enter your reference number, and upload the payment screenshot to submit for organiser verification.
+                Your seat <strong>{query.data.seats.map(seatDisplayId).join(", ")}</strong> in AB02-127 has been allocated for you. Please scan the QR code below, pay <strong>₹{query.data.amount}</strong> via UPI, enter your reference number, and upload the payment screenshot to submit for organiser verification.
               </p>
 
               <form onSubmit={handlePaySubmit} className="mt-4 space-y-4 border-t border-purple-500/20 pt-4">

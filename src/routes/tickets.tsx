@@ -21,7 +21,7 @@ import { useAuth } from "@/lib/auth-context";
 import { EVENT, UPI } from "@/lib/event-config";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import { uploadImage } from "@/lib/cloudinary";
-import { roomForSeat, tierForSeat } from "@/lib/seat-layout";
+import { roomForSeat, seatDisplayId, tierForSeat } from "@/lib/seat-layout";
 import {
   compressImage,
   searchTickets,
@@ -332,7 +332,7 @@ function BookingTicketCard({
               .map((s) => {
                 const room = roomForSeat(s)?.name;
                 const tier = tierForSeat(s)?.name;
-                return `${s} (${[room, tier].filter(Boolean).join(" · ")})`;
+                return `${seatDisplayId(s)} (${[room, tier].filter(Boolean).join(" · ")})`;
               })
               .join(", ")}
           </p>
@@ -374,7 +374,7 @@ function BookingTicketCard({
             Seat Allocated! Complete Payment to Confirm Your Ticket
           </h3>
           <p className="mt-1 text-xs text-muted-foreground">
-            Your seat <strong>{booking.seats.join(", ")}</strong> has been allocated from the waitlist.
+            Your seat <strong>{booking.seats.map(seatDisplayId).join(", ")}</strong> has been allocated from the waitlist.
             Scan the QR code below, pay <strong>₹{booking.amount}</strong> via UPI, enter your reference number, and upload the payment screenshot to submit for organiser verification.
           </p>
 
@@ -519,7 +519,7 @@ function WaitlistTicketCard({ waitlist }: { waitlist: WaitlistRecord }) {
           <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
             Reserved Seat
           </span>
-          <p className="font-semibold text-waitlist">{waitlist.seat} (AB02-127)</p>
+          <p className="font-semibold text-waitlist">{seatDisplayId(waitlist.seat)} (AB02-127)</p>
         </div>
       </div>
 

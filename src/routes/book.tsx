@@ -26,6 +26,7 @@ import {
   TOTAL_SEATS,
   roomForId,
   roomForSeat,
+  seatDisplayId,
   tierForSeat,
   totalPrice,
   type RoomId,
@@ -576,8 +577,8 @@ function BookPage() {
                 {selected.map((id) => (
                   <li key={id} className="flex items-center justify-between gap-2">
                     <span className="font-semibold min-w-0">
-                      <span className="sm:hidden">Seat {id}</span>
-                      <span className="hidden sm:inline">Seat {id}</span>{" "}
+                      <span className="sm:hidden">Seat {seatDisplayId(id)}</span>
+                      <span className="hidden sm:inline">Seat {seatDisplayId(id)}</span>{" "}
                       <span className="font-normal text-muted-foreground hidden sm:inline">
                         · {roomForSeat(id)?.name} · {tierForSeat(id)?.name}
                       </span>
@@ -770,7 +771,7 @@ function BookPage() {
               {myWl ? (
                 <div className="rounded-md border border-waitlist/50 bg-card p-4">
                   <p className="font-bold uppercase tracking-wider">
-                    You're on the list — seat {myWl.seat} reserved
+                    You're on the list — seat {seatDisplayId(myWl.seat)} reserved
                   </p>
                   <p className="mt-1 text-sm text-muted-foreground">
                     Your waitlist code is{" "}
@@ -834,7 +835,7 @@ function BookPage() {
                   />
                   {wlPicked && (
                     <p className="rounded-sm border border-waitlist/50 bg-waitlist/10 px-3 py-2 text-xs font-semibold">
-                      Reserved: {wlPicked} · {tierForSeat(wlPicked)?.name} · ₹
+                      Reserved: {seatDisplayId(wlPicked)} · {tierForSeat(wlPicked)?.name} · ₹
                       {tierForSeat(wlPicked)?.price} (pay only when AB02-127 opens)
                     </p>
                   )}
@@ -885,7 +886,7 @@ function BookPage() {
                   <RowStub label="Waitlist code" value={wlResult.code} mono />
                   <RowStub
                     label="Seat reserved"
-                    value={`${wlResult.seat} (${tierForSeat(wlResult.seat)?.name})`}
+                    value={`${seatDisplayId(wlResult.seat)} (${tierForSeat(wlResult.seat)?.name})`}
                   />
                   <RowStub
                     label="What happens next"

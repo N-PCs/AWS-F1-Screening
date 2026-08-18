@@ -137,6 +137,17 @@ export function seatNum(id: string): string {
   return String.fromCharCode(96 + num); // 1→a, 2→b, …, 16→p
 }
 
+/**
+ * Human-readable seat ID for tickets and summaries: R{rowNumber}C{colNumber}.
+ * e.g. internal "R1-A1" → "R1C1", "R2-P16" → "R16C16".
+ */
+export function seatDisplayId(id: string): string {
+  const parts = seatParts(id);
+  if (!parts) return id;
+  const rowNum = parts.row.charCodeAt(0) - 64; // A→1, B→2, …, P→16
+  return `R${rowNum}C${parts.num}`;
+}
+
 export function roomForSeat(id: string): Room | null {
   const parts = seatParts(id);
   return parts ? roomForId(parts.room) : null;
