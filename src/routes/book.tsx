@@ -135,17 +135,7 @@ function BookPage() {
   const selectedRef = useRef<string[]>([]);
   selectedRef.current = selected;
 
-  // Auth gate — must come AFTER all hooks so the hook order is stable across renders.
-  if (!authLoading && !user) {
-    return <AuthGate />;
-  }
-  if (authLoading) {
-    return (
-      <div className="mx-auto max-w-md px-4 py-20 text-center">
-        <p className="text-sm text-muted-foreground">Checking sign-in…</p>
-      </div>
-    );
-  }
+
 
   // Serialize taken array to maintain stable Set reference unless taken seats actually change.
   const takenKey = (availability.data?.taken ?? []).slice().sort().join(",");
@@ -230,6 +220,12 @@ function BookPage() {
 
   const toggle = useCallback(
     async (id: string) => {
+      if (!user) {
+        toast.error("Please sign in with Google to select seats.", {
+          id: "auth-required-toast",
+        });
+        return;
+      }
       const current = selectedRef.current;
       const isSelected = current.includes(id);
       let next: string[];
@@ -517,7 +513,7 @@ function BookPage() {
         <section
           id="seat-map-section"
           className={cn(
-            "rounded-md border border-border bg-card p-3 sm:p-6 order-2 lg:order-1",
+            "rounded-md border border-border bg-card p-2 sm:p-6",
             roomTop[activeRoomInfo.tone],
           )}
         >
@@ -536,166 +532,168 @@ function BookPage() {
         </section>
 
         {/* Selection + form aside */}
-        <aside className="space-y-4 sm:space-y-6 order-1 lg:order-2">
-          {/* Quick mobile CTA to jump to seat map */}
-          <a
-            href="#seat-map-section"
-            className="flex items-center justify-center gap-2 rounded-md border border-primary/40 bg-primary/10 px-4 py-3 text-sm font-bold text-primary uppercase tracking-wider lg:hidden"
-          >
-            ↓ Pick seats on the map below
-          </a>
-
-          <div className="rounded-md border border-border bg-card p-4 sm:p-5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base sm:text-lg font-bold uppercase">Your selection</h2>
-              {selected.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSelected([]);
-                    selectedRef.current = [];
-                    void syncHold([]);
-                  }}
-                  className="text-xs text-muted-foreground underline hover:text-foreground"
-                >
-                  Clear all ({selected.length})
-                </button>
-              )}
+        <aside className="space-y-4 sm:space-y-6">
+          {authLoading ? (
+            <div className="rounded-md border border-border bg-card p-6 text-center">
+              <p className="text-sm text-muted-foreground">Checking sign-in…</p>
             </div>
-            {holdExpiresAt && secondsLeft > 0 && (
-              <p className="mt-2 rounded-sm border border-primary/50 bg-primary/10 px-3 py-2 text-xs font-semibold">
-                Seats held for you · <span className="tabular-nums">{holdClock}</span> left to
-                finish payment
-              </p>
-            )}
-            {selected.length === 0 ? (
-              <p className="mt-2 text-xs sm:text-sm text-muted-foreground">
-                No seats picked yet. Front rows are the premium spots.
-              </p>
-            ) : (
-              <ul className="mt-3 space-y-1.5 text-xs sm:text-sm">
-                {selected.map((id) => (
-                  <li key={id} className="flex items-center justify-between gap-2">
-                    <span className="font-semibold min-w-0">
-                      <span className="sm:hidden">Seat {seatDisplayId(id)}</span>
-                      <span className="hidden sm:inline">Seat {seatDisplayId(id)}</span>{" "}
-                      <span className="font-normal text-muted-foreground hidden sm:inline">
-                        · {roomForSeat(id)?.name} · {tierForSeat(id)?.name}
-                      </span>
-                      <span className="font-normal text-muted-foreground sm:hidden text-[0.65rem]">
-                        {tierForSeat(id)?.name}
-                      </span>
-                    </span>
-                    <span className="shrink-0">₹{tierForSeat(id)?.price}</span>
-                  </li>
-                ))}
-              </ul>
-            )}
-            <div className="mt-3 sm:mt-4 flex items-center justify-between border-t border-border pt-3 text-sm sm:text-base font-bold">
-              <span>Total</span>
-              <span className="text-primary">₹{amount}</span>
-            </div>
-            <p className="mt-2 sm:mt-3 text-[0.65rem] sm:text-xs text-muted-foreground">
-              {Object.values(TIERS)
-                .map((t) => `${t.name} ₹${t.price}`)
-                .join(" · ")}
-            </p>
-          </div>
-
-          <form
-            id="booking-form"
-            onSubmit={submit}
-            className="space-y-4 sm:space-y-5 rounded-md border border-border bg-card p-4 sm:p-5"
-          >
-            <div>
-              <h2 className="text-base sm:text-lg font-bold uppercase">Your details</h2>
-              <div className="mt-3 sm:mt-4 space-y-3">
-                <Field
-                  id="name"
-                  label="Full name"
-                  value={form.name}
-                  error={errors["name"]}
-                  onChange={(v) => setForm({ ...form, name: v })}
-                />
-                <Field
-                  id="email"
-                  label="Email"
-                  type="email"
-                  value={form.email}
-                  error={errors["email"]}
-                  onChange={(v) => setForm({ ...form, email: v })}
-                  readOnly={Boolean(user?.email)}
-                />
-                <Field
-                  id="phone"
-                  label="Phone"
-                  value={form.phone}
-                  error={errors["phone"]}
-                  onChange={(v) => setForm({ ...form, phone: v })}
-                />
-                <Field
-                  id="regNo"
-                  label="Registration number"
-                  value={form.regNo}
-                  error={errors["regNo"]}
-                  onChange={(v) => setForm({ ...form, regNo: v })}
-                />
-              </div>
-            </div>
-
-            <div className="border-t border-border pt-4">
-              <h2 className="text-base sm:text-lg font-bold uppercase">Pay ₹{amount} by UPI</h2>
-              <div className="mt-3 flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:gap-4">
-                <QrPanel />
-                <div className="text-xs sm:text-sm text-center sm:text-left">
-                  <p className="font-semibold">{UPI.payeeName}</p>
-                  <p className="font-mono text-[0.65rem] sm:text-xs break-all text-muted-foreground">
-                    {UPI.id}
-                  </p>
-                  <p className="mt-1.5 sm:mt-2 text-[0.65rem] sm:text-xs text-muted-foreground">
-                    Scan, pay the exact amount, then upload the screenshot below.
-                  </p>
-                </div>
-              </div>
-
-              <div className="mt-3 sm:mt-4 space-y-3">
-                <Field
-                  id="upiRef"
-                  label="UPI transaction / reference ID"
-                  value={form.upiRef}
-                  error={errors["upiRef"]}
-                  onChange={(v) => setForm({ ...form, upiRef: v })}
-                />
-                <div>
-                  <Label htmlFor="screenshot">Payment screenshot</Label>
-                  <Input
-                    id="screenshot"
-                    type="file"
-                    accept="image/*"
-                    className="mt-1.5"
-                    onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                  />
-                  {errors["screenshot"] && (
-                    <p className="mt-1 text-xs text-destructive">{errors["screenshot"]}</p>
+          ) : !user ? (
+            <AuthGate />
+          ) : (
+            <>
+              <div className="rounded-md border border-border bg-card p-4 sm:p-5">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-base sm:text-lg font-bold uppercase">Your selection</h2>
+                  {selected.length > 0 && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelected([]);
+                        selectedRef.current = [];
+                        void syncHold([]);
+                      }}
+                      className="text-xs text-muted-foreground underline hover:text-foreground"
+                    >
+                      Clear all ({selected.length})
+                    </button>
                   )}
                 </div>
+                {holdExpiresAt && secondsLeft > 0 && (
+                  <p className="mt-2 rounded-sm border border-primary/50 bg-primary/10 px-3 py-2 text-xs font-semibold">
+                    Seats held for you · <span className="tabular-nums">{holdClock}</span> left to
+                    finish payment
+                  </p>
+                )}
+                {selected.length === 0 ? (
+                  <p className="mt-2 text-xs sm:text-sm text-muted-foreground">
+                    No seats picked yet. Front rows are the premium spots.
+                  </p>
+                ) : (
+                  <ul className="mt-3 space-y-1.5 text-xs sm:text-sm">
+                    {selected.map((id) => (
+                      <li key={id} className="flex items-center justify-between gap-2">
+                        <span className="font-semibold min-w-0">
+                          <span className="sm:hidden">Seat {seatDisplayId(id)}</span>
+                          <span className="hidden sm:inline">Seat {seatDisplayId(id)}</span>{" "}
+                          <span className="font-normal text-muted-foreground hidden sm:inline">
+                            · {roomForSeat(id)?.name} · {tierForSeat(id)?.name}
+                          </span>
+                          <span className="font-normal text-muted-foreground sm:hidden text-[0.65rem]">
+                            {tierForSeat(id)?.name}
+                          </span>
+                        </span>
+                        <span className="shrink-0">₹{tierForSeat(id)?.price}</span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                <div className="mt-3 sm:mt-4 flex items-center justify-between border-t border-border pt-3 text-sm sm:text-base font-bold">
+                  <span>Total</span>
+                  <span className="text-primary">₹{amount}</span>
+                </div>
+                <p className="mt-2 sm:mt-3 text-[0.65rem] sm:text-xs text-muted-foreground">
+                  {Object.values(TIERS)
+                    .map((t) => `${t.name} ₹${t.price}`)
+                    .join(" · ")}
+                </p>
               </div>
-            </div>
 
-            <Button
-              type="submit"
-              disabled={submitting || !selected.length}
-              className="w-full font-bold tracking-wide uppercase"
-            >
-              {submitting
-                ? "Confirming…"
-                : `Confirm ${selected.length || ""} seat${selected.length === 1 ? "" : "s"}`}
-            </Button>
-            <p className="text-[0.65rem] sm:text-xs text-muted-foreground">
-              Picking a seat locks it for you for a few minutes — nobody else can book it while your
-              timer runs. Leave the page or let the timer run out and it goes back on sale.
-            </p>
-          </form>
+              <form
+                id="booking-form"
+                onSubmit={submit}
+                className="space-y-4 sm:space-y-5 rounded-md border border-border bg-card p-4 sm:p-5"
+              >
+                <div>
+                  <h2 className="text-base sm:text-lg font-bold uppercase">Your details</h2>
+                  <div className="mt-3 sm:mt-4 space-y-3">
+                    <Field
+                      id="name"
+                      label="Full name"
+                      value={form.name}
+                      error={errors["name"]}
+                      onChange={(v) => setForm({ ...form, name: v })}
+                    />
+                    <Field
+                      id="email"
+                      label="Email"
+                      type="email"
+                      value={form.email}
+                      error={errors["email"]}
+                      onChange={(v) => setForm({ ...form, email: v })}
+                      readOnly={Boolean(user?.email)}
+                    />
+                    <Field
+                      id="phone"
+                      label="Phone"
+                      value={form.phone}
+                      error={errors["phone"]}
+                      onChange={(v) => setForm({ ...form, phone: v })}
+                    />
+                    <Field
+                      id="regNo"
+                      label="Registration number"
+                      value={form.regNo}
+                      error={errors["regNo"]}
+                      onChange={(v) => setForm({ ...form, regNo: v })}
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-border pt-4">
+                  <h2 className="text-base sm:text-lg font-bold uppercase">Pay ₹{amount} by UPI</h2>
+                  <div className="mt-3 flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:gap-4">
+                    <QrPanel />
+                    <div className="text-xs sm:text-sm text-center sm:text-left">
+                      <p className="font-semibold">{UPI.payeeName}</p>
+                      <p className="font-mono text-[0.65rem] sm:text-xs break-all text-muted-foreground">
+                        {UPI.id}
+                      </p>
+                      <p className="mt-1.5 sm:mt-2 text-[0.65rem] sm:text-xs text-muted-foreground">
+                        Scan, pay the exact amount, then upload the screenshot below.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 sm:mt-4 space-y-3">
+                    <Field
+                      id="upiRef"
+                      label="UPI transaction / reference ID"
+                      value={form.upiRef}
+                      error={errors["upiRef"]}
+                      onChange={(v) => setForm({ ...form, upiRef: v })}
+                    />
+                    <div>
+                      <Label htmlFor="screenshot">Payment screenshot</Label>
+                      <Input
+                        id="screenshot"
+                        type="file"
+                        accept="image/*"
+                        className="mt-1.5"
+                        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                      />
+                      {errors["screenshot"] && (
+                        <p className="mt-1 text-xs text-destructive">{errors["screenshot"]}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <Button
+                  type="submit"
+                  disabled={submitting || !selected.length}
+                  className="w-full font-bold tracking-wide uppercase"
+                >
+                  {submitting
+                    ? "Confirming…"
+                    : `Confirm ${selected.length || ""} seat${selected.length === 1 ? "" : "s"}`}
+                </Button>
+                <p className="text-[0.65rem] sm:text-xs text-muted-foreground">
+                  Picking a seat locks it for you for a few minutes — nobody else can book it while your
+                  timer runs. Leave the page or let the timer run out and it goes back on sale.
+                </p>
+              </form>
+            </>
+          )}
         </aside>
       </div>
 
