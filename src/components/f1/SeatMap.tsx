@@ -42,7 +42,7 @@ export function SeatMap({ room, taken, held, waitlisted, selected, onToggle, dis
   }, []);
 
   return (
-    <div className="mx-auto max-w-xl overflow-x-auto scroll-smooth overscroll-x-contain">
+    <div className="mx-auto max-w-xl sm:max-w-3xl lg:max-w-full overflow-x-auto scroll-smooth overscroll-x-contain">
       {/* Mobile view mode toggle */}
       <div className="mb-3 flex items-center justify-between gap-2 rounded-md border border-border bg-secondary/30 px-2 py-1.5 sm:hidden">
         <span className="text-[0.65rem] font-semibold text-muted-foreground uppercase tracking-wider">
@@ -237,16 +237,16 @@ function SeatRow({
   const isFit = mobileView === "fit";
 
   return (
-    <div className="flex items-center justify-between gap-0.5 sm:gap-2">
+    <div className="flex items-center justify-between gap-0.5 sm:gap-1.5 md:gap-2">
       <span
         className={cn(
-          "shrink-0 text-right text-[0.55rem] sm:text-[0.6rem] font-bold tabular-nums text-muted-foreground",
-          isFit ? "w-4 sm:w-8" : "w-7 sm:w-8",
+          "shrink-0 text-right text-[0.55rem] sm:text-xs font-bold tabular-nums text-muted-foreground",
+          isFit ? "w-4 sm:w-8 md:w-10 lg:w-12" : "w-7 sm:w-8",
         )}
       >
         {displayRow}
       </span>
-      <div className="flex flex-1 items-center justify-center gap-0.5">
+      <div className="flex flex-1 items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 lg:gap-2">
         {left.map((n) => {
           const sid = seatId(room, def.row, n);
           const st = tierForSeat(sid) ?? tier;
@@ -265,7 +265,7 @@ function SeatRow({
             />
           );
         })}
-        <span className={cn("shrink-0", isFit ? "w-1 sm:w-4" : "w-3.5 sm:w-4")} aria-hidden />
+        <span className={cn("shrink-0", isFit ? "w-1 sm:w-4 md:w-6 lg:w-8" : "w-3.5 sm:w-4")} aria-hidden />
         {centre.map((n) => {
           const sid = seatId(room, def.row, n);
           const st = tierForSeat(sid) ?? tier;
@@ -284,7 +284,7 @@ function SeatRow({
             />
           );
         })}
-        <span className={cn("shrink-0", isFit ? "w-1 sm:w-4" : "w-3.5 sm:w-4")} aria-hidden />
+        <span className={cn("shrink-0", isFit ? "w-1 sm:w-4 md:w-6 lg:w-8" : "w-3.5 sm:w-4")} aria-hidden />
         {right.map((n) => {
           const sid = seatId(room, def.row, n);
           const st = tierForSeat(sid) ?? tier;
@@ -306,8 +306,8 @@ function SeatRow({
       </div>
       <span
         className={cn(
-          "flex shrink-0 items-center justify-end gap-1 text-[0.55rem] sm:text-[0.6rem]",
-          isFit ? "w-4 sm:w-14" : "w-10 sm:w-14",
+          "flex shrink-0 items-center justify-end gap-1 text-[0.55rem] sm:text-xs",
+          isFit ? "w-4 sm:w-14 md:w-16 lg:w-20" : "w-10 sm:w-14",
         )}
       >
         <span className={cn("tabular-nums text-muted-foreground", isFit ? "hidden sm:inline" : "inline")}>
@@ -372,8 +372,8 @@ function Seat({
       className={cn(
         "rounded-t-xs sm:rounded-t-md border font-bold transition-colors touch-manipulation",
         isFit
-          ? "h-4.5 w-3.5 text-[0.45rem] sm:h-5 sm:w-5 sm:text-[0.5rem]"
-          : "h-5.5 w-5 text-[0.55rem] sm:h-5 sm:w-5 sm:text-[0.5rem]",
+          ? "h-4.5 w-3.5 text-[0.45rem] sm:h-5 sm:w-6 sm:text-[0.55rem] md:h-5.5 md:w-7 md:text-xs lg:h-6 lg:w-8 lg:text-xs"
+          : "h-5.5 w-5 text-[0.55rem] sm:h-5 sm:w-6 sm:text-[0.55rem] md:h-5.5 md:w-7 md:text-xs lg:h-6 lg:w-8 lg:text-xs",
         taken
           ? "cursor-not-allowed border-border bg-seat-taken text-muted-foreground/50"
           : held

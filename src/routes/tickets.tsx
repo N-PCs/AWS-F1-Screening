@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { UtrGuideTrigger } from "@/components/f1/UtrGuideModal";
 import { useAuth } from "@/lib/auth-context";
 import { EVENT, UPI } from "@/lib/event-config";
 import { isFirebaseConfigured } from "@/lib/firebase";
@@ -405,6 +406,7 @@ function BookingTicketCard({
                   onChange={(e) => setUpiRef(e.target.value)}
                   className="text-xs"
                 />
+                <UtrGuideTrigger />
               </div>
               <div>
                 <label htmlFor={`screenshot-${booking.code}`} className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">

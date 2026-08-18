@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { CheckCircle2, XCircle, Clock, Download, Ticket, Lock, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { UtrGuideTrigger } from "@/components/f1/UtrGuideModal";
 import { EVENT, UPI } from "@/lib/event-config";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import { uploadImage } from "@/lib/cloudinary";
@@ -220,6 +221,7 @@ function BookingPage() {
                       onChange={(e) => setUpiRef(e.target.value)}
                       className="text-xs"
                     />
+                    <UtrGuideTrigger />
                   </div>
                   <div>
                     <label htmlFor="booking-screenshot" className="block text-xs font-bold uppercase tracking-wider text-muted-foreground mb-1">

@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Lock, TicketCheck } from "lucide-react";
 import { AuthGate } from "@/components/f1/AuthGate";
 import { SeatLegend, SeatMap } from "@/components/f1/SeatMap";
+import { UtrGuideTrigger } from "@/components/f1/UtrGuideModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -425,7 +426,7 @@ function BookPage() {
   }
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-6 sm:py-10 pb-24 lg:pb-10">
+    <div className="mx-auto max-w-6xl lg:max-w-7xl xl:max-w-[96rem] px-4 sm:px-6 lg:px-8 xl:px-12 py-6 sm:py-10 pb-24 lg:pb-10">
       <header className="border-b border-border pb-4 sm:pb-6">
         <p className="text-xs font-bold tracking-[0.3em] text-primary uppercase">Grid Selection</p>
         <h1 className="mt-2 text-2xl font-bold uppercase sm:text-4xl">Book your seat</h1>
@@ -508,7 +509,7 @@ function BookPage() {
         })}
       </div>
 
-      <div className="mt-4 sm:mt-6 grid gap-6 sm:gap-8 lg:grid-cols-[1fr_22rem]">
+      <div className="mt-4 sm:mt-6 grid gap-6 sm:gap-8 lg:grid-cols-[1fr_24rem] xl:grid-cols-[1fr_27rem] xl:gap-10">
         {/* Seat map section */}
         <section
           id="seat-map-section"
@@ -655,13 +656,16 @@ function BookPage() {
                   </div>
 
                   <div className="mt-3 sm:mt-4 space-y-3">
-                    <Field
-                      id="upiRef"
-                      label="UPI transaction / reference ID"
-                      value={form.upiRef}
-                      error={errors["upiRef"]}
-                      onChange={(v) => setForm({ ...form, upiRef: v })}
-                    />
+                    <div>
+                      <Field
+                        id="upiRef"
+                        label="UPI transaction / reference ID"
+                        value={form.upiRef}
+                        error={errors["upiRef"]}
+                        onChange={(v) => setForm({ ...form, upiRef: v })}
+                      />
+                      <UtrGuideTrigger />
+                    </div>
                     <div>
                       <Label htmlFor="screenshot">Payment screenshot</Label>
                       <Input
