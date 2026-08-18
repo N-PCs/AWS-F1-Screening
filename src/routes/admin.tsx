@@ -245,13 +245,12 @@ function AdminPage() {
 
 async function downloadWaitlistCSV() {
     const { entries } = await adminWaitlistList();
-    const waitlisted = entries.filter((e): e is WaitlistRecord => e.status === "waitlisted");
     const header = ["Seat", "Registration No", "Waitlist Code", "Created At"];
-    const rows = waitlisted.map((e) => [
+    const rows = entries.map((e) => [
       e.seat,
       e.regNo,
       e.code,
-      e.createdAt?.toDate().toISOString?.() ?? "",
+      e.createdAt ?? "",
     ]);
     const csv = [header, ...rows]
       .map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
@@ -358,7 +357,7 @@ async function downloadWaitlistCSV() {
       </header>
 
       <div className="overflow-x-auto">
-          <table className="w-full min-w-[820px] text-sm">
+          <table className="w-full text-sm">
             <thead className="text-left text-xs tracking-widest uppercase">
               <tr>
                 <th className="px-3 py-2">Code</th>
@@ -438,7 +437,7 @@ async function downloadWaitlistCSV() {
       />
 
       <div className="mt-4 overflow-x-auto rounded-md border border-border">
-        <table className="w-full min-w-[900px] text-sm">
+        <table className="w-full text-sm">
           <thead className="bg-card text-left text-xs tracking-widest uppercase">
             <tr>
               <th className="px-3 py-2">Code</th>

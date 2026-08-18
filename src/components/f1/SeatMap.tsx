@@ -68,7 +68,7 @@ export function SeatMap({ room, taken, held, waitlisted, selected, onToggle, dis
         </span>
       </div>
 
-      <div className="min-w-[680px] space-y-4 pb-2">
+      <div className="space-y-4 pb-2">
         <div className="mx-auto w-3/4">
           <div
             className={cn(
