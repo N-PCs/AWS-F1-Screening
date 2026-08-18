@@ -37,43 +37,68 @@ A full-stack ticket booking system for the **F1 Grand Prix Screening** hosted by
 
 ```mermaid
 flowchart TD
-    User([Student]) --> Browser[Browser]
+    User([Student]) --> Browser["Browser (Client Frontend)"]
 
-    subgraph Browser
-        Auth[Sign in with Google\n@vitbhopal.ac.in]
-        SeatGrid[Interactive 500-Seat Grid\nRooms AB02-127 & AB02-128]
-        Checkout[Checkout + UPI Screenshot\ncompressed via canvas]
-        Confirmation[Confirmation Page /booking/:code]
-        Waitlist[Join Waiting List\n(AB02-127 only, no payment)]
+    subgraph Browser UI
+        Auth["Sign in with Google\n@vitbhopal.ac.in"]
+        SeatGrid["Interactive 500-Seat Grid\nRooms AB02-127 & AB02-128"]
+        Checkout["Checkout + UPI Screenshot\ncompressed via canvas"]
+        Confirmation["Confirmation Page\n/booking/:code"]
+        Waitlist["Join Waiting List\n(AB02-127 only, no payment)"]
     end
 
-    Browser -->|Sign in / Verify domain| FirebaseAuth[Firebase Auth]
+    Browser --> Auth
+    Auth -->|Verify Domain| FirebaseAuth["Firebase Auth"]
+    
+    Browser --> SeatGrid
+    SeatGrid -->|Select Seats| HoldSeat["Seat Hold\nFirestore lock 8 min"]
 
-    subgraph Server
-        HoldSeat[Seat Hold\nFirestore lock 8 min]
-        CreateBooking[createBooking\nACID Transaction]
-        Organiser[Verify / Reject Booking]
-        WaitlistAdmin[Admin: Open AB02-127]\nAuto-allocate all waitlist
+    Browser --> Waitlist
+    Waitlist -->|Join waiting list| WaitlistAdmin["Admin: Open AB02-127\nAuto-allocate waitlist"]
+
+    Browser --> Checkout
+    Checkout -->|Upload screenshot| Cloudinary[("Cloudinary\nUnsigned Upload")]
+    Cloudinary -->|Return secureUrl| Browser
+    Browser -->|Form + screenshotUrl| CreateBooking["createBooking\nACID Transaction"]
+
+    subgraph Firebase & Database
+        Firestore[("Firestore Database\nSeats + Bookings + RLS")]
     end
 
-    Browser -->|Select seats| HoldSeat
-    Browser -->|Join waiting list| Waitlist
-    Browser -->|Upload screenshot| Cloudinary[(Cloudinary\nUnsigned Upload)]
-    Cloudinary -->|secureUrl| Browser
-    Browser -->|Form + screenshotUrl| CreateBooking
+    HoldSeat -->|Hold seats| Firestore
+    CreateBooking -->|Lock reg no + write| Firestore
 
-    HoldSeat -->|hold seats| Firestore[(Firestore\nSeats + Bookings + RLS)]
-    CreateBooking -->|lock reg no + write booking| Firestore
+    subgraph Admin Operations
+        Admin([Organiser]) --> Organiser["Verify / Reject Booking"]
+    end
 
-    Admin([Organiser]) --> Organiser
-    Organiser -->|verify → stays booked / reject → release seats| Firestore
-    Organiser -->|export CSV with screenshot links| Firestore
-    Admin -->|Open AB02-127| WaitlistAdmin
-    WaitlistAdmin -->|Auto-allocate| NewBookings[New Bookings\npending_payment status]
-    NewBookings -->|Appear in Ticket Portal| Student2([Student])
-    Student2 -->|Pay via UPI QR| CompletePayment[Complete Payment\nenter UTR + screenshot]
+    Organiser -->|Verify → stays booked\nReject → release seats| Firestore
+    Organiser -->|Export CSV with\nscreenshot links| Firestore
+
+    Admin -->|Trigger Open| WaitlistAdmin
+    WaitlistAdmin -->|Auto-allocate| NewBookings["New Bookings\npending_payment status"]
+    NewBookings -->|Sync state| Firestore
+    
+    NewBookings -->|Appear in Ticket Portal| Student2([Student User])
+    Student2 -->|Pay via UPI QR| CompletePayment["Complete Payment\nEnter UTR + screenshot"]
     CompletePayment -->|Verified → stays booked| Firestore
+
+    %% Custom High-Contrast Theme with Neon Yellow & Black Borders
+    classDef blueBox fill:#0288D1,stroke:#000000,stroke-width:2px,color:#FFF;
+    classDef neonYellowBox fill:#FFFF00,stroke:#000000,stroke-width:2px,color:#000;
+    classDef pinkBox fill:#FF1493,stroke:#000000,stroke-width:2px,color:#FFF;
+    classDef purpleBox fill:#7B1FA2,stroke:#000000,stroke-width:2px,color:#FFF;
+
+    %% Direct Node Assignments
+    class User,Admin,Student2 blueBox;
+    class Browser,Auth,SeatGrid,Checkout,Confirmation,Waitlist neonYellowBox;
+    class FirebaseAuth,HoldSeat,CreateBooking,Organiser,WaitlistAdmin,NewBookings,CompletePayment pinkBox;
+    class Cloudinary,Firestore purpleBox;
 ```
+
+
+
+
 
 ### Student Booking Flow
 
