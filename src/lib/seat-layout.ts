@@ -8,7 +8,7 @@
  *   - Room 2 (AB02-126): R2-A1 … R2-P16
  * Current total: 512 seats (256 per room).
  */
-export type TierId = "premium" | "standard" | "economy";
+export type TierId = "redbull" | "ferrari" | "premium" | "standard" | "economy";
 
 export type Tier = {
   id: TierId;
@@ -21,10 +21,24 @@ export type Tier = {
 };
 
 export const TIERS: Record<TierId, Tier> = {
+  redbull: {
+    id: "redbull",
+    name: "Red Bull Fanzone",
+    price: 249,
+    tone: "tier-redbull",
+    blurb: "R1, R2 & R3 left block. Pure Red Bull Racing energy.",
+  },
+  ferrari: {
+    id: "ferrari",
+    name: "Ferrari Fanzone",
+    price: 249,
+    tone: "tier-ferrari",
+    blurb: "R1, R2 & R3 right block. Tifosi passion in full voice.",
+  },
   premium: {
     id: "premium",
     name: "Pit Lane",
-    price: 249,
+    price: 199,
     tone: "tier-premium",
     blurb: "Front rows. Screen fills your vision, sound hits hardest.",
   },
@@ -156,8 +170,30 @@ export function roomForSeat(id: string): Room | null {
 export function tierForSeat(id: string): Tier | null {
   const parts = seatParts(id);
   if (!parts) return null;
-  const def = (ROOM_ROWS[parts.room] ?? []).find((r) => r.row === parts.row);
-  return def ? TIERS[def.tier] : null;
+  const { row, num } = parts;
+
+  // Red Bull Fanzone: R1, R2 & R3 (rows A, B & C), Left block only (seats 1..4) -> ₹249
+  if ((row === "A" || row === "B" || row === "C") && num >= 1 && num <= 4) {
+    return TIERS.redbull;
+  }
+
+  // Ferrari Fanzone: R1, R2 & R3 (rows A, B & C), Right block only (seats 13..16) -> ₹249
+  if ((row === "A" || row === "B" || row === "C") && num >= 13 && num <= 16) {
+    return TIERS.ferrari;
+  }
+
+  // Pit Lane: remaining front row seats (rows A, B, C, D, E) -> ₹199
+  if (row === "A" || row === "B" || row === "C" || row === "D" || row === "E") {
+    return TIERS.premium;
+  }
+
+  // Grandstand: middle rows R6..R13 (rows F, G, H, I, J, K, L, M) -> ₹99
+  if (["F", "G", "H", "I", "J", "K", "L", "M"].includes(row)) {
+    return TIERS.standard;
+  }
+
+  // Back Straight: rear rows R14..R16 (rows N, O, P) -> ₹85
+  return TIERS.economy;
 }
 
 export function priceForSeat(id: string): number {

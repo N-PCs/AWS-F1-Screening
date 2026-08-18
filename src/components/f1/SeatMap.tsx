@@ -247,50 +247,62 @@ function SeatRow({
         {displayRow}
       </span>
       <div className="flex flex-1 items-center justify-center gap-0.5">
-        {left.map((n) => (
-          <Seat
-            key={n}
-            id={seatId(room, def.row, n)}
-            label={`${roomName} · ${tier.name} ${displayRow} seat ${String.fromCharCode(96 + n)} — ₹${tier.price}`}
-            taken={taken.has(seatId(room, def.row, n))}
-            held={heldSet.has(seatId(room, def.row, n))}
-            waitlisted={waitlistedSet.has(seatId(room, def.row, n))}
-            selected={selectedSet.has(seatId(room, def.row, n))}
-            onToggle={onToggle}
-            disabled={disabled}
-            mobileView={mobileView}
-          />
-        ))}
+        {left.map((n) => {
+          const sid = seatId(room, def.row, n);
+          const st = tierForSeat(sid) ?? tier;
+          return (
+            <Seat
+              key={n}
+              id={sid}
+              label={`${roomName} · ${st.name} ${displayRow} seat ${String.fromCharCode(96 + n)} — ₹${st.price}`}
+              taken={taken.has(sid)}
+              held={heldSet.has(sid)}
+              waitlisted={waitlistedSet.has(sid)}
+              selected={selectedSet.has(sid)}
+              onToggle={onToggle}
+              disabled={disabled}
+              mobileView={mobileView}
+            />
+          );
+        })}
         <span className={cn("shrink-0", isFit ? "w-1 sm:w-4" : "w-3.5 sm:w-4")} aria-hidden />
-        {centre.map((n) => (
-          <Seat
-            key={n}
-            id={seatId(room, def.row, n)}
-            label={`${roomName} · ${tier.name} ${displayRow} seat ${String.fromCharCode(96 + n)} — ₹${tier.price}`}
-            taken={taken.has(seatId(room, def.row, n))}
-            held={heldSet.has(seatId(room, def.row, n))}
-            waitlisted={waitlistedSet.has(seatId(room, def.row, n))}
-            selected={selectedSet.has(seatId(room, def.row, n))}
-            onToggle={onToggle}
-            disabled={disabled}
-            mobileView={mobileView}
-          />
-        ))}
+        {centre.map((n) => {
+          const sid = seatId(room, def.row, n);
+          const st = tierForSeat(sid) ?? tier;
+          return (
+            <Seat
+              key={n}
+              id={sid}
+              label={`${roomName} · ${st.name} ${displayRow} seat ${String.fromCharCode(96 + n)} — ₹${st.price}`}
+              taken={taken.has(sid)}
+              held={heldSet.has(sid)}
+              waitlisted={waitlistedSet.has(sid)}
+              selected={selectedSet.has(sid)}
+              onToggle={onToggle}
+              disabled={disabled}
+              mobileView={mobileView}
+            />
+          );
+        })}
         <span className={cn("shrink-0", isFit ? "w-1 sm:w-4" : "w-3.5 sm:w-4")} aria-hidden />
-        {right.map((n) => (
-          <Seat
-            key={n}
-            id={seatId(room, def.row, n)}
-            label={`${roomName} · ${tier.name} ${displayRow} seat ${String.fromCharCode(96 + n)} — ₹${tier.price}`}
-            taken={taken.has(seatId(room, def.row, n))}
-            held={heldSet.has(seatId(room, def.row, n))}
-            waitlisted={waitlistedSet.has(seatId(room, def.row, n))}
-            selected={selectedSet.has(seatId(room, def.row, n))}
-            onToggle={onToggle}
-            disabled={disabled}
-            mobileView={mobileView}
-          />
-        ))}
+        {right.map((n) => {
+          const sid = seatId(room, def.row, n);
+          const st = tierForSeat(sid) ?? tier;
+          return (
+            <Seat
+              key={n}
+              id={sid}
+              label={`${roomName} · ${st.name} ${displayRow} seat ${String.fromCharCode(96 + n)} — ₹${st.price}`}
+              taken={taken.has(sid)}
+              held={heldSet.has(sid)}
+              waitlisted={waitlistedSet.has(sid)}
+              selected={selectedSet.has(sid)}
+              onToggle={onToggle}
+              disabled={disabled}
+              mobileView={mobileView}
+            />
+          );
+        })}
       </div>
       <span
         className={cn(
@@ -308,6 +320,10 @@ function SeatRow({
 }
 
 const tierClass: Record<string, string> = {
+  redbull:
+    "bg-blue-600/90 border-blue-400 text-white hover:bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.4)]",
+  ferrari:
+    "bg-orange-500/90 border-orange-300 text-slate-950 font-extrabold hover:bg-orange-400 shadow-[0_0_8px_rgba(249,115,22,0.45)]",
   premium: "bg-tier-premium/25 border-tier-premium/70 hover:bg-tier-premium/50",
   standard: "bg-tier-standard/20 border-tier-standard/70 hover:bg-tier-standard/45",
   economy: "bg-tier-economy/20 border-tier-economy/70 hover:bg-tier-economy/45",
