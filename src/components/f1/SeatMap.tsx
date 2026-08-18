@@ -4,6 +4,7 @@ import {
   TIERS,
   roomForId,
   rowBlocks,
+  rowDisplayLabel,
   seatId,
   seatNum,
   tierForSeat,
@@ -39,7 +40,7 @@ export function SeatMap({ room, taken, held, waitlisted, selected, onToggle, dis
   }, []);
 
   return (
-    <div className="overflow-x-auto scroll-smooth overscroll-x-contain">
+    <div className="mx-auto max-w-xl overflow-x-auto scroll-smooth overscroll-x-contain">
       {/* Mobile scroll hint */}
       <div className="mb-2 flex items-center justify-center gap-2 rounded-md border border-border bg-secondary/50 py-1.5 text-[0.65rem] text-muted-foreground sm:hidden">
         <span aria-hidden>←</span>
@@ -47,7 +48,7 @@ export function SeatMap({ room, taken, held, waitlisted, selected, onToggle, dis
         <span aria-hidden>→</span>
       </div>
 
-      {/* Room banner — room accent makes AB02-127 / AB02-128 instantly distinct */}
+      {/* Room banner — room accent makes AB02-126 / AB02-127 instantly distinct */}
       <div
         className={cn(
           "mb-3 flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 rounded-sm border px-2 sm:px-3 py-1.5 sm:py-2",
@@ -100,7 +101,7 @@ export function SeatMap({ room, taken, held, waitlisted, selected, onToggle, dis
                     {tier.name}
                   </h3>
                   <span className="text-[0.65rem] tracking-widest text-muted-foreground uppercase">
-                    Rows {band.rows[0]?.row}–{band.rows[band.rows.length - 1]?.row}
+                    Rows {rowDisplayLabel(band.rows[0]?.row ?? "A")}–{rowDisplayLabel(band.rows[band.rows.length - 1]?.row ?? "A")}
                   </span>
                   <span className="h-px flex-1 bg-border" aria-hidden />
                   <span className="text-[0.65rem] text-muted-foreground">
@@ -191,20 +192,21 @@ function SeatRow({
   onToggle: (id: string) => void;
   disabled?: boolean | undefined;
 }) {
-  const [left, right] = rowBlocks(def);
+  const [left, centre, right] = rowBlocks(def);
   const tier = TIERS[def.tier];
+  const displayRow = rowDisplayLabel(def.row);
 
   return (
-    <div className="flex items-center gap-3">
-      <span className="w-6 shrink-0 text-center text-xs font-bold text-muted-foreground">
-        {def.row}
+    <div className="flex items-center gap-2">
+      <span className="w-8 shrink-0 text-right text-[0.6rem] font-bold tabular-nums text-muted-foreground">
+        {displayRow}
       </span>
-      <div className="flex flex-1 items-center justify-center gap-1">
+      <div className="flex flex-1 items-center justify-center gap-0.5">
         {left.map((n) => (
           <Seat
             key={n}
             id={seatId(room, def.row, n)}
-            label={`${roomName} · ${tier.name} row ${def.row} seat ${n} — ₹${tier.price}`}
+            label={`${roomName} · ${tier.name} ${displayRow} seat ${String.fromCharCode(96 + n)} — ₹${tier.price}`}
             taken={taken.has(seatId(room, def.row, n))}
             held={heldSet.has(seatId(room, def.row, n))}
             waitlisted={waitlistedSet.has(seatId(room, def.row, n))}
@@ -213,12 +215,26 @@ function SeatRow({
             disabled={disabled}
           />
         ))}
-        <span className="w-6 shrink-0" aria-hidden />
+        <span className="w-4 shrink-0" aria-hidden />
+        {centre.map((n) => (
+          <Seat
+            key={n}
+            id={seatId(room, def.row, n)}
+            label={`${roomName} · ${tier.name} ${displayRow} seat ${String.fromCharCode(96 + n)} — ₹${tier.price}`}
+            taken={taken.has(seatId(room, def.row, n))}
+            held={heldSet.has(seatId(room, def.row, n))}
+            waitlisted={waitlistedSet.has(seatId(room, def.row, n))}
+            selected={selectedSet.has(seatId(room, def.row, n))}
+            onToggle={onToggle}
+            disabled={disabled}
+          />
+        ))}
+        <span className="w-4 shrink-0" aria-hidden />
         {right.map((n) => (
           <Seat
             key={n}
             id={seatId(room, def.row, n)}
-            label={`${roomName} · ${tier.name} row ${def.row} seat ${n} — ₹${tier.price}`}
+            label={`${roomName} · ${tier.name} ${displayRow} seat ${String.fromCharCode(96 + n)} — ₹${tier.price}`}
             taken={taken.has(seatId(room, def.row, n))}
             held={heldSet.has(seatId(room, def.row, n))}
             waitlisted={waitlistedSet.has(seatId(room, def.row, n))}
@@ -228,9 +244,9 @@ function SeatRow({
           />
         ))}
       </div>
-      <span className="flex w-16 shrink-0 items-center justify-end gap-1.5">
-        <span className="text-[0.6rem] tabular-nums text-muted-foreground">₹{tier.price}</span>
-        <span className="text-xs font-bold text-muted-foreground">{def.row}</span>
+      <span className="flex w-14 shrink-0 items-center justify-end gap-1">
+        <span className="text-[0.55rem] tabular-nums text-muted-foreground">₹{tier.price}</span>
+        <span className="text-[0.6rem] font-bold tabular-nums text-muted-foreground">{displayRow}</span>
       </span>
     </div>
   );
@@ -280,7 +296,7 @@ function Seat({
       disabled={taken || held || waitlisted || disabled}
       onClick={() => onToggle(id)}
       className={cn(
-        "h-6 w-6 rounded-t-md border text-[0.55rem] font-bold transition-colors",
+        "h-5 w-5 rounded-t-md border text-[0.5rem] font-bold transition-colors",
         taken
           ? "cursor-not-allowed border-border bg-seat-taken text-muted-foreground/50"
           : held
