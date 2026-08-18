@@ -1,0 +1,90 @@
+/**
+ * Example Firestore Security Rules — F1 Grand Prix Screening
+ * 
+ * This is an EXAMPLE file for educational purposes only.
+ * Do not copy admin emails or project-specific values directly.
+ * Replace with your own Firebase project configuration.
+ */
+
+/**
+ * Example: Check if the requesting user is an admin
+ */
+function isAdmin() {
+  return request.auth != null && request.auth.token.email in [
+    // Example admin emails - replace with your actual organiser emails
+    'organiser1@yourdomain.com',
+    'organiser2@yourdomain.com',
+  ];
+}
+
+/**
+ * Example: Seat map rules
+ * - Anyone can read seat availability
+ * - Only organisers can update/delete seats
+ */
+match /seats/{seat} {
+  allow read: if true;
+  allow create: if true;  // Booking transactions write seats
+  allow update, delete: if isAdmin() || 
+    resource.data.status == 'held' || 
+    resource.data.status == 'waitlisted';
+}
+
+/**
+ * Example: Registration number uniqueness check
+ * - Visitors can check if regNo is taken
+ * - Only organisers can list/update/delete all registrations
+ */
+match /registrations/{regNo} {
+  allow get: if request.auth != null;
+  allow list: if isAdmin();
+  allow create: if request.auth != null;  // Visitors create their own registration
+  allow update, delete: if isAdmin();
+}
+
+/**
+ * Example: Booking creation and management
+ * - Visitors can create bookings (status must be 'pending')
+ * - Only organisers can list/all/update/delete all bookings
+ * - Bookings can have status: pending, pending_payment, verified, rejected
+ */
+match /bookings/{code} {
+  allow get: if true;
+  allow list: if isAdmin();
+  allow create: if request.resource.data.status == 'pending' || 
+                 request.resource.data.status == 'pending_payment';
+  allow update, delete: if isAdmin();
+}
+
+/**
+ * Example: Payment screenshot storage
+ * - Visitors can upload screenshots
+ * - Only organisers can read/list/delete
+ */
+match /screenshots/{code} {
+  allow create: if request.auth != null;
+  allow get, list, update, delete: if isAdmin();
+}
+
+/**
+ * Example: Waitlist management
+ * - Users create their own waitlist entries
+ * - Organisers can list/all/update/delete all entries
+ */
+match /waitlist/{code} {
+  allow get: if true;
+  allow list: if isAdmin();
+  allow create: if request.auth != null;
+  allow update, delete: if isAdmin();
+}
+
+/**
+ * Example: Room configuration (open/close AB02-127)
+ * - Anyone can read room state
+ * - Only organisers can change it
+ */
+match /config/{name} {
+  allow get: if true;
+  allow list: if isAdmin();
+  allow create, update, delete: if isAdmin();
+}
