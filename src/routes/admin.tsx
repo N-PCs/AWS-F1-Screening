@@ -140,6 +140,19 @@ function AdminPage() {
     try {
       const res = await adminSetRoomOpen("R2", !r2Open);
       setR2Open(res.open);
+
+      if (res.open) {
+        const { entries } = await adminWaitlistList();
+        for (const entry of entries) {
+          try {
+            await adminAllocateWaitlist(entry.code, email ?? "");
+            toast.success(`Waitlist ${entry.code} → booking allocated for ${entry.name}.`);
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : `Allocation failed for ${entry.code}`);
+          }
+        }
+      }
+
       toast.success(`AB02-127 ${res.open ? "opened for booking." : "locked again."}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Update failed");
