@@ -168,7 +168,7 @@ function BookPage() {
     );
   }, [heldKey]);
 
-  // Seats reserved via the AB02-128 waiting list.
+  // Seats reserved via the AB02-127 waiting list.
   const waitlistedKey = (availability.data?.waitlisted ?? []).slice().sort().join(",");
   const waitlistedSet = useMemo(
     () => new Set(availability.data?.waitlisted ?? []),
@@ -178,7 +178,7 @@ function BookPage() {
   const waitlistTotal = availability.data?.waitlistTotal ?? 0;
   const waitlistFull = waitlistTotal >= EVENT.waitlistCapacity;
 
-  // Never show AB02-128 while it is locked for booking.
+  // Never show AB02-127 while it is locked for booking.
   const displayRoom: RoomId = !r2Open && activeRoom === "R2" ? "R1" : activeRoom;
 
   // Drop any selection that someone else just booked/held.
@@ -372,7 +372,7 @@ function BookPage() {
   const activeRoomInfo = roomForId(displayRoom);
   const holdClock = `${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, "0")}`;
 
-  /** Open the AB02-128 popup and check whether this browser is already on the list. */
+  /** Open the AB02-127 popup and check whether this browser is already on the list. */
   async function openWaitlist() {
     setWlOpen(true);
     setWlStep("info");

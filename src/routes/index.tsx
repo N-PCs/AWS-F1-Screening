@@ -67,7 +67,7 @@ function Hero() {
           {EVENT.title}
         </h1>
         <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
-          Lights out on the big screens of AB02-127 & AB02-128. {TOTAL_SEATS} seats, tiered like a
+          Lights out on the big screens of AB02-127. {TOTAL_SEATS} seats, tiered like a
           real grandstand — the closer you sit, the louder the engines.
         </p>
         <dl className="mt-8 flex flex-wrap gap-x-10 gap-y-4 text-sm">
