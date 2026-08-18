@@ -28,7 +28,7 @@ A full-stack ticket booking system for the **F1 Grand Prix Screening** hosted by
 - **One Registration, One Booking** — Database-level uniqueness lock per registration number — no duplicate claims possible.
 - **VIT Bhopal Only** — Sign-in restricted to `@vitbhopal.ac.in` Google accounts.
 - **Cloudinary Screenshot Uploads** — Client-side compression + unsigned upload to Cloudinary; Firestore stores only the URL, not the image, keeping docs tiny and free-tier friendly.
-- **Admin Dashboard** — Google-authenticated organiser panel to verify/reject bookings, view screenshot thumbnails, delete registrants, and export CSV with Cloudinary links.
+- **Admin Dashboard** — Google-authenticated organiser panel to verify/reject bookings, view screenshot thumbnails, delete registrants, and export CSV with Cloudinary links. **When AB02-127 opens, all waitlisted entries are automatically allocated to bookings with pending_payment status.**
 - **F1-Themed UI** — Glassmorphic design with Tailwind CSS v4, shadcn/ui + Radix primitives, Lucide icons, and Sonner toast alerts.
 
 ---
@@ -44,6 +44,7 @@ flowchart TD
         SeatGrid[Interactive 500-Seat Grid\nRooms AB02-127 & AB02-128]
         Checkout[Checkout + UPI Screenshot\ncompressed via canvas]
         Confirmation[Confirmation Page /booking/:code]
+        Waitlist[Join Waiting List\n(AB02-127 only, no payment)]
     end
 
     Browser -->|Sign in / Verify domain| FirebaseAuth[Firebase Auth]
@@ -52,9 +53,11 @@ flowchart TD
         HoldSeat[Seat Hold\nFirestore lock 8 min]
         CreateBooking[createBooking\nACID Transaction]
         Organiser[Verify / Reject Booking]
+        WaitlistAdmin[Admin: Open AB02-127]\nAuto-allocate all waitlist
     end
 
     Browser -->|Select seats| HoldSeat
+    Browser -->|Join waiting list| Waitlist
     Browser -->|Upload screenshot| Cloudinary[(Cloudinary\nUnsigned Upload)]
     Cloudinary -->|secureUrl| Browser
     Browser -->|Form + screenshotUrl| CreateBooking
@@ -65,12 +68,11 @@ flowchart TD
     Admin([Organiser]) --> Organiser
     Organiser -->|verify → stays booked / reject → release seats| Firestore
     Organiser -->|export CSV with screenshot links| Firestore
-
-    style User fill:#FBF9F4,stroke:#18181b,stroke-width:2px
-    style FirebaseAuth fill:#FFCA28,color:#18181b,stroke:#18181b
-    style Firestore fill:#FFCA28,color:#18181b,stroke:#18181b
-    style Cloudinary fill:#3448C5,color:#fff,stroke:#18181b
-    style Server fill:#8B5CF6,color:#fff,stroke:#18181b
+    Admin -->|Open AB02-127| WaitlistAdmin
+    WaitlistAdmin -->|Auto-allocate| NewBookings[New Bookings\npending_payment status]
+    NewBookings -->|Appear in Ticket Portal| Student2([Student])
+    Student2 -->|Pay via UPI QR| CompletePayment[Complete Payment\nenter UTR + screenshot]
+    CompletePayment -->|Verified → stays booked| Firestore
 ```
 
 ### Student Booking Flow
@@ -119,8 +121,10 @@ sequenceDiagram
     DB-->>App: Grant / Deny admin access
 
     Organiser->>App: Open /admin
-    App->>DB: list bookings + screenshot metadata
-    DB-->>App: Bookings + thumbnails
+    App->>DB: list bookings + waitlist + screenshot metadata
+    DB-->>App: Bookings + thumbnails + waitlist entries
+
+    Note over Organiser,App: **If AB02-127 is closed, click "Open AB02-127 for booking"**\n**All waitlist entries are auto-allocated to bookings**
 
     Organiser->>App: Preview payment screenshot
     App->>CD: Load secureUrl
@@ -184,6 +188,7 @@ sequenceDiagram
 AWS-F1-Screening/
 ├── firebase/
 │   ├── firestore.rules           # Security rules (auth, transactions, admin gating)
+│   ├── firestoreexample.rules    # Example rules for understanding patterns
 │   └── README.md                 # Firebase + Cloudinary setup walkthrough
 ├── src/
 │   ├── components/
