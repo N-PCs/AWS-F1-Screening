@@ -4,8 +4,8 @@
  * Each room has 16 rows (A..P), 16 seats per row, split into three
  * blocks: 4 left | gap | 8 centre | gap | 4 right.
  * Seat ids are room-prefixed so both rooms can share row letters:
- *   - Room 1 (AB02-126): R1-A1 … R1-P16
- *   - Room 2 (AB02-127): R2-A1 … R2-P16
+ *   - Room 1 (AB02-127): R1-A1 … R1-P16
+ *   - Room 2 (AB02-126): R2-A1 … R2-P16
  * Current total: 512 seats (256 per room).
  */
 export type TierId = "premium" | "standard" | "economy";
@@ -57,8 +57,8 @@ export type Room = {
 };
 
 export const ROOMS: Room[] = [
-  { id: "R1", label: "Room 1", name: "AB02-126", tone: "room-1" },
-  { id: "R2", label: "Room 2", name: "AB02-127", tone: "room-2" },
+  { id: "R1", label: "Room 1", name: "AB02-127", tone: "room-1" },
+  { id: "R2", label: "Room 2", name: "AB02-126", tone: "room-2" },
 ];
 
 export type RowDef = { row: string; count: number; tier: TierId };

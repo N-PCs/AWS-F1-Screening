@@ -519,13 +519,13 @@ function WaitlistTicketCard({ waitlist }: { waitlist: WaitlistRecord }) {
           <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
             Reserved Seat
           </span>
-          <p className="font-semibold text-waitlist">{seatDisplayId(waitlist.seat)} (AB02-127)</p>
+          <p className="font-semibold text-waitlist">{seatDisplayId(waitlist.seat)} (AB02-126)</p>
         </div>
       </div>
 
       <div className="mt-6 pt-4 border-t border-waitlist/20 flex flex-col sm:flex-row items-center justify-between gap-3">
         <p className="text-xs text-muted-foreground">
-          No payment was required yet. When AB02-127 opens, organisers will allocate your reserved seat!
+          No payment was required yet. When AB02-126 opens, organisers will allocate your reserved seat!
         </p>
 
         <Button

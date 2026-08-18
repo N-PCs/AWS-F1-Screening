@@ -190,7 +190,7 @@ function BookingPage() {
                 Seat Allocated! Complete Payment to Confirm Your Pass
               </h3>
               <p className="mt-1.5 text-xs text-muted-foreground">
-                Your seat <strong>{query.data.seats.map(seatDisplayId).join(", ")}</strong> in AB02-127 has been allocated for you. Please scan the QR code below, pay <strong>₹{query.data.amount}</strong> via UPI, enter your reference number, and upload the payment screenshot to submit for organiser verification.
+                Your seat <strong>{query.data.seats.map(seatDisplayId).join(", ")}</strong> in AB02-126 has been allocated for you. Please scan the QR code below, pay <strong>₹{query.data.amount}</strong> via UPI, enter your reference number, and upload the payment screenshot to submit for organiser verification.
               </p>
 
               <form onSubmit={handlePaySubmit} className="mt-4 space-y-4 border-t border-purple-500/20 pt-4">

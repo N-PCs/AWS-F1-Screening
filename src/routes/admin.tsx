@@ -153,7 +153,7 @@ function AdminPage() {
         }
       }
 
-      toast.success(`AB02-127 ${res.open ? "opened for booking." : "locked again."}`);
+      toast.success(`AB02-126 ${res.open ? "opened for booking." : "locked again."}`);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Update failed");
     } finally {
@@ -342,11 +342,11 @@ async function downloadWaitlistCSV() {
         {ROOMS.map((r) => `${r.name}: ${stats.perRoom[r.name] ?? 0} sold`).join(" · ")}
       </p>
 
-      {/* ── AB02-127 waiting list ── */}
+      {/* ── AB02-126 waiting list ── */}
       <section className="mt-8 overflow-hidden rounded-md border border-waitlist/40">
         <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
           <div>
-            <h2 className="text-sm font-bold uppercase tracking-widest">AB02-127 waiting list</h2>
+            <h2 className="text-sm font-bold uppercase tracking-widest">AB02-126 waiting list</h2>
             <p className="mt-1 text-xs text-muted-foreground">
               {waitlist.length} / {EVENT.waitlistCapacity} entries ·{" "}
               {r2Open ? (
@@ -359,7 +359,7 @@ async function downloadWaitlistCSV() {
             </p>
           </div>
 <Button variant="outline" disabled={roomBusy || busy} onClick={() => void toggleRoom()}>
-            {r2Open ? "Lock AB02-127" : "Open AB02-127 for booking"}
+            {r2Open ? "Lock AB02-126" : "Open AB02-126 for booking"}
           </Button>
         {/* Download waitlist CSV */}
         <div className="mt-2">

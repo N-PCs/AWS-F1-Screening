@@ -15,7 +15,7 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Lights out at VIT Bhopal. AWS SBG VITB screens the Formula 1 Grand Prix live across AB02-126 & AB02-127 — 500 seats, tiered pricing from ₹99, book your seat now.",
+          "Lights out at VIT Bhopal. AWS SBG VITB screens the Formula 1 Grand Prix live across AB02-127 & AB02-126 — 500 seats, tiered pricing from ₹99, book your seat now.",
       },
       { property: "og:title", content: "F1 Grand Prix Screening — AWS SBG VITB" },
       {

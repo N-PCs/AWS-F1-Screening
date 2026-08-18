@@ -74,11 +74,11 @@ export type SeatHold = { seat: string; holdId: string; expiresAt: number };
 export type Availability = {
   taken: string[];
   held: SeatHold[];
-  /** seats permanently reserved through the AB02-127 waiting list */
+  /** seats permanently reserved through the AB02-126 waiting list */
   waitlisted: string[];
-  /** how many people are on the AB02-127 waiting list right now */
+  /** how many people are on the AB02-126 waiting list right now */
   waitlistTotal: number;
-  /** whether the organiser has opened AB02-127 for normal booking */
+  /** whether the organiser has opened AB02-126 for normal booking */
   r2Open: boolean;
   holdTtlMs: number;
   updatedAt: string;
@@ -493,10 +493,10 @@ export async function searchTickets(inputQuery: string): Promise<{
   };
 }
 
-/* ---------------- AB02-127 waiting list ---------------- */
+/* ---------------- AB02-126 waiting list ---------------- */
 
 /**
- * AB02-127 is locked until 100 people join the waiting list. Joining the list
+ * AB02-126 is locked until 100 people join the waiting list. Joining the list
  * reserves the seat you pick — no payment. When the list fills up the
  * organiser opens the room and allocates bookings for those seats first.
  */
@@ -528,7 +528,7 @@ function newWaitlistCode() {
   return out;
 }
 
-/** Join the waiting list and reserve one seat in AB02-127 (no payment). */
+/** Join the waiting list and reserve one seat in AB02-126 (no payment). */
 export async function joinWaitlist(input: {
   seat: string;
   attendee: WaitlistAttendee;
@@ -537,7 +537,7 @@ export async function joinWaitlist(input: {
   const { seat, attendee } = input;
   const parts = seatParts(seat);
   if (!parts) throw new Error("That seat does not exist.");
-  if (parts.room !== "R2") throw new Error("The waiting list is only for AB02-127.");
+  if (parts.room !== "R2") throw new Error("The waiting list is only for AB02-126.");
   const parsed = waitlistSchema.parse(attendee);
   const regKey = parsed.regNo.toUpperCase();
 
@@ -547,7 +547,7 @@ export async function joinWaitlist(input: {
   );
   if (existing.size >= EVENT.waitlistCapacity) {
     throw new Error(
-      `The waiting list is full (${EVENT.waitlistCapacity}). Bookings for AB02-127 open soon.`,
+      `The waiting list is full (${EVENT.waitlistCapacity}). Bookings for AB02-126 open soon.`,
     );
   }
 
@@ -616,7 +616,7 @@ export async function getRoomState(): Promise<Record<RoomId, boolean>> {
   };
 }
 
-/** Organiser-only: list everyone on the AB02-127 waiting list. */
+/** Organiser-only: list everyone on the AB02-126 waiting list. */
 export async function adminWaitlistList(): Promise<{ entries: WaitlistRecord[] }> {
   requireBackend();
   const snap = await getDocs(collection(db(), WAITLIST));
@@ -636,7 +636,7 @@ export async function adminWaitlistList(): Promise<{ entries: WaitlistRecord[] }
   return { entries };
 }
 
-/** Organiser-only: open or close AB02-127 for normal booking. */
+/** Organiser-only: open or close AB02-126 for normal booking. */
 export async function adminSetRoomOpen(room: RoomId, open: boolean) {
   requireBackend();
   const ref = doc(db(), CONFIG, "rooms");

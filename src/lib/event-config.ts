@@ -19,7 +19,7 @@ export const EVENT = {
   dateLabel: "Sunday, 13 September",
   timeLabel: "6:30 PM IST",
   maxSeatsPerBooking: 10,
-  /** When AB02-127 is locked, this many waitlist entries unlock it (organiser opens it manually). */
+  /** When AB02-126 is locked, this many waitlist entries unlock it (organiser opens it manually). */
   waitlistCapacity: 100,
 };
 
