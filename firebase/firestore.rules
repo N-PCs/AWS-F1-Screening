@@ -67,6 +67,14 @@ service cloud.firestore {
       allow create, update, delete: if isAdmin();
     }
 
+    // Public availability aggregate (taken/held/waitlisted + r2Open).
+    // Read by everyone, written by booking transactions & organiser actions.
+    match /availability/{doc} {
+      allow get: if true;
+      allow create, update: if true;
+      allow delete: if isAdmin();
+    }
+
     // Public lookup index for /tickets: keys are `email:<lowercase>` and
     // `reg:<UPPERCASE>` and `wl:<waitlist-code>`; values hold only booking /
     // waitlist codes (no PII). Written by the booking/waitlist transactions so

@@ -15,11 +15,11 @@ export function generateTicketPdf(ticket: BookingRecord | WaitlistRecord, isWait
   const isPending = !isWaitlist && (ticket as BookingRecord).status === "pending";
   const isPendingPayment = !isWaitlist && (ticket as BookingRecord).status === "pending_payment";
 
-  const primaryColor = [225, 6, 0]; // F1 Red
-  const darkBg = [18, 18, 22]; // Dark sleek theme
-  const cardBg = [28, 28, 35];
-  const textColor = [255, 255, 255];
-  const mutedTextColor = [160, 160, 175];
+  const primaryColor: [number, number, number] = [225, 6, 0]; // F1 Red
+  const darkBg: [number, number, number] = [18, 18, 22]; // Dark sleek theme
+  const cardBg: [number, number, number] = [28, 28, 35];
+  const textColor: [number, number, number] = [255, 255, 255];
+  const mutedTextColor: [number, number, number] = [160, 160, 175];
 
   // 1. Dark background container
   doc.setFillColor(darkBg[0], darkBg[1], darkBg[2]);

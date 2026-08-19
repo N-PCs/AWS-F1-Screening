@@ -20,6 +20,7 @@ import {
   adminAllocateWaitlist,
   adminDeleteBooking,
   adminList,
+  adminRebuildAvailability,
   adminRebuildLookups,
   adminRemoveWaitlist,
   adminScreenshot,
@@ -96,6 +97,9 @@ function AdminPage() {
       if (data.bookings.length || wl.entries.length) {
         await adminRebuildLookups().catch(() => {});
       }
+      // Also rebuild the availability aggregate so the seat map is accurate
+      // for tickets created before this index existed.
+      await adminRebuildAvailability().catch(() => {});
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not load registrations");
     } finally {

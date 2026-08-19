@@ -50,7 +50,7 @@ import {
 
 export const Route = createFileRoute("/book")({
   validateSearch: (search: Record<string, unknown>) => ({
-    wl: search.wl ? String(search.wl) : undefined,
+    wl: search["wl"] ? String(search["wl"]) : undefined,
   }),
   head: () => ({
     meta: [
@@ -110,7 +110,7 @@ function BookPage() {
   const availability = useQuery({
     queryKey: ["availability"],
     queryFn: getAvailability,
-    refetchInterval: 15000,
+    refetchInterval: 30000,
     retry: false,
     enabled: isFirebaseConfigured,
   });

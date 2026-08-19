@@ -3,17 +3,15 @@ import {
   arrayRemove,
   arrayUnion,
   collection,
-  deleteDoc,
   doc,
   getDoc,
   getDocs,
-  query,
   runTransaction,
   serverTimestamp,
   setDoc,
   updateDoc,
-  where,
   type Timestamp,
+  type Transaction,
 } from "firebase/firestore";
 import {
   GoogleAuthProvider,
@@ -110,6 +108,45 @@ const SHOTS = "screenshots";
 const WAITLIST = "waitlist";
 const CONFIG = "config";
 const LOOKUPS = "lookups";
+const AVAIL = "availability";
+
+const availRef = () => doc(db(), AVAIL, "state");
+
+type AvailabilityState = {
+  taken: string[];
+  held: SeatHold[];
+  waitlisted: string[];
+  r2Open: boolean;
+  updatedAt: number;
+};
+
+function emptyAvailability(): AvailabilityState {
+  return { taken: [], held: [], waitlisted: [], r2Open: false, updatedAt: 0 };
+}
+
+function pruneHeld(held: SeatHold[], now: number): SeatHold[] {
+  return held.filter((h) => h.expiresAt > now);
+}
+
+async function readAvailabilityState(tx: Transaction): Promise<AvailabilityState> {
+  const snap = await tx.get(availRef());
+  if (!snap.exists()) return emptyAvailability();
+  const d = snap.data() as Partial<AvailabilityState>;
+  return {
+    taken: d.taken ?? [],
+    held: d.held ?? [],
+    waitlisted: d.waitlisted ?? [],
+    r2Open: Boolean(d.r2Open),
+    updatedAt: d.updatedAt ?? 0,
+  };
+}
+
+async function writeAvailabilityState(
+  tx: Transaction,
+  st: AvailabilityState,
+) {
+  tx.set(availRef(), { ...st, updatedAt: Date.now() });
+}
 
 /**
  * Public lookup index keyed by `email:<lowercase>` / `reg:<UPPERCASE>` (and
@@ -141,15 +178,14 @@ function toIso(v: unknown): string {
   return typeof ts?.toDate === "function" ? ts.toDate().toISOString() : String(v);
 }
 
-/* ---------------- availability ---------------- */
-
-export async function getAvailability(): Promise<Availability> {
+/** Rebuild the aggregate from raw seat docs (one-time lazy init / backfill). */
+async function rebuildAvailabilityFromSeats(): Promise<AvailabilityState> {
   requireBackend();
+  const now = Date.now();
   const snap = await getDocs(collection(db(), SEATS));
   const taken: string[] = [];
   const held: SeatHold[] = [];
   const waitlisted: string[] = [];
-  const now = Date.now();
   snap.forEach((d) => {
     const data = d.data() as SeatDoc;
     if (data.status === "booked") taken.push(d.id);
@@ -158,22 +194,39 @@ export async function getAvailability(): Promise<Availability> {
       held.push({ seat: d.id, holdId: data.holdId ?? "", expiresAt: data.expiresAt ?? 0 });
     }
   });
-  let r2Open = false;
-  try {
-    const cfg = await getDoc(doc(db(), CONFIG, "rooms"));
-    if (cfg.exists()) r2Open = Boolean((cfg.data() as Record<string, unknown>)["R2"]);
-  } catch {
-    r2Open = false;
-  }
+  const cfg = await getDoc(doc(db(), CONFIG, "rooms")).catch(() => null);
+  const r2Open = cfg?.exists() ? Boolean((cfg.data() as Record<string, unknown>)["R2"]) : false;
+  return { taken, held, waitlisted, r2Open, updatedAt: Date.now() };
+}
+
+function toAvailability(st: AvailabilityState, now: number): Availability {
+  const held = pruneHeld(st.held, now);
+  const waitlisted = st.waitlisted ?? [];
   return {
-    taken,
+    taken: st.taken ?? [],
     held,
     waitlisted,
     waitlistTotal: waitlisted.length,
-    r2Open,
+    r2Open: Boolean(st.r2Open),
     holdTtlMs: HOLD_TTL_MS,
     updatedAt: new Date().toISOString(),
   };
+}
+
+/* ---------------- availability ---------------- */
+
+export async function getAvailability(): Promise<Availability> {
+  requireBackend();
+  const now = Date.now();
+  const snap = await getDoc(availRef());
+  if (!snap.exists()) {
+    // First run — build the aggregate from the seat docs once.
+    const built = await rebuildAvailabilityFromSeats();
+    await setDoc(availRef(), built);
+    return toAvailability(built, now);
+  }
+  const st = snap.data() as AvailabilityState;
+  return toAvailability(st, now);
 }
 
 /* ---------------- holds ---------------- */
@@ -184,14 +237,11 @@ export async function holdSeats(holdId: string, seats: string[]) {
   if (seats.length > EVENT.maxSeatsPerBooking) {
     throw new Error(`Maximum ${EVENT.maxSeatsPerBooking} seats per booking`);
   }
-  const mine = await getDocs(query(collection(db(), SEATS), where("holdId", "==", holdId)));
-  const stale = mine.docs.filter((d) => !seats.includes(d.id));
   const expiresAt = Date.now() + HOLD_TTL_MS;
 
   await runTransaction(db(), async (tx) => {
     const now = Date.now();
     const current = await Promise.all(seats.map((s) => tx.get(doc(db(), SEATS, s))));
-    const staleSnaps = await Promise.all(stale.map((d) => tx.get(d.ref)));
 
     const clash: string[] = [];
     current.forEach((snap, i) => {
@@ -204,16 +254,31 @@ export async function holdSeats(holdId: string, seats: string[]) {
     });
     if (clash.length) throw new Error(`Seats no longer available: ${clash.join(", ")}`);
 
+    // Find stale seats (mine not in new selection) from aggregate.
+    const st = await readAvailabilityState(tx);
+    const myHeld = st.held.filter((h) => h.holdId === holdId);
+    const staleSeats = myHeld.filter((h) => !seats.includes(h.seat)).map((h) => h.seat);
+
+    // Write seat docs.
     for (const s of seats) {
       tx.set(doc(db(), SEATS, s), { status: "held", holdId, expiresAt });
     }
-    staleSnaps.forEach((d) => {
-      if (!d.exists()) return;
-      const data = d.data() as SeatDoc;
-      if (data.status === "held" && data.holdId === holdId) {
-        tx.delete(d.ref);
+    // Delete stale seat docs.
+    for (const s of staleSeats) {
+      const snap = await tx.get(doc(db(), SEATS, s));
+      if (snap.exists()) {
+        const data = snap.data() as SeatDoc;
+        if (data.status === "held" && data.holdId === holdId) {
+          tx.delete(doc(db(), SEATS, s));
+        }
       }
-    });
+    }
+
+    // Update aggregate.
+    const held = pruneHeld(st.held, now);
+    const rest = held.filter((h) => h.holdId !== holdId);
+    for (const s of seats) rest.push({ seat: s, holdId, expiresAt });
+    await writeAvailabilityState(tx, { ...st, held: rest });
   });
 
   return { seats, expiresAt, holdTtlMs: HOLD_TTL_MS };
@@ -222,18 +287,39 @@ export async function holdSeats(holdId: string, seats: string[]) {
 /** Give the seats back immediately (deselect, tab close, expiry). */
 export async function releaseSeats(holdId: string, seats?: string[]) {
   requireBackend();
-  const mine = await getDocs(query(collection(db(), SEATS), where("holdId", "==", holdId)));
-  let released = 0;
-  await Promise.all(
-    mine.docs.map(async (d) => {
-      const data = d.data() as SeatDoc;
-      if (data.status !== "held") return;
-      if (seats && seats.length && !seats.includes(d.id)) return;
-      await deleteDoc(d.ref);
-      released++;
-    }),
+  // Use aggregate to find seats to release (no 512-read query).
+  const st = await getDoc(availRef()).then((s) =>
+    s.exists() ? (s.data() as AvailabilityState) : emptyAvailability(),
   );
-  return { released };
+  const now = Date.now();
+  const held = pruneHeld(st.held, now);
+  const myHeld = held.filter((h) => h.holdId === holdId);
+  const releaseSeatIds = seats?.length
+    ? myHeld.filter((h) => seats.includes(h.seat)).map((h) => h.seat)
+    : myHeld.map((h) => h.seat);
+
+  if (!releaseSeatIds.length) return { released: 0 };
+
+  await runTransaction(db(), async (tx) => {
+    for (const s of releaseSeatIds) {
+      const snap = await tx.get(doc(db(), SEATS, s));
+      if (snap.exists()) {
+        const data = snap.data() as SeatDoc;
+        if (data.status === "held" && data.holdId === holdId) {
+          tx.delete(doc(db(), SEATS, s));
+        }
+      }
+    }
+    // Update aggregate.
+    const fresh = await readAvailabilityState(tx);
+    const pruned = pruneHeld(fresh.held, Date.now());
+    const updated = pruned.filter(
+      (h) => !(h.holdId === holdId && (!seats?.length || seats.includes(h.seat))),
+    );
+    await writeAvailabilityState(tx, { ...fresh, held: updated });
+  });
+
+  return { released: releaseSeatIds.length };
 }
 
 const HOLD_KEY = "f1-hold-id";
@@ -305,9 +391,6 @@ export async function createBooking(input: {
       tx.set(doc(db(), SEATS, s), { status: "booked", code });
     }
     tx.set(regRef, { code, createdAt: serverTimestamp() });
-    // Link the Cloudinary image to this booking code. Firestore keeps the access
-    // control: only organisers can read this doc, but the image URL itself is
-    // unlisted (random public id) on Cloudinary.
     tx.set(doc(db(), SHOTS, code), {
       screenshotUrl: screenshot.secureUrl,
       cloudinaryPublicId: screenshot.publicId,
@@ -326,6 +409,13 @@ export async function createBooking(input: {
       screenshotUrl: screenshot.secureUrl,
       status: "pending",
     });
+
+    // Update aggregate: held -> taken.
+    const st = await readAvailabilityState(tx);
+    const held = pruneHeld(st.held, now).filter((h) => !seats.includes(h.seat));
+    const taken = [...st.taken.filter((t) => !seats.includes(t)), ...seats];
+    await writeAvailabilityState(tx, { ...st, taken, held });
+
     for (const key of lookupKeys(parsed.email, regKey)) {
       tx.set(doc(db(), LOOKUPS, key), { bookingCodes: arrayUnion(code) }, { merge: true });
     }
@@ -480,20 +570,17 @@ export async function joinWaitlist(input: {
   const parsed = waitlistSchema.parse(attendee);
   const regKey = parsed.regNo.toUpperCase();
 
-  // Count what is already reserved so we don't overshoot the capacity.
-  const existing = await getDocs(
-    query(collection(db(), SEATS), where("status", "==", "waitlisted")),
-  );
-  if (existing.size >= EVENT.waitlistCapacity) {
-    throw new Error(
-      `The waiting list is full (${EVENT.waitlistCapacity}). Bookings for AB02-126 open soon.`,
-    );
-  }
-
   const code = newWaitlistCode();
-  const now = Date.now();
 
   await runTransaction(db(), async (tx) => {
+    // Capacity check from aggregate (1 read instead of 512).
+    const st = await readAvailabilityState(tx);
+    if ((st.waitlisted ?? []).length >= EVENT.waitlistCapacity) {
+      throw new Error(
+        `The waiting list is full (${EVENT.waitlistCapacity}). Bookings for AB02-126 open soon.`,
+      );
+    }
+
     // One registration number = one booking or waitlist entry.
     const regRef = doc(db(), REGS, regKey);
     const regSnap = await tx.get(regRef);
@@ -502,6 +589,7 @@ export async function joinWaitlist(input: {
     }
 
     const seatSnap = await tx.get(doc(db(), SEATS, seat));
+    const now = Date.now();
     if (seatSnap.exists()) {
       const data = seatSnap.data() as SeatDoc;
       if (data.status === "booked" || data.status === "waitlisted") {
@@ -524,6 +612,12 @@ export async function joinWaitlist(input: {
       createdAt: serverTimestamp(),
     });
     tx.set(regRef, { code, kind: "waitlist", createdAt: serverTimestamp() });
+
+    // Update aggregate: waitlisted + remove from held if stale.
+    const held = pruneHeld(st.held, now).filter((h) => h.seat !== seat);
+    const waitlisted = [...(st.waitlisted ?? []).filter((w) => w !== seat), seat];
+    await writeAvailabilityState(tx, { ...st, held, waitlisted });
+
     for (const key of lookupKeys(parsed.email, regKey)) {
       tx.set(doc(db(), LOOKUPS, key), { waitlistCodes: arrayUnion(code) }, { merge: true });
     }
@@ -585,6 +679,14 @@ export async function adminSetRoomOpen(room: RoomId, open: boolean) {
   const snap = await getDoc(ref);
   const current = snap.exists() ? (snap.data() as Record<string, unknown>) : {};
   await setDoc(ref, { ...current, [room]: open });
+
+  // Mirror into availability aggregate so getAvailability is 1-read.
+  await runTransaction(db(), async (tx) => {
+    const st = await readAvailabilityState(tx);
+    const r2Open = room === "R2" ? open : st.r2Open;
+    await writeAvailabilityState(tx, { ...st, r2Open });
+  });
+
   return { room, open };
 }
 
@@ -634,6 +736,13 @@ export async function adminAllocateWaitlist(code: string, allocatorEmail: string
     });
     if (regKey) tx.update(doc(db(), REGS, regKey), { code: bookingCode, kind: "booking" });
     tx.delete(wlRef);
+
+    // Update aggregate: waitlisted -> taken.
+    const st = await readAvailabilityState(tx);
+    const waitlisted = (st.waitlisted ?? []).filter((w) => w !== seat);
+    const taken = [...st.taken.filter((t) => t !== seat), seat];
+    await writeAvailabilityState(tx, { ...st, taken, waitlisted });
+
     for (const key of lookupKeys(email, regKey)) {
       tx.set(doc(db(), LOOKUPS, key), { bookingCodes: arrayUnion(bookingCode) }, { merge: true });
     }
@@ -702,6 +811,11 @@ export async function adminRemoveWaitlist(code: string) {
     tx.delete(wlRef);
     if (regKey) tx.delete(doc(db(), REGS, regKey));
     if (seat) tx.delete(doc(db(), SEATS, seat));
+
+    // Update aggregate: remove from waitlisted.
+    const st = await readAvailabilityState(tx);
+    const waitlisted = (st.waitlisted ?? []).filter((w) => w !== seat);
+    await writeAvailabilityState(tx, { ...st, waitlisted });
   });
   return { code };
 }
@@ -791,6 +905,14 @@ export async function adminRebuildLookups(): Promise<{
   return { bookings: bookings.length, waitlists: entries.length };
 }
 
+/** Organiser-only: rebuild the availability aggregate from raw seat docs. */
+export async function adminRebuildAvailability(): Promise<AvailabilityState> {
+  requireBackend();
+  const state = await rebuildAvailabilityFromSeats();
+  await setDoc(availRef(), state);
+  return state;
+}
+
 export async function adminSetStatus(code: string, status: BookingRecord["status"]) {
   requireBackend();
   const bookingRef = doc(db(), BOOKINGS, code);
@@ -798,11 +920,20 @@ export async function adminSetStatus(code: string, status: BookingRecord["status
   if (!snap.exists()) throw new Error("Booking not found");
   const seats = ((snap.data() as { seats?: string[] }).seats ?? []) as string[];
 
-  await updateDoc(bookingRef, { status });
-  // Rejecting a booking puts its seats back on sale.
-  if (status === "rejected") {
-    await Promise.all(seats.map((s) => deleteDoc(doc(db(), SEATS, s))));
+  // For reject, free seats atomically with aggregate update.
+  if (status === "rejected" && seats.length) {
+    await runTransaction(db(), async (tx) => {
+      tx.update(bookingRef, { status });
+      for (const s of seats) tx.delete(doc(db(), SEATS, s));
+
+      const st = await readAvailabilityState(tx);
+      const taken = st.taken.filter((t) => !seats.includes(t));
+      await writeAvailabilityState(tx, { ...st, taken });
+    });
+    return { code, status };
   }
+
+  await updateDoc(bookingRef, { status });
   return { code, status };
 }
 
@@ -828,6 +959,12 @@ export async function adminDeleteBooking(code: string) {
     tx.delete(doc(db(), SHOTS, code));
     if (regNo) tx.delete(doc(db(), REGS, regNo));
     for (const s of seats) tx.delete(doc(db(), SEATS, s));
+
+    // Update aggregate: remove from taken.
+    const st = await readAvailabilityState(tx);
+    const taken = st.taken.filter((t) => !seats.includes(t));
+    await writeAvailabilityState(tx, { ...st, taken });
+
     for (const key of lookupKeys(email, regNo)) {
       tx.set(doc(db(), LOOKUPS, key), { bookingCodes: arrayRemove(code) }, { merge: true });
     }
