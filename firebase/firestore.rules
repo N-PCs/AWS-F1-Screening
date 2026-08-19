@@ -41,7 +41,14 @@ service cloud.firestore {
       allow get: if true;
       allow list: if isAdmin();
       allow create: if request.resource.data.status == 'pending' || request.resource.data.status == 'pending_payment';
-      allow update, delete: if isAdmin();
+      // A visitor may submit payment for their own allocated booking: the
+      // only permitted transition is pending_payment -> pending (they can
+      // never mark themselves verified). Organisers can do anything.
+      allow update: if isAdmin()
+        || (request.auth != null
+            && resource.data.status == 'pending_payment'
+            && request.resource.data.status == 'pending');
+      allow delete: if isAdmin();
     }
 
     // Payment screenshots: write-only for visitors, readable by organisers.

@@ -259,17 +259,21 @@ export async function holdSeats(holdId: string, seats: string[]) {
     const myHeld = st.held.filter((h) => h.holdId === holdId);
     const staleSeats = myHeld.filter((h) => !seats.includes(h.seat)).map((h) => h.seat);
 
+    // All reads must happen before any writes in a Firestore transaction.
+    const staleSnaps = await Promise.all(
+      staleSeats.map((s) => tx.get(doc(db(), SEATS, s)).then((snap) => ({ seat: s, snap }))),
+    );
+
     // Write seat docs.
     for (const s of seats) {
       tx.set(doc(db(), SEATS, s), { status: "held", holdId, expiresAt });
     }
-    // Delete stale seat docs.
-    for (const s of staleSeats) {
-      const snap = await tx.get(doc(db(), SEATS, s));
+    // Delete stale seat docs (checked against their pre-write state).
+    for (const { seat: staleSeat, snap } of staleSnaps) {
       if (snap.exists()) {
         const data = snap.data() as SeatDoc;
         if (data.status === "held" && data.holdId === holdId) {
-          tx.delete(doc(db(), SEATS, s));
+          tx.delete(doc(db(), SEATS, staleSeat));
         }
       }
     }
@@ -301,17 +305,20 @@ export async function releaseSeats(holdId: string, seats?: string[]) {
   if (!releaseSeatIds.length) return { released: 0 };
 
   await runTransaction(db(), async (tx) => {
-    for (const s of releaseSeatIds) {
-      const snap = await tx.get(doc(db(), SEATS, s));
+    // Read aggregate + seat docs first (all reads before any writes).
+    const fresh = await readAvailabilityState(tx);
+    const seatSnaps = await Promise.all(
+      releaseSeatIds.map((s) => tx.get(doc(db(), SEATS, s))),
+    );
+    for (const snap of seatSnaps) {
       if (snap.exists()) {
         const data = snap.data() as SeatDoc;
         if (data.status === "held" && data.holdId === holdId) {
-          tx.delete(doc(db(), SEATS, s));
+          tx.delete(doc(db(), SEATS, snap.id));
         }
       }
     }
     // Update aggregate.
-    const fresh = await readAvailabilityState(tx);
     const pruned = pruneHeld(fresh.held, Date.now());
     const updated = pruned.filter(
       (h) => !(h.holdId === holdId && (!seats?.length || seats.includes(h.seat))),
@@ -368,6 +375,10 @@ export async function createBooking(input: {
   await runTransaction(db(), async (tx) => {
     const now = Date.now();
 
+    // Availability aggregate is part of the transaction's read set, so the
+    // read must happen up front (all reads before all writes).
+    const st = await readAvailabilityState(tx);
+
     // One registration number = one booking. This doc is the uniqueness lock.
     const regRef = doc(db(), REGS, regKey);
     const regSnap = await tx.get(regRef);
@@ -411,7 +422,6 @@ export async function createBooking(input: {
     });
 
     // Update aggregate: held -> taken.
-    const st = await readAvailabilityState(tx);
     const held = pruneHeld(st.held, now).filter((h) => !seats.includes(h.seat));
     const taken = [...st.taken.filter((t) => !seats.includes(t)), ...seats];
     await writeAvailabilityState(tx, { ...st, taken, held });
@@ -710,6 +720,8 @@ export async function adminAllocateWaitlist(code: string, allocatorEmail: string
   const amount = priceForSeat(seat);
 
   await runTransaction(db(), async (tx) => {
+    const st = await readAvailabilityState(tx);
+
     const seatSnap = await tx.get(doc(db(), SEATS, seat));
     if (seatSnap.exists()) {
       const data = seatSnap.data() as SeatDoc;
@@ -738,7 +750,6 @@ export async function adminAllocateWaitlist(code: string, allocatorEmail: string
     tx.delete(wlRef);
 
     // Update aggregate: waitlisted -> taken.
-    const st = await readAvailabilityState(tx);
     const waitlisted = (st.waitlisted ?? []).filter((w) => w !== seat);
     const taken = [...st.taken.filter((t) => t !== seat), seat];
     await writeAvailabilityState(tx, { ...st, taken, waitlisted });
@@ -808,12 +819,14 @@ export async function adminRemoveWaitlist(code: string) {
   const regKey = String(wl["regNo"] ?? "");
 
   await runTransaction(db(), async (tx) => {
+    // Read aggregate first (all reads before any writes).
+    const st = await readAvailabilityState(tx);
+
     tx.delete(wlRef);
     if (regKey) tx.delete(doc(db(), REGS, regKey));
     if (seat) tx.delete(doc(db(), SEATS, seat));
 
     // Update aggregate: remove from waitlisted.
-    const st = await readAvailabilityState(tx);
     const waitlisted = (st.waitlisted ?? []).filter((w) => w !== seat);
     await writeAvailabilityState(tx, { ...st, waitlisted });
   });
@@ -923,10 +936,10 @@ export async function adminSetStatus(code: string, status: BookingRecord["status
   // For reject, free seats atomically with aggregate update.
   if (status === "rejected" && seats.length) {
     await runTransaction(db(), async (tx) => {
+      const st = await readAvailabilityState(tx);
       tx.update(bookingRef, { status });
       for (const s of seats) tx.delete(doc(db(), SEATS, s));
 
-      const st = await readAvailabilityState(tx);
       const taken = st.taken.filter((t) => !seats.includes(t));
       await writeAvailabilityState(tx, { ...st, taken });
     });
@@ -955,13 +968,14 @@ export async function adminDeleteBooking(code: string) {
   const email = data.email ?? "";
 
   await runTransaction(db(), async (tx) => {
+    const st = await readAvailabilityState(tx);
+
     tx.delete(bookingRef);
     tx.delete(doc(db(), SHOTS, code));
     if (regNo) tx.delete(doc(db(), REGS, regNo));
     for (const s of seats) tx.delete(doc(db(), SEATS, s));
 
     // Update aggregate: remove from taken.
-    const st = await readAvailabilityState(tx);
     const taken = st.taken.filter((t) => !seats.includes(t));
     await writeAvailabilityState(tx, { ...st, taken });
 
