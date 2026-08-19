@@ -1,12 +1,12 @@
 /**
  * EDIT ME — exact AB-02 seat layout, split across two rooms.
  *
- * Each room has 16 rows (A..P), 16 seats per row, split into three
- * blocks: 4 left | gap | 8 centre | gap | 4 right.
+ * Each room has 16 rows (A..P), 17 seats per row, split into three
+ * blocks: 4 left | gap | 9 centre | gap | 4 right.
  * Seat ids are room-prefixed so both rooms can share row letters:
- *   - Room 1 (AB02-127): R1-A1 … R1-P16
- *   - Room 2 (AB02-126): R2-A1 … R2-P16
- * Current total: 512 seats (256 per room).
+ *   - Room 1 (AB02-127): R1-A1 … R1-P17
+ *   - Room 2 (AB02-126): R2-A1 … R2-P17
+ * Current total: 544 seats (272 per room).
  */
 export type TierId = "redbull" | "ferrari" | "premium" | "standard" | "economy";
 
@@ -77,43 +77,43 @@ export const ROOMS: Room[] = [
 
 export type RowDef = { row: string; count: number; tier: TierId };
 
-/** Rows in a single room (256 seats). */
+/** Rows in a single room (272 seats). */
 export const ROOM_ROWS: Record<RoomId, RowDef[]> = {
   R1: [
-    { row: "A", count: 16, tier: "premium" },
-    { row: "B", count: 16, tier: "premium" },
-    { row: "C", count: 16, tier: "premium" },
-    { row: "D", count: 16, tier: "premium" },
-    { row: "E", count: 16, tier: "premium" },
-    { row: "F", count: 16, tier: "standard" },
-    { row: "G", count: 16, tier: "standard" },
-    { row: "H", count: 16, tier: "standard" },
-    { row: "I", count: 16, tier: "standard" },
-    { row: "J", count: 16, tier: "standard" },
-    { row: "K", count: 16, tier: "standard" },
-    { row: "L", count: 16, tier: "standard" },
-    { row: "M", count: 16, tier: "standard" },
-    { row: "N", count: 16, tier: "economy" },
-    { row: "O", count: 16, tier: "economy" },
-    { row: "P", count: 16, tier: "economy" },
+    { row: "A", count: 17, tier: "premium" },
+    { row: "B", count: 17, tier: "premium" },
+    { row: "C", count: 17, tier: "premium" },
+    { row: "D", count: 17, tier: "premium" },
+    { row: "E", count: 17, tier: "premium" },
+    { row: "F", count: 17, tier: "standard" },
+    { row: "G", count: 17, tier: "standard" },
+    { row: "H", count: 17, tier: "standard" },
+    { row: "I", count: 17, tier: "standard" },
+    { row: "J", count: 17, tier: "standard" },
+    { row: "K", count: 17, tier: "standard" },
+    { row: "L", count: 17, tier: "standard" },
+    { row: "M", count: 17, tier: "standard" },
+    { row: "N", count: 17, tier: "economy" },
+    { row: "O", count: 17, tier: "economy" },
+    { row: "P", count: 17, tier: "economy" },
   ],
   R2: [
-    { row: "A", count: 16, tier: "premium" },
-    { row: "B", count: 16, tier: "premium" },
-    { row: "C", count: 16, tier: "premium" },
-    { row: "D", count: 16, tier: "premium" },
-    { row: "E", count: 16, tier: "premium" },
-    { row: "F", count: 16, tier: "standard" },
-    { row: "G", count: 16, tier: "standard" },
-    { row: "H", count: 16, tier: "standard" },
-    { row: "I", count: 16, tier: "standard" },
-    { row: "J", count: 16, tier: "standard" },
-    { row: "K", count: 16, tier: "standard" },
-    { row: "L", count: 16, tier: "standard" },
-    { row: "M", count: 16, tier: "standard" },
-    { row: "N", count: 16, tier: "economy" },
-    { row: "O", count: 16, tier: "economy" },
-    { row: "P", count: 16, tier: "economy" },
+    { row: "A", count: 17, tier: "premium" },
+    { row: "B", count: 17, tier: "premium" },
+    { row: "C", count: 17, tier: "premium" },
+    { row: "D", count: 17, tier: "premium" },
+    { row: "E", count: 17, tier: "premium" },
+    { row: "F", count: 17, tier: "standard" },
+    { row: "G", count: 17, tier: "standard" },
+    { row: "H", count: 17, tier: "standard" },
+    { row: "I", count: 17, tier: "standard" },
+    { row: "J", count: 17, tier: "standard" },
+    { row: "K", count: 17, tier: "standard" },
+    { row: "L", count: 17, tier: "standard" },
+    { row: "M", count: 17, tier: "standard" },
+    { row: "N", count: 17, tier: "economy" },
+    { row: "O", count: 17, tier: "economy" },
+    { row: "P", count: 17, tier: "economy" },
   ],
 };
 
@@ -144,11 +144,11 @@ export function seatParts(id: string): SeatParts | null {
   return { room, row: m[2] as string, num: Number(m[3]) };
 }
 
-/** The display label shown on the seat button — lowercase letter (a–p). */
+/** The display label shown on the seat button — lowercase letter (a–q). */
 export function seatNum(id: string): string {
   const num = seatParts(id)?.num;
   if (num == null) return id;
-  return String.fromCharCode(96 + num); // 1→a, 2→b, …, 16→p
+  return String.fromCharCode(96 + num); // 1→a, 2→b, …, 17→q
 }
 
 /**
@@ -210,10 +210,25 @@ export function rowDisplayLabel(row: string): string {
 }
 
 /**
- * Seats in a row, split into three blocks: 4 left | 8 centre | 4 right.
- * Matches the physical AB-02 auditorium aisle layout.
+ * Seats in a row, split into three blocks.
+ * Base layout: 4 left | 8 centre | 4 right (16 seats).
+ * For 17-seat rows the extra seat alternates between left and right blocks:
+ *   - Odd rows (A, C, E …) → 5 left | 8 centre | 4 right
+ *   - Even rows (B, D, F …) → 4 left | 8 centre | 5 right
+ * This distributes seats per the plan: 5L/5R premium, 8L/8R grandstand, 3L/3R economy.
  */
 export function rowBlocks(def: RowDef): [number[], number[], number[]] {
   const all = Array.from({ length: def.count }, (_, i) => i + 1);
-  return [all.slice(0, 4), all.slice(4, 12), all.slice(12, 16)];
+  if (def.count <= 16) {
+    return [all.slice(0, 4), all.slice(4, 12), all.slice(12)];
+  }
+  // 17-seat rows: alternate extra seat between left and right blocks
+  const rowIndex = def.row.charCodeAt(0) - 65; // A=0, B=1, C=2, …
+  if (rowIndex % 2 === 0) {
+    // Rows A, C, E, G, I, K, M, O → extra on left: 5|8|4
+    return [all.slice(0, 5), all.slice(5, 13), all.slice(13)];
+  } else {
+    // Rows B, D, F, H, J, L, N, P → extra on right: 4|8|5
+    return [all.slice(0, 4), all.slice(4, 12), all.slice(12)];
+  }
 }
