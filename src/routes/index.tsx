@@ -229,6 +229,7 @@ function Countdown() {
 const TIER_ACCENT: Record<string, string> = {
   redbull: "border-t-blue-500",
   ferrari: "border-t-orange-500",
+  generalfanzone: "border-t-purple-400",
   aisle: "border-t-pink-500",
   premium: "border-t-amber-500",
   standard: "border-t-cyan-500",

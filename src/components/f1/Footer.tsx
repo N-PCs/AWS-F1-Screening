@@ -12,17 +12,17 @@ export function SiteFooter() {
       <div className="relative w-full overflow-hidden bg-black/60 py-4 border-b border-border/40">
         {/* Track asphalt grid lines */}
         <div className="absolute inset-0 opacity-25 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px)] bg-[size:28px_100%]" />
-        
+
         {/* Full-width Racecar track container */}
         <div className="relative w-full h-12 flex items-center px-4 sm:px-8">
-          
+
           {/* Road Asphalt Background Strip (Attached from START to FINISH) */}
           <div className="absolute inset-x-4 sm:inset-x-8 top-1/2 -translate-y-1/2 h-9 bg-zinc-900/90 rounded-xs border border-zinc-800 shadow-inner" />
 
           {/* Track kerb lines (Top & Bottom Red/White borders attached end-to-end) */}
           <div className="absolute inset-x-4 sm:inset-x-8 h-[3px] bg-[repeating-linear-gradient(90deg,#e10600,#e10600_12px,#ffffff_12px,#ffffff_24px)] top-1 z-10" />
           <div className="absolute inset-x-4 sm:inset-x-8 h-[3px] bg-[repeating-linear-gradient(90deg,#e10600,#e10600_12px,#ffffff_12px,#ffffff_24px)] bottom-1 z-10" />
-          
+
           {/* Track Center Dashed White Line */}
           <div className="absolute inset-x-4 sm:inset-x-8 h-[1px] border-t border-dashed border-white/40 top-1/2 -translate-y-1/2 z-10" />
 
@@ -50,7 +50,7 @@ export function SiteFooter() {
             <div className="f1-car-anim flex items-center gap-1">
               {/* Exhaust Flame & Speed Blur Trail */}
               <div className="h-2.5 w-14 rounded-l-full bg-linear-to-r from-transparent via-amber-500 to-red-600 animate-pulse shadow-[0_0_12px_rgba(225,6,0,0.9)]" />
-              
+
               {/* Large Detailed F1 Car SVG */}
               <svg
                 className="w-16 h-10 text-primary drop-shadow-[0_0_14px_rgba(225,6,0,1)] shrink-0"
@@ -60,16 +60,16 @@ export function SiteFooter() {
                 {/* Rear Wing */}
                 <path d="M3 5h8v16H3z" fill="#e10600" />
                 <path d="M0 3h14v4H0z" fill="#ffffff" />
-                
+
                 {/* Chassis Body */}
                 <path d="M8 12h28l14 2 10 3v5H8z" fill="#e10600" />
                 <path d="M16 10h14l8 4H16z" fill="#111111" />
-                
+
                 {/* Cockpit & Driver Helmet */}
                 <path d="M22 8h8v6h-8z" fill="#e10600" />
                 <circle cx="27" cy="9" r="3.5" fill="#ffffff" />
                 <path d="M25 8h5v2h-5z" fill="#fbbf24" />
-                
+
                 {/* Front Nose & Wing */}
                 <path d="M46 14l14 2v4H46z" fill="#e10600" />
                 <path d="M54 14h10v7H54z" fill="#ffffff" />
@@ -89,14 +89,11 @@ export function SiteFooter() {
       {/* Main Footer Container */}
       <div className="mx-auto max-w-6xl px-4 py-8">
         <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
-          
+
           {/* Club Info & Credits */}
           <div className="flex flex-col gap-1.5">
-            <div className="flex items-center gap-2">
-              <img src="awssbg.png" style={{height:"35px", width:"35px"}}></img>
-              <span className="font-display font-black tracking-widest text-sm uppercase text-foreground">
-                 {EVENT.club}
-              </span>
+            <div className="flex items-center">
+              <img src="logo.png" style={{ height: "50px", width: "250px" }}></img>
             </div>
             <p className="text-xs text-muted-foreground">
               This website was made with ❤️ by{" "}

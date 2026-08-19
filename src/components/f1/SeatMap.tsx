@@ -199,6 +199,7 @@ const roomScreen: Record<string, string> = {
 
 const bandBar: Record<string, string> = {
   premium: "bg-tier-premium",
+  generalfanzone: "bg-purple-400",
   aisle: "bg-pink-500",
   standard: "bg-tier-standard",
   economy: "bg-tier-economy",
@@ -206,6 +207,7 @@ const bandBar: Record<string, string> = {
 
 const bandBadge: Record<string, string> = {
   premium: "border-tier-premium/70 bg-tier-premium/20 text-tier-premium",
+  generalfanzone: "border-purple-300/70 bg-purple-500/20 text-purple-300",
   aisle: "border-pink-400/70 bg-pink-500/20 text-pink-400",
   standard: "border-tier-standard/70 bg-tier-standard/20 text-tier-standard",
   economy: "border-tier-economy/70 bg-tier-economy/20 text-tier-economy",
@@ -338,6 +340,8 @@ const tierClass: Record<string, string> = {
     "bg-blue-600/90 border-blue-400 text-white hover:bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.4)]",
   ferrari:
     "bg-orange-500/90 border-orange-300 text-slate-950 font-extrabold hover:bg-orange-400 shadow-[0_0_8px_rgba(249,115,22,0.45)]",
+  generalfanzone:
+    "bg-[#c8a2c8] border-[#e0b0ff] text-slate-950 font-extrabold hover:bg-[#d8b2d8] shadow-[0_0_8px_rgba(200,162,200,0.5)]",
   aisle:
     "bg-pink-500/90 border-pink-400 text-slate-950 font-extrabold hover:bg-pink-400 shadow-[0_0_8px_rgba(236,72,153,0.45)]",
   premium: "bg-tier-premium/25 border-tier-premium/70 hover:bg-tier-premium/50",

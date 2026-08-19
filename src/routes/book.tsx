@@ -518,6 +518,9 @@ function BookPage() {
             roomTop[activeRoomInfo.tone],
           )}
         >
+          <div className="mb-4 border-b border-border pb-3 sm:pb-4">
+            <SeatLegend />
+          </div>
           <SeatMap
             room={displayRoom}
             taken={taken}
@@ -527,9 +530,6 @@ function BookPage() {
             onToggle={(id) => void toggle(id)}
             disabled={submitting}
           />
-          <div className="mt-4 sm:mt-6 border-t border-border pt-3 sm:pt-4">
-            <SeatLegend />
-          </div>
         </section>
 
         {/* Selection + form aside */}

@@ -8,7 +8,7 @@
  *   - Room 2 (AB02-126): R2-A1 … R2-P17
  * Current total: 544 seats (272 per room).
  */
-export type TierId = "redbull" | "ferrari" | "aisle" | "premium" | "standard" | "economy";
+export type TierId = "redbull" | "ferrari" | "generalfanzone" | "aisle" | "premium" | "standard" | "economy";
 
 export type Tier = {
   id: TierId;
@@ -34,6 +34,13 @@ export const TIERS: Record<TierId, Tier> = {
     price: 249,
     tone: "tier-ferrari",
     blurb: "R1, R2 & R3 right block. Tifosi passion in full voice.",
+  },
+  generalfanzone: {
+    id: "generalfanzone",
+    name: "General Fanzone",
+    price: 249,
+    tone: "tier-generalfanzone",
+    blurb: "R1C6 to R1C12 & R2C6 to R2C12. Premium front centre seats.",
   },
   aisle: {
     id: "aisle",
@@ -186,6 +193,11 @@ export function tierForSeat(id: string): Tier | null {
   const parts = seatParts(id);
   if (!parts) return null;
   const { room, row, num } = parts;
+
+  // General Fanzone: Row R1 (Row 'A') seats 6..12 & Row R2 (Row 'B') seats 6..12 -> ₹249
+  if ((row === "A" || row === "B") && num >= 6 && num <= 12) {
+    return TIERS.generalfanzone;
+  }
 
   // Aisle Special: seat 5 (label 'e') and seat 13 (label 'm') across ALL rows → flat ₹99
   if (num === 5 || num === 13) {

@@ -211,7 +211,7 @@ function AdminPage() {
 
   const stats = useMemo(() => {
     const active = bookings.filter((b) => b.status !== "rejected");
-    const perTier: Record<string, number> = { redbull: 0, ferrari: 0, aisle: 0, premium: 0, standard: 0, economy: 0 };
+    const perTier: Record<string, number> = { redbull: 0, ferrari: 0, generalfanzone: 0, aisle: 0, premium: 0, standard: 0, economy: 0 };
     const perRoom: Record<string, number> = {};
     let seats = 0;
     let revenue = 0;

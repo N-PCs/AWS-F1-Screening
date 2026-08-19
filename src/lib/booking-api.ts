@@ -226,7 +226,14 @@ export async function getAvailability(): Promise<Availability> {
     return toAvailability(built, now);
   }
   const st = snap.data() as AvailabilityState;
-  return toAvailability(st, now);
+  const activeHolds = pruneHeld(st.held ?? [], now);
+
+  // Opportunistically update aggregate if expired holds were pruned
+  if (activeHolds.length !== (st.held ?? []).length) {
+    void updateDoc(availRef(), { held: activeHolds, updatedAt: now }).catch(() => {});
+  }
+
+  return toAvailability({ ...st, held: activeHolds }, now);
 }
 
 /* ---------------- holds ---------------- */
