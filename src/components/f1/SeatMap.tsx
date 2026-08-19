@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   ROOM_ROWS,
   ROOM_SEAT_COUNT,
@@ -354,6 +354,15 @@ function Seat({
 }) {
   const tier = tierForSeat(id)?.id ?? "premium";
   const isFit = mobileView === "fit";
+  const [popping, setPopping] = useState(false);
+
+  const handleClick = useCallback(() => {
+    onToggle(id);
+    setPopping(true);
+    const timer = setTimeout(() => setPopping(false), 350);
+    return () => clearTimeout(timer);
+  }, [id, onToggle]);
+
   return (
     <button
       type="button"
@@ -368,9 +377,9 @@ function Seat({
       }
       aria-pressed={selected}
       disabled={taken || held || waitlisted || disabled}
-      onClick={() => onToggle(id)}
+      onClick={handleClick}
       className={cn(
-        "rounded-t-xs sm:rounded-t-md border font-bold transition-colors touch-manipulation",
+        "rounded-t-xs sm:rounded-t-md border font-bold transition-all duration-150 touch-manipulation",
         isFit
           ? "h-4.5 w-3.5 text-[0.45rem] sm:h-5 sm:w-6 sm:text-[0.55rem] md:h-5.5 md:w-7 md:text-xs lg:h-6 lg:w-8 lg:text-xs"
           : "h-5.5 w-5 text-[0.55rem] sm:h-5 sm:w-6 sm:text-[0.55rem] md:h-5.5 md:w-7 md:text-xs lg:h-6 lg:w-8 lg:text-xs",
@@ -384,6 +393,7 @@ function Seat({
         selected &&
         "border-foreground bg-foreground text-background ring-2 ring-primary ring-offset-1 ring-offset-background",
         disabled && !taken && "opacity-60",
+        popping && "seat-pop",
       )}
     >
       {seatNum(id)}
