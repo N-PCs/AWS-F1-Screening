@@ -229,6 +229,7 @@ function Countdown() {
 const TIER_ACCENT: Record<string, string> = {
   redbull: "border-t-blue-500",
   ferrari: "border-t-orange-500",
+  aisle: "border-t-pink-500",
   premium: "border-t-amber-500",
   standard: "border-t-cyan-500",
   economy: "border-t-emerald-500",
@@ -241,7 +242,7 @@ function Tiers() {
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
         Front rows feature team-exclusive Red Bull & Ferrari Fanzones alongside Pit Lane.
       </p>
-      <div className="mt-8 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
+      <div className="mt-8 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-6">
         {Object.values(TIERS).map((tier) => {
           return (
             <article

@@ -8,7 +8,7 @@
  *   - Room 2 (AB02-126): R2-A1 … R2-P17
  * Current total: 544 seats (272 per room).
  */
-export type TierId = "redbull" | "ferrari" | "premium" | "standard" | "economy";
+export type TierId = "redbull" | "ferrari" | "aisle" | "premium" | "standard" | "economy";
 
 export type Tier = {
   id: TierId;
@@ -35,10 +35,17 @@ export const TIERS: Record<TierId, Tier> = {
     tone: "tier-ferrari",
     blurb: "R1, R2 & R3 right block. Tifosi passion in full voice.",
   },
+  aisle: {
+    id: "aisle",
+    name: "Normal Seats",
+    price: 99,
+    tone: "tier-aisle",
+    blurb: "Seats e & m — flat ₹99 across every row.",
+  },
   premium: {
     id: "premium",
     name: "Pit Lane",
-    price: 199,
+    price: 179,
     tone: "tier-premium",
     blurb: "Front rows. Screen fills your vision, sound hits hardest.",
   },
@@ -144,6 +151,14 @@ export function seatParts(id: string): SeatParts | null {
   return { room, row: m[2] as string, num: Number(m[3]) };
 }
 
+/** Check if a seat number falls in the right block of its row (per rowBlocks logic). */
+function isRightBlockSeat(room: RoomId, row: string, num: number): boolean {
+  const def = ROOM_ROWS[room]?.find((r) => r.row === row);
+  if (!def) return false;
+  const [, , right] = rowBlocks(def);
+  return right.includes(num);
+}
+
 /** The display label shown on the seat button — lowercase letter (a–q). */
 export function seatNum(id: string): string {
   const num = seatParts(id)?.num;
@@ -170,16 +185,23 @@ export function roomForSeat(id: string): Room | null {
 export function tierForSeat(id: string): Tier | null {
   const parts = seatParts(id);
   if (!parts) return null;
-  const { row, num } = parts;
+  const { room, row, num } = parts;
+
+  // Aisle Special: seat 5 (label 'e') and seat 13 (label 'm') across ALL rows → flat ₹99
+  if (num === 5 || num === 13) {
+    return TIERS.aisle;
+  }
 
   // Red Bull Fanzone: R1, R2 & R3 (rows A, B & C), Left block only (seats 1..4) -> ₹249
   if ((row === "A" || row === "B" || row === "C") && num >= 1 && num <= 4) {
     return TIERS.redbull;
   }
 
-  // Ferrari Fanzone: R1, R2 & R3 (rows A, B & C), Right block only (seats 13..16) -> ₹249
-  if ((row === "A" || row === "B" || row === "C") && num >= 13 && num <= 16) {
-    return TIERS.ferrari;
+  // Ferrari Fanzone: R1, R2 & R3 (rows A, B & C), Right block only -> ₹249
+  if (row === "A" || row === "B" || row === "C") {
+    if (isRightBlockSeat(room, row, num)) {
+      return TIERS.ferrari;
+    }
   }
 
   // Pit Lane: remaining front row seats (rows A, B, C, D, E) -> ₹199

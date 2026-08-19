@@ -137,7 +137,8 @@ export function SeatMap({ room, taken, held, waitlisted, selected, onToggle, dis
                     {tier.name}
                   </h3>
                   <span className="text-[0.6rem] sm:text-[0.65rem] tracking-widest text-muted-foreground uppercase">
-                    Rows {rowDisplayLabel(band.rows[0]?.row ?? "A")}–{rowDisplayLabel(band.rows[band.rows.length - 1]?.row ?? "A")}
+                    Rows {rowDisplayLabel(band.rows[0]?.row ?? "A")}–
+                    {rowDisplayLabel(band.rows[band.rows.length - 1]?.row ?? "A")}
                   </span>
                   <span className="h-px flex-1 bg-border" aria-hidden />
                   <span className="text-[0.6rem] sm:text-[0.65rem] text-muted-foreground">
@@ -198,12 +199,14 @@ const roomScreen: Record<string, string> = {
 
 const bandBar: Record<string, string> = {
   premium: "bg-tier-premium",
+  aisle: "bg-pink-500",
   standard: "bg-tier-standard",
   economy: "bg-tier-economy",
 };
 
 const bandBadge: Record<string, string> = {
   premium: "border-tier-premium/70 bg-tier-premium/20 text-tier-premium",
+  aisle: "border-pink-400/70 bg-pink-500/20 text-pink-400",
   standard: "border-tier-standard/70 bg-tier-standard/20 text-tier-standard",
   economy: "border-tier-economy/70 bg-tier-economy/20 text-tier-economy",
 };
@@ -265,7 +268,10 @@ function SeatRow({
             />
           );
         })}
-        <span className={cn("shrink-0", isFit ? "w-1 sm:w-4 md:w-6 lg:w-8" : "w-3.5 sm:w-4")} aria-hidden />
+        <span
+          className={cn("shrink-0", isFit ? "w-1 sm:w-4 md:w-6 lg:w-8" : "w-3.5 sm:w-4")}
+          aria-hidden
+        />
         {centre.map((n) => {
           const sid = seatId(room, def.row, n);
           const st = tierForSeat(sid) ?? tier;
@@ -284,7 +290,10 @@ function SeatRow({
             />
           );
         })}
-        <span className={cn("shrink-0", isFit ? "w-1 sm:w-4 md:w-6 lg:w-8" : "w-3.5 sm:w-4")} aria-hidden />
+        <span
+          className={cn("shrink-0", isFit ? "w-1 sm:w-4 md:w-6 lg:w-8" : "w-3.5 sm:w-4")}
+          aria-hidden
+        />
         {right.map((n) => {
           const sid = seatId(room, def.row, n);
           const st = tierForSeat(sid) ?? tier;
@@ -310,7 +319,12 @@ function SeatRow({
           isFit ? "w-4 sm:w-14 md:w-16 lg:w-20" : "w-10 sm:w-14",
         )}
       >
-        <span className={cn("tabular-nums text-muted-foreground", isFit ? "hidden sm:inline" : "inline")}>
+        <span
+          className={cn(
+            "tabular-nums text-muted-foreground",
+            isFit ? "hidden sm:inline" : "inline",
+          )}
+        >
           ₹{tier.price}
         </span>
         <span className="font-bold tabular-nums text-muted-foreground">{displayRow}</span>
@@ -324,6 +338,8 @@ const tierClass: Record<string, string> = {
     "bg-blue-600/90 border-blue-400 text-white hover:bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.4)]",
   ferrari:
     "bg-orange-500/90 border-orange-300 text-slate-950 font-extrabold hover:bg-orange-400 shadow-[0_0_8px_rgba(249,115,22,0.45)]",
+  aisle:
+    "bg-pink-500/90 border-pink-400 text-slate-950 font-extrabold hover:bg-pink-400 shadow-[0_0_8px_rgba(236,72,153,0.45)]",
   premium: "bg-tier-premium/25 border-tier-premium/70 hover:bg-tier-premium/50",
   standard: "bg-tier-standard/20 border-tier-standard/70 hover:bg-tier-standard/45",
   economy: "bg-tier-economy/20 border-tier-economy/70 hover:bg-tier-economy/45",
@@ -391,7 +407,7 @@ function Seat({
               ? waitlistedClass
               : tierClass[tier],
         selected &&
-        "border-foreground bg-foreground text-background ring-2 ring-primary ring-offset-1 ring-offset-background",
+          "border-foreground bg-foreground text-background ring-2 ring-primary ring-offset-1 ring-offset-background",
         disabled && !taken && "opacity-60",
         popping && "seat-pop",
       )}
