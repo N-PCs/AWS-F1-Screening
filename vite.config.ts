@@ -28,6 +28,17 @@ export default defineConfig(async ({ command }) => {
     css: {
       transformer: "lightningcss",
     },
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (id.includes("/src/routes/")) {
+              return "routes";
+            }
+          },
+        },
+      },
+    },
     resolve: {
       alias: {
         "@": `${process.cwd()}/src`,

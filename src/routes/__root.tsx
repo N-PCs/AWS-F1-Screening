@@ -47,16 +47,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     error?.message?.includes("Failed to fetch dynamically imported module") ||
     error?.message?.includes("Importing a module script failed") ||
     error?.name === "ChunkLoadError" ||
-    String(error).includes("dynamically imported module");
-
-  if (isChunkError && typeof window !== "undefined") {
-    const lastReload = window.sessionStorage.getItem("chunk_reload_ts");
-    if (!lastReload || Date.now() - Number(lastReload) > 10000) {
-      window.sessionStorage.setItem("chunk_reload_ts", String(Date.now()));
-      window.location.reload();
-      return null;
-    }
-  }
+    String(error).includes("dynamically imported module") ||
+    String(error).includes("404");
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -66,14 +58,14 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
           {isChunkError
-            ? "A new version of the app was deployed. Please refresh to load the latest version."
+            ? "A new update was deployed. Click below to load the latest version."
             : "Something went wrong on our end. You can try refreshing or head back home."}
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
               if (typeof window !== "undefined") {
-                window.location.reload();
+                window.location.href = window.location.pathname + "?_r=" + Date.now();
               } else {
                 router.invalidate();
                 reset();
