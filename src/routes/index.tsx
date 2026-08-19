@@ -15,13 +15,13 @@ export const Route = createFileRoute("/")({
       {
         name: "description",
         content:
-          "Lights out at VIT Bhopal. AWS Club VITB screens the Formula 1 Grand Prix live across AB02-127 & AB02-128 — 500 seats, tiered pricing from ₹99, book your seat now.",
+          "Lights out at VIT Bhopal. AWS Club VITB screens the Formula 1 Grand Prix live across AB02-127 & AB02-128 — 532 seats, tiered pricing from ₹99, book your seat now.",
       },
       { property: "og:title", content: "F1 Grand Prix Screening — AWS Club VITB" },
       {
         property: "og:description",
         content:
-          "500 seats, two rooms, big screens and full race weekend energy in AB-02. Pick your seat from ₹99.",
+          "532 seats, two rooms, big screens and full race weekend energy in AB-02. Pick your seat from ₹99.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

@@ -1,11 +1,11 @@
 /**
  * EDIT ME — exact AB-02 seat layout, split across two rooms.
  *
- * Each room has 10 rows (A..J), 25 seats per row, split around a centre
- * aisle. Seat ids are room-prefixed so both rooms can share row letters:
- *   - Room 1 (AB02-127): R1-A1 … R1-J25
- *   - Room 2 (AB02-128): R2-A1 … R2-J25
- * Current total: 500 seats (250 per room).
+ * Each room has 10 rows (A..J) with varying seat counts, split around a
+ * centre aisle. Seat ids are room-prefixed so both rooms can share row letters:
+ *   - Room 1 (AB02-127): R1-A1 … R1-J26
+ *   - Room 2 (AB02-128): R2-A1 … R2-J26
+ * Current total: 532 seats (266 per room).
  */
 export type TierId = "premium" | "standard" | "economy";
 
@@ -62,31 +62,31 @@ export const ROOMS: Room[] = [
 
 export type RowDef = { row: string; count: number; tier: TierId };
 
-/** Rows in a single room (250 seats). */
+/** Rows in a single room (266 seats). */
 export const ROOM_ROWS: Record<RoomId, RowDef[]> = {
   R1: [
-    { row: "A", count: 25, tier: "premium" },
-    { row: "B", count: 25, tier: "premium" },
-    { row: "C", count: 25, tier: "premium" },
-    { row: "D", count: 25, tier: "standard" },
-    { row: "E", count: 25, tier: "standard" },
-    { row: "F", count: 25, tier: "standard" },
-    { row: "G", count: 25, tier: "standard" },
-    { row: "H", count: 25, tier: "economy" },
-    { row: "I", count: 25, tier: "economy" },
-    { row: "J", count: 25, tier: "economy" },
+    { row: "A", count: 27, tier: "premium" },
+    { row: "B", count: 27, tier: "premium" },
+    { row: "C", count: 26, tier: "premium" },
+    { row: "D", count: 27, tier: "standard" },
+    { row: "E", count: 27, tier: "standard" },
+    { row: "F", count: 27, tier: "standard" },
+    { row: "G", count: 27, tier: "standard" },
+    { row: "H", count: 26, tier: "economy" },
+    { row: "I", count: 26, tier: "economy" },
+    { row: "J", count: 26, tier: "economy" },
   ],
   R2: [
-    { row: "A", count: 25, tier: "premium" },
-    { row: "B", count: 25, tier: "premium" },
-    { row: "C", count: 25, tier: "premium" },
-    { row: "D", count: 25, tier: "standard" },
-    { row: "E", count: 25, tier: "standard" },
-    { row: "F", count: 25, tier: "standard" },
-    { row: "G", count: 25, tier: "standard" },
-    { row: "H", count: 25, tier: "economy" },
-    { row: "I", count: 25, tier: "economy" },
-    { row: "J", count: 25, tier: "economy" },
+    { row: "A", count: 27, tier: "premium" },
+    { row: "B", count: 27, tier: "premium" },
+    { row: "C", count: 26, tier: "premium" },
+    { row: "D", count: 27, tier: "standard" },
+    { row: "E", count: 27, tier: "standard" },
+    { row: "F", count: 27, tier: "standard" },
+    { row: "G", count: 27, tier: "standard" },
+    { row: "H", count: 26, tier: "economy" },
+    { row: "I", count: 26, tier: "economy" },
+    { row: "J", count: 26, tier: "economy" },
   ],
 };
 

@@ -638,21 +638,67 @@ const roomDot: Record<string, string> = {
 
 function QrPanel() {
   const [broken, setBroken] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
+
   if (broken) {
     return (
-      <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-sm border border-dashed border-border p-2 text-center text-[0.65rem] text-muted-foreground">
+      <div className="flex h-36 w-36 shrink-0 items-center justify-center rounded-sm border border-dashed border-border p-2 text-center text-[0.65rem] text-muted-foreground">
         QR coming soon — pay to the UPI ID
       </div>
     );
   }
   return (
-    <img
-      src={UPI.qrImage}
-      alt={`UPI QR code for ${UPI.payeeName}`}
-      className="h-28 w-28 shrink-0 rounded-sm border border-border bg-background object-contain p-1"
-      loading="lazy"
-      onError={() => setBroken(true)}
-    />
+    <>
+      <button
+        type="button"
+        onClick={() => setZoomed(true)}
+        className="group relative shrink-0 cursor-zoom-in rounded-sm border border-border bg-background p-1 transition hover:border-primary/60 hover:shadow-[0_0_16px_rgba(var(--primary),0.15)]"
+        aria-label="Zoom QR code"
+      >
+        <img
+          src={UPI.qrImage}
+          alt={`UPI QR code for ${UPI.payeeName}`}
+          className="h-36 w-36 rounded-sm object-contain"
+          loading="lazy"
+          onError={() => setBroken(true)}
+        />
+        <span className="absolute inset-0 flex items-end justify-center rounded-sm bg-gradient-to-t from-black/40 to-transparent opacity-0 transition group-hover:opacity-100">
+          <span className="mb-2 rounded-full bg-black/70 px-2.5 py-0.5 text-[0.6rem] font-bold tracking-wider text-white uppercase">
+            Tap to zoom
+          </span>
+        </span>
+      </button>
+
+      {/* Fullscreen zoomed overlay */}
+      {zoomed && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm"
+          onClick={() => setZoomed(false)}
+          role="dialog"
+          aria-modal="true"
+          aria-label="Zoomed QR code"
+        >
+          <div className="relative rounded-lg border border-border bg-card p-4 shadow-2xl">
+            <img
+              src={UPI.qrImage}
+              alt={`UPI QR code for ${UPI.payeeName} — zoomed`}
+              className="h-72 w-72 rounded-sm object-contain sm:h-80 sm:w-80"
+            />
+            <p className="mt-3 text-center text-xs font-semibold text-muted-foreground">
+              {UPI.payeeName} · <span className="font-mono text-[0.65rem]">{UPI.id}</span>
+            </p>
+            <button
+              type="button"
+              onClick={() => setZoomed(false)}
+              className="absolute -top-3 -right-3 flex h-7 w-7 items-center justify-center rounded-full border border-border bg-card text-sm font-bold text-muted-foreground transition hover:bg-destructive hover:text-destructive-foreground"
+              aria-label="Close zoomed QR"
+            >
+              ✕
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
 

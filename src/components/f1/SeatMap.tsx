@@ -1,3 +1,4 @@
+import { useCallback, useState } from "react";
 import {
   ROOM_ROWS,
   ROOM_SEAT_COUNT,
@@ -189,11 +190,11 @@ function SeatRow({
   const tier = TIERS[def.tier];
 
   return (
-    <div className="flex items-center gap-3">
-      <span className="w-6 shrink-0 text-center text-xs font-bold text-muted-foreground">
+    <div className="flex items-center gap-2">
+      <span className="w-5 shrink-0 text-center text-[0.65rem] font-bold text-muted-foreground">
         {def.row}
       </span>
-      <div className="flex flex-1 items-center justify-center gap-1">
+      <div className="flex flex-1 items-center justify-center gap-0.5">
         {left.map((n) => (
           <Seat
             key={n}
@@ -206,7 +207,7 @@ function SeatRow({
             disabled={disabled}
           />
         ))}
-        <span className="w-6 shrink-0" aria-hidden />
+        <span className="w-4 shrink-0" aria-hidden />
         {right.map((n) => (
           <Seat
             key={n}
@@ -220,9 +221,9 @@ function SeatRow({
           />
         ))}
       </div>
-      <span className="flex w-16 shrink-0 items-center justify-end gap-1.5">
-        <span className="text-[0.6rem] tabular-nums text-muted-foreground">₹{tier.price}</span>
-        <span className="text-xs font-bold text-muted-foreground">{def.row}</span>
+      <span className="flex w-14 shrink-0 items-center justify-end gap-1">
+        <span className="text-[0.55rem] tabular-nums text-muted-foreground">₹{tier.price}</span>
+        <span className="text-[0.65rem] font-bold text-muted-foreground">{def.row}</span>
       </span>
     </div>
   );
@@ -252,6 +253,16 @@ function Seat({
   disabled?: boolean | undefined;
 }) {
   const tier = tierForSeat(id)?.id ?? "premium";
+  const [popping, setPopping] = useState(false);
+
+  const handleClick = useCallback(() => {
+    onToggle(id);
+    setPopping(true);
+    // Remove the animation class after it completes
+    const timer = setTimeout(() => setPopping(false), 350);
+    return () => clearTimeout(timer);
+  }, [id, onToggle]);
+
   return (
     <button
       type="button"
@@ -260,9 +271,9 @@ function Seat({
       }
       aria-pressed={selected}
       disabled={taken || held || disabled}
-      onClick={() => onToggle(id)}
+      onClick={handleClick}
       className={cn(
-        "h-6 w-6 rounded-t-md border text-[0.55rem] font-bold transition-colors",
+        "h-5 w-5 rounded-t-md border text-[0.45rem] font-bold transition-all duration-150",
         taken
           ? "cursor-not-allowed border-border bg-seat-taken text-muted-foreground/50"
           : held
@@ -271,6 +282,7 @@ function Seat({
         selected &&
           "border-foreground bg-foreground text-background ring-2 ring-primary ring-offset-1 ring-offset-background",
         disabled && !taken && "opacity-60",
+        popping && "seat-pop",
       )}
     >
       {seatNum(id)}
