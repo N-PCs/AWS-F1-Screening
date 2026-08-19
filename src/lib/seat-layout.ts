@@ -210,10 +210,25 @@ export function rowDisplayLabel(row: string): string {
 }
 
 /**
- * Seats in a row, split into three blocks: 4 left | 9 centre | 4 right.
- * Matches the physical AB-02 auditorium aisle layout.
+ * Seats in a row, split into three blocks.
+ * Base layout: 4 left | 8 centre | 4 right (16 seats).
+ * For 17-seat rows the extra seat alternates between left and right blocks:
+ *   - Odd rows (A, C, E …) → 5 left | 8 centre | 4 right
+ *   - Even rows (B, D, F …) → 4 left | 8 centre | 5 right
+ * This distributes seats per the plan: 5L/5R premium, 8L/8R grandstand, 3L/3R economy.
  */
 export function rowBlocks(def: RowDef): [number[], number[], number[]] {
   const all = Array.from({ length: def.count }, (_, i) => i + 1);
-  return [all.slice(0, 4), all.slice(4, 13), all.slice(13, 17)];
+  if (def.count <= 16) {
+    return [all.slice(0, 4), all.slice(4, 12), all.slice(12)];
+  }
+  // 17-seat rows: alternate extra seat between left and right blocks
+  const rowIndex = def.row.charCodeAt(0) - 65; // A=0, B=1, C=2, …
+  if (rowIndex % 2 === 0) {
+    // Rows A, C, E, G, I, K, M, O → extra on left: 5|8|4
+    return [all.slice(0, 5), all.slice(5, 13), all.slice(13)];
+  } else {
+    // Rows B, D, F, H, J, L, N, P → extra on right: 4|8|5
+    return [all.slice(0, 4), all.slice(4, 12), all.slice(12)];
+  }
 }
