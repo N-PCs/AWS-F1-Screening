@@ -269,7 +269,7 @@ function SeatRow({
           );
         })}
         <span
-          className={cn("shrink-0", isFit ? "w-1 sm:w-4 md:w-6 lg:w-8" : "w-3.5 sm:w-4")}
+          className="shrink-0 w-px"
           aria-hidden
         />
         {centre.map((n) => {
@@ -291,7 +291,7 @@ function SeatRow({
           );
         })}
         <span
-          className={cn("shrink-0", isFit ? "w-1 sm:w-4 md:w-6 lg:w-8" : "w-3.5 sm:w-4")}
+          className="shrink-0 w-px"
           aria-hidden
         />
         {right.map((n) => {
