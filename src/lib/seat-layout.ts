@@ -45,14 +45,14 @@ export const TIERS: Record<TierId, Tier> = {
   standard: {
     id: "standard",
     name: "Grandstand",
-    price: 99,
+    price: 129,
     tone: "tier-standard",
     blurb: "Middle of the auditorium — the best all-round view.",
   },
   economy: {
     id: "economy",
     name: "Back Straight",
-    price: 85,
+    price: 99,
     tone: "tier-economy",
     blurb: "Rear rows, cheapest tickets, same race.",
   },

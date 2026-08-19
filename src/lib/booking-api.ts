@@ -1,5 +1,7 @@
 import { z } from "zod";
 import {
+  arrayRemove,
+  arrayUnion,
   collection,
   deleteDoc,
   doc,
@@ -107,6 +109,21 @@ const REGS = "registrations";
 const SHOTS = "screenshots";
 const WAITLIST = "waitlist";
 const CONFIG = "config";
+const LOOKUPS = "lookups";
+
+/**
+ * Public lookup index keyed by `email:<lowercase>` / `reg:<UPPERCASE>` (and
+ * `wl:<code>` for waitlist allocations). Stores only booking/waitlist codes —
+ * no PII. Used by `searchTickets` so visitors can find their own tickets by
+ * email or reg no. without Firestore `list` access, which rules restrict to
+ * admins.
+ */
+function lookupKeys(email: string, regNo: string) {
+  const keys: string[] = [];
+  if (email) keys.push(`email:${email.toLowerCase()}`);
+  if (regNo) keys.push(`reg:${regNo.toUpperCase()}`);
+  return keys;
+}
 
 type SeatDoc = {
   status: "held" | "booked" | "waitlisted";
@@ -309,6 +326,9 @@ export async function createBooking(input: {
       screenshotUrl: screenshot.secureUrl,
       status: "pending",
     });
+    for (const key of lookupKeys(parsed.email, regKey)) {
+      tx.set(doc(db(), LOOKUPS, key), { bookingCodes: arrayUnion(code) }, { merge: true });
+    }
   });
 
   return { code, amount };
@@ -339,153 +359,72 @@ export async function searchTickets(inputQuery: string): Promise<{
   const bookingsMap = new Map<string, BookingRecord>();
   const waitlistsMap = new Map<string, WaitlistRecord>();
 
-  // 1. Direct code lookup for Bookings
-  if (qUpper.startsWith("F1-") || qUpper.length >= 6) {
-    try {
-      const snap = await getDoc(doc(db(), BOOKINGS, qUpper));
-      if (snap.exists()) {
-        const d = snap.data() as Record<string, unknown>;
-        bookingsMap.set(snap.id, {
-          code: String(d["code"] ?? snap.id),
-          createdAt: toIso(d["createdAt"]),
-          name: String(d["name"] ?? ""),
-          email: String(d["email"] ?? ""),
-          phone: String(d["phone"] ?? ""),
-          regNo: String(d["regNo"] ?? ""),
-          seats: (d["seats"] as string[]) ?? [],
-          amount: Number(d["amount"] ?? 0),
-          upiRef: String(d["upiRef"] ?? ""),
-          screenshotUrl: String(d["screenshotUrl"] ?? ""),
-          status: String(d["status"] ?? "pending") as BookingRecord["status"],
-        });
-      }
-    } catch {}
+  const readBooking = async (code: string) => {
+    if (bookingsMap.has(code)) return;
+    const snap = await getDoc(doc(db(), BOOKINGS, code)).catch(() => null);
+    if (!snap?.exists()) return;
+    const d = snap.data() as Record<string, unknown>;
+    bookingsMap.set(code, {
+      code: String(d["code"] ?? code),
+      createdAt: toIso(d["createdAt"]),
+      name: String(d["name"] ?? ""),
+      email: String(d["email"] ?? ""),
+      phone: String(d["phone"] ?? ""),
+      regNo: String(d["regNo"] ?? ""),
+      seats: (d["seats"] as string[]) ?? [],
+      amount: Number(d["amount"] ?? 0),
+      upiRef: String(d["upiRef"] ?? ""),
+      screenshotUrl: String(d["screenshotUrl"] ?? ""),
+      status: String(d["status"] ?? "pending") as BookingRecord["status"],
+    });
+  };
+
+  const readWaitlist = async (code: string) => {
+    if (waitlistsMap.has(code)) return;
+    const snap = await getDoc(doc(db(), WAITLIST, code)).catch(() => null);
+    if (!snap?.exists()) return;
+    const d = snap.data() as Record<string, unknown>;
+    waitlistsMap.set(code, {
+      code: String(d["code"] ?? code),
+      seat: String(d["seat"] ?? ""),
+      name: String(d["name"] ?? ""),
+      email: String(d["email"] ?? ""),
+      phone: String(d["phone"] ?? ""),
+      regNo: String(d["regNo"] ?? ""),
+      createdAt: toIso(d["createdAt"]),
+    });
+  };
+
+  // Resolve everything a public lookup doc points at (booking / waitlist codes).
+  const readLookup = async (key: string) => {
+    const snap = await getDoc(doc(db(), LOOKUPS, key)).catch(() => null);
+    if (!snap?.exists()) return;
+    const d = snap.data() as { bookingCodes?: string[]; waitlistCodes?: string[] };
+    await Promise.all([
+      ...(d.bookingCodes ?? []).map(readBooking),
+      ...(d.waitlistCodes ?? []).map(readWaitlist),
+    ]);
+  };
+
+  // 1. Direct code lookup (getDoc is public; works for any F1-/WL- code).
+  if (qUpper.startsWith("F1-") || qUpper.length >= 6) await readBooking(qUpper);
+  if (qUpper.startsWith("WL-") || qUpper.length >= 6) await readWaitlist(qUpper);
+
+  // 2. A booking allocated from a waitlist keeps the old WL- code findable.
+  if (qUpper.startsWith("WL-")) await readLookup(`wl:${qUpper}`);
+
+  // 3. Email lookup index (public getDoc, no Firestore list needed).
+  if (qLower.includes("@")) await readLookup(`email:${qLower}`);
+
+  // 4. Registration number lookup index.
+  if (
+    !qLower.includes("@") &&
+    /^[A-Za-z0-9]+$/.test(qUpper) &&
+    !qUpper.startsWith("F1-") &&
+    !qUpper.startsWith("WL-")
+  ) {
+    await readLookup(`reg:${qUpper}`);
   }
-
-  // 2. Direct code lookup for Waitlist (or booking allocated from waitlist)
-  if (qUpper.startsWith("WL-") || qUpper.length >= 6) {
-    try {
-      const snap = await getDoc(doc(db(), WAITLIST, qUpper));
-      if (snap.exists()) {
-        const d = snap.data() as Record<string, unknown>;
-        waitlistsMap.set(snap.id, {
-          code: String(d["code"] ?? snap.id),
-          seat: String(d["seat"] ?? ""),
-          name: String(d["name"] ?? ""),
-          email: String(d["email"] ?? ""),
-          phone: String(d["phone"] ?? ""),
-          regNo: String(d["regNo"] ?? ""),
-          createdAt: toIso(d["createdAt"]),
-        });
-      }
-    } catch {}
-
-    try {
-      const allocSnaps = await getDocs(
-        query(collection(db(), BOOKINGS), where("allocatedFromWaitlist", "==", qUpper)),
-      );
-      allocSnaps.forEach((d) => {
-        const data = d.data() as Record<string, unknown>;
-        bookingsMap.set(d.id, {
-          code: String(data["code"] ?? d.id),
-          createdAt: toIso(data["createdAt"]),
-          name: String(data["name"] ?? ""),
-          email: String(data["email"] ?? ""),
-          phone: String(data["phone"] ?? ""),
-          regNo: String(data["regNo"] ?? ""),
-          seats: (data["seats"] as string[]) ?? [],
-          amount: Number(data["amount"] ?? 0),
-          upiRef: String(data["upiRef"] ?? ""),
-          screenshotUrl: String(data["screenshotUrl"] ?? ""),
-          status: String(data["status"] ?? "pending") as BookingRecord["status"],
-        });
-      });
-    } catch {}
-  }
-
-  // 3. Query bookings by email
-  try {
-    const emailSnaps = await getDocs(
-      query(collection(db(), BOOKINGS), where("email", "==", qLower)),
-    );
-    emailSnaps.forEach((d) => {
-      const data = d.data() as Record<string, unknown>;
-      bookingsMap.set(d.id, {
-        code: String(data["code"] ?? d.id),
-        createdAt: toIso(data["createdAt"]),
-        name: String(data["name"] ?? ""),
-        email: String(data["email"] ?? ""),
-        phone: String(data["phone"] ?? ""),
-        regNo: String(data["regNo"] ?? ""),
-        seats: (data["seats"] as string[]) ?? [],
-        amount: Number(data["amount"] ?? 0),
-        upiRef: String(data["upiRef"] ?? ""),
-        screenshotUrl: String(data["screenshotUrl"] ?? ""),
-        status: String(data["status"] ?? "pending") as BookingRecord["status"],
-      });
-    });
-  } catch {}
-
-  // 4. Query bookings by registration number
-  try {
-    const regSnaps = await getDocs(
-      query(collection(db(), BOOKINGS), where("regNo", "==", qUpper)),
-    );
-    regSnaps.forEach((d) => {
-      const data = d.data() as Record<string, unknown>;
-      bookingsMap.set(d.id, {
-        code: String(data["code"] ?? d.id),
-        createdAt: toIso(data["createdAt"]),
-        name: String(data["name"] ?? ""),
-        email: String(data["email"] ?? ""),
-        phone: String(data["phone"] ?? ""),
-        regNo: String(data["regNo"] ?? ""),
-        seats: (data["seats"] as string[]) ?? [],
-        amount: Number(data["amount"] ?? 0),
-        upiRef: String(data["upiRef"] ?? ""),
-        screenshotUrl: String(data["screenshotUrl"] ?? ""),
-        status: String(data["status"] ?? "pending") as BookingRecord["status"],
-      });
-    });
-  } catch {}
-
-  // 5. Query waitlist by email
-  try {
-    const emailWlSnaps = await getDocs(
-      query(collection(db(), WAITLIST), where("email", "==", qLower)),
-    );
-    emailWlSnaps.forEach((d) => {
-      const data = d.data() as Record<string, unknown>;
-      waitlistsMap.set(d.id, {
-        code: String(data["code"] ?? d.id),
-        seat: String(data["seat"] ?? ""),
-        name: String(data["name"] ?? ""),
-        email: String(data["email"] ?? ""),
-        phone: String(data["phone"] ?? ""),
-        regNo: String(data["regNo"] ?? ""),
-        createdAt: toIso(data["createdAt"]),
-      });
-    });
-  } catch {}
-
-  // 6. Query waitlist by registration number
-  try {
-    const regWlSnaps = await getDocs(
-      query(collection(db(), WAITLIST), where("regNo", "==", qUpper)),
-    );
-    regWlSnaps.forEach((d) => {
-      const data = d.data() as Record<string, unknown>;
-      waitlistsMap.set(d.id, {
-        code: String(data["code"] ?? d.id),
-        seat: String(data["seat"] ?? ""),
-        name: String(data["name"] ?? ""),
-        email: String(data["email"] ?? ""),
-        phone: String(data["phone"] ?? ""),
-        regNo: String(data["regNo"] ?? ""),
-        createdAt: toIso(data["createdAt"]),
-      });
-    });
-  } catch {}
 
   return {
     bookings: Array.from(bookingsMap.values()),
@@ -585,6 +524,9 @@ export async function joinWaitlist(input: {
       createdAt: serverTimestamp(),
     });
     tx.set(regRef, { code, kind: "waitlist", createdAt: serverTimestamp() });
+    for (const key of lookupKeys(parsed.email, regKey)) {
+      tx.set(doc(db(), LOOKUPS, key), { waitlistCodes: arrayUnion(code) }, { merge: true });
+    }
   });
 
   return { code, seat };
@@ -661,6 +603,7 @@ export async function adminAllocateWaitlist(code: string, allocatorEmail: string
   const seat = String(wl["seat"] ?? "");
   if (!seat) throw new Error("Waitlist entry has no seat reserved.");
   const regKey = String(wl["regNo"] ?? "");
+  const email = String(wl["email"] ?? "");
   const bookingCode = newCode();
   const amount = priceForSeat(seat);
 
@@ -691,6 +634,14 @@ export async function adminAllocateWaitlist(code: string, allocatorEmail: string
     });
     if (regKey) tx.update(doc(db(), REGS, regKey), { code: bookingCode, kind: "booking" });
     tx.delete(wlRef);
+    for (const key of lookupKeys(email, regKey)) {
+      tx.set(doc(db(), LOOKUPS, key), { bookingCodes: arrayUnion(bookingCode) }, { merge: true });
+    }
+    tx.set(
+      doc(db(), LOOKUPS, `wl:${code}`),
+      { bookingCodes: arrayUnion(bookingCode) },
+      { merge: true },
+    );
   });
 
   return { code: bookingCode, seat, amount };
@@ -814,6 +765,32 @@ export async function adminScreenshot(code: string): Promise<string> {
   return data.screenshotUrl ?? data.dataUrl ?? "";
 }
 
+/**
+ * Organiser-only: rebuild the public email/reg lookup index from existing
+ * bookings and waitlist entries. Backfills tickets created before the index
+ * existed. Idempotent — safe to run on every admin load.
+ */
+export async function adminRebuildLookups(): Promise<{
+  bookings: number;
+  waitlists: number;
+}> {
+  requireBackend();
+  const [{ bookings }, { entries }] = await Promise.all([adminList(), adminWaitlistList()]);
+  const writes: Promise<unknown>[] = [];
+  for (const b of bookings) {
+    const set = (key: string, field: "bookingCodes") =>
+      setDoc(doc(db(), LOOKUPS, key), { [field]: arrayUnion(b.code) }, { merge: true });
+    for (const key of lookupKeys(b.email, b.regNo)) writes.push(set(key, "bookingCodes"));
+  }
+  for (const w of entries) {
+    const set = (key: string, field: "waitlistCodes") =>
+      setDoc(doc(db(), LOOKUPS, key), { [field]: arrayUnion(w.code) }, { merge: true });
+    for (const key of lookupKeys(w.email, w.regNo)) writes.push(set(key, "waitlistCodes"));
+  }
+  await Promise.all(writes);
+  return { bookings: bookings.length, waitlists: entries.length };
+}
+
 export async function adminSetStatus(code: string, status: BookingRecord["status"]) {
   requireBackend();
   const bookingRef = doc(db(), BOOKINGS, code);
@@ -841,15 +818,19 @@ export async function adminDeleteBooking(code: string) {
   const bookingRef = doc(db(), BOOKINGS, code);
   const snap = await getDoc(bookingRef);
   if (!snap.exists()) throw new Error("Booking not found");
-  const data = snap.data() as { regNo?: string; seats?: string[] };
+  const data = snap.data() as { regNo?: string; seats?: string[]; email?: string };
   const regNo = data.regNo ?? "";
   const seats = data.seats ?? [];
+  const email = data.email ?? "";
 
   await runTransaction(db(), async (tx) => {
     tx.delete(bookingRef);
     tx.delete(doc(db(), SHOTS, code));
     if (regNo) tx.delete(doc(db(), REGS, regNo));
     for (const s of seats) tx.delete(doc(db(), SEATS, s));
+    for (const key of lookupKeys(email, regNo)) {
+      tx.set(doc(db(), LOOKUPS, key), { bookingCodes: arrayRemove(code) }, { merge: true });
+    }
   });
 
   return { code };

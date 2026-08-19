@@ -20,6 +20,7 @@ import {
   adminAllocateWaitlist,
   adminDeleteBooking,
   adminList,
+  adminRebuildLookups,
   adminRemoveWaitlist,
   adminScreenshot,
   adminSetRoomOpen,
@@ -90,6 +91,11 @@ function AdminPage() {
       setBookings(data.bookings);
       setWaitlist(wl.entries);
       setR2Open(Boolean(rooms.R2));
+      // Keep the public email/reg lookup index in sync so tickets created
+      // before it existed are still findable on /tickets.
+      if (data.bookings.length || wl.entries.length) {
+        await adminRebuildLookups().catch(() => {});
+      }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not load registrations");
     } finally {

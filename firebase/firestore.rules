@@ -66,5 +66,15 @@ service cloud.firestore {
       allow list: if isAdmin();
       allow create, update, delete: if isAdmin();
     }
+
+    // Public lookup index for /tickets: keys are `email:<lowercase>` and
+    // `reg:<UPPERCASE>` and `wl:<waitlist-code>`; values hold only booking /
+    // waitlist codes (no PII). Written by the booking/waitlist transactions so
+    // visitors can find their own tickets with a `get` (never a `list`).
+    match /lookups/{key} {
+      allow get: if true;
+      allow create, update: if true;
+      allow delete: if isAdmin();
+    }
   }
 }
