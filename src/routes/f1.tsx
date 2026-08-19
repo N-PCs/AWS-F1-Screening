@@ -26,11 +26,11 @@ import { EVENT } from "@/lib/event-config";
 export const Route = createFileRoute("/f1")({
   head: () => ({
     meta: [
-      { title: "F1 101 — Complete Formula 1 Guide | AWS Club VITB" },
+      { title: "F1 101 — Complete Formula 1 Guide | AWS SBG VITB" },
       {
         name: "description",
         content:
-          "New to Formula 1? Master the race weekend format, telemetry, points system, tyre strategy, drivers, and jargon before the AWS Club VITB Grand Prix screening.",
+          "New to Formula 1? Master the race weekend format, telemetry, points system, tyre strategy, drivers, and jargon before the AWS SBG VITB Grand Prix screening.",
       },
       { property: "og:title", content: "F1 101 — Complete Formula 1 Guide" },
       {
@@ -373,7 +373,7 @@ function HeroHeader() {
           <div className="relative overflow-hidden rounded-md border border-white/15 bg-card/60 p-2 shadow-2xl shadow-primary/10">
             <div className="relative aspect-4/3 overflow-hidden">
               <img
-                src="/random/random4.jpeg"
+                src="/random/madringlogo.jpg"
                 alt="Formula 1 car driving at ultra high speed"
                 className="h-full w-full object-cover transition-transform duration-700 hover:scale-105"
               />
@@ -699,7 +699,7 @@ function CircuitTelemetrySection() {
         <div className="lg:col-span-6 flex justify-center relative group">
           <div className="relative w-full max-w-md overflow-hidden rounded-md border border-white/10 bg-zinc-950/80 p-6 shadow-inner">
             <img
-              src="/random/italiangrandprix.svg"
+              src="/madring.avif"
               alt="Spanish Grand Prix Madrid Madring Track Layout"
               className="h-auto w-full transition-transform duration-500"
             />
@@ -826,13 +826,13 @@ function TyreStrategySection() {
             </div>
           </div>
 
-          {/* Visual Tyre Image Card (Using public/random/random2.avif) */}
+          {/* Visual Tyre Image Card */}
           <div className="lg:col-span-5">
             <div className="relative overflow-hidden rounded-xl border border-white/15 bg-black/50 p-2 shadow-xl">
               <img
-                src="/random2.avif"
+                src="/random/tyres.png"
                 alt="Formula 1 Tyre Stacks and Racing Action"
-                className="h-56 w-full rounded-lg object-cover"
+                className="h-75 w-full rounded-lg object-cover"
               />
               <div className="p-3 text-center text-xs font-semibold text-zinc-300">
                 Rule: Failing to use 2 different slick compounds results in instant Disqualification (DQ).

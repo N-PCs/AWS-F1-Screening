@@ -27,39 +27,37 @@ export function AuthGate() {
   const disabled = busy || loading || !isFirebaseConfigured;
 
   return (
-    <div className="mx-auto max-w-md px-4 py-16 sm:py-24">
-      <div className="rounded-lg border border-border bg-card p-6 sm:p-8">
-        {/* Header */}
-        <div className="checkers h-1.5 w-16 rounded-sm opacity-80" aria-hidden />
-        <h1 className="mt-4 text-2xl font-bold uppercase sm:text-3xl">
-          Sign in to book
-        </h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          Only <span className="font-semibold text-primary">@{ALLOWED_DOMAIN}</span> Google accounts
-          can book seats for the screening.
+    <div className="rounded-md border border-border bg-card p-5 sm:p-6">
+      {/* Header */}
+      <div className="checkers h-1.5 w-16 rounded-sm opacity-80" aria-hidden />
+      <h2 className="mt-3 text-lg font-bold uppercase sm:text-xl">
+        Sign in to book
+      </h2>
+      <p className="mt-2 text-xs sm:text-sm text-muted-foreground">
+        Only <span className="font-semibold text-primary">@{ALLOWED_DOMAIN}</span> Google accounts
+        can book seats for the screening.
+      </p>
+
+      {!isFirebaseConfigured && (
+        <p className="mt-3 rounded-md border border-accent/50 bg-accent/10 p-3 text-xs">
+          Firebase keys not configured yet — see <code>firebase/README.md</code>.
         </p>
+      )}
 
-        {!isFirebaseConfigured && (
-          <p className="mt-4 rounded-md border border-accent/50 bg-accent/10 p-3 text-xs">
-            Firebase keys not configured yet — see <code>firebase/README.md</code>.
-          </p>
-        )}
+      {/* Google sign-in */}
+      <Button
+        className="mt-5 w-full gap-2 font-bold uppercase tracking-wide"
+        disabled={disabled}
+        onClick={() => void handleGoogle()}
+      >
+        <GoogleIcon />
+        Sign in with Google
+      </Button>
 
-        {/* Google sign-in */}
-        <Button
-          className="mt-6 w-full gap-2 font-bold uppercase tracking-wide"
-          disabled={disabled}
-          onClick={() => void handleGoogle()}
-        >
-          <GoogleIcon />
-          Sign in with Google
-        </Button>
-
-        <p className="mt-5 text-center text-[0.7rem] text-muted-foreground">
-          We only use your email to verify you're a VIT Bhopal student.
-          No spam, ever.
-        </p>
-      </div>
+      <p className="mt-4 text-center text-[0.7rem] text-muted-foreground">
+        We only use your email to verify you're a VIT Bhopal student.
+        No spam, ever.
+      </p>
     </div>
   );
 }

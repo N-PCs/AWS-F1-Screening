@@ -79,7 +79,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { name: "author", content: "AWS Club VITB" },
+      { name: "author", content: "AWS SBG VITB" },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -145,6 +145,7 @@ const NAV_ITEMS = [
   { to: "/teams", label: "Teams" },
   { to: "/drivers", label: "Drivers" },
   { to: "/book", label: "Book Seats" },
+  { to: "/tickets", label: "My Tickets" },
 ] as const;
 
 function SiteHeader() {
@@ -155,8 +156,8 @@ function SiteHeader() {
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
         {/* Logo */}
         <Link to="/" className="group flex items-center gap-3">
-          <span className="checkers h-7 w-7 rounded-sm opacity-90" aria-hidden />
-          <span className="display text-sm leading-tight font-bold tracking-widest uppercase">
+            <img src="f1logo.png" style={{height:"35px", width:"35px"}}></img><img src="awssbg.png" style={{height:"35px", width:"35px"}}></img>
+            <span className="display text-sm leading-tight font-bold tracking-widest uppercase">
             {EVENT.club}
             <span className="block text-[0.65rem] font-medium tracking-[0.25em] text-muted-foreground">
               Race Screening

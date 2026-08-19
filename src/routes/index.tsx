@@ -11,17 +11,17 @@ import { ScrollyMadrid } from "@/components/f1/ScrollyMadrid";
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "F1 Grand Prix Screening — AWS Club VITB, AB-02" },
+      { title: "F1 Grand Prix Screening — AWS SBG VITB, AB-02" },
       {
         name: "description",
         content:
-          "Lights out at VIT Bhopal. AWS Club VITB screens the Formula 1 Grand Prix live across AB02-127 & AB02-128 — 532 seats, tiered pricing from ₹99, book your seat now.",
+          "Lights out at VIT Bhopal. AWS SBG VITB screens the Formula 1 Grand Prix live across AB02-127 & AB02-126 — 500 seats, tiered pricing from ₹99, book your seat now.",
       },
-      { property: "og:title", content: "F1 Grand Prix Screening — AWS Club VITB" },
+      { property: "og:title", content: "F1 Grand Prix Screening — AWS SBG VITB" },
       {
         property: "og:description",
         content:
-          "532 seats, two rooms, big screens and full race weekend energy in AB-02. Pick your seat from ₹99.",
+          "500 seats, two rooms, big screens and full race weekend energy in AB-02. Pick your seat from ₹99.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
@@ -67,7 +67,7 @@ function Hero() {
           {EVENT.title}
         </h1>
         <p className="mt-4 max-w-xl text-base text-muted-foreground sm:text-lg">
-          Lights out on the big screens of AB02-127 & AB02-128. {TOTAL_SEATS} seats, tiered like a
+          Lights out on the big screens of AB02-127. {TOTAL_SEATS} seats, tiered like a
           real grandstand — the closer you sit, the louder the engines.
         </p>
         <dl className="mt-8 flex flex-wrap gap-x-10 gap-y-4 text-sm">
@@ -227,33 +227,30 @@ function Countdown() {
 }
 
 const TIER_ACCENT: Record<string, string> = {
-  premium: "border-t-tier-premium",
-  standard: "border-t-tier-standard",
-  economy: "border-t-tier-economy",
+  redbull: "border-t-blue-500",
+  ferrari: "border-t-orange-500",
+  premium: "border-t-amber-500",
+  standard: "border-t-cyan-500",
+  economy: "border-t-emerald-500",
 };
 
 function Tiers() {
   return (
-    <section className="mx-auto max-w-5xl px-4 py-16">
+    <section className="mx-auto max-w-6xl px-4 py-16">
       <h2 className="text-2xl font-bold uppercase sm:text-3xl">Pick your grandstand</h2>
       <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
-        Rows are priced like a circuit: pole position up front, budget seats at the back.
+        Front rows feature team-exclusive Red Bull & Ferrari Fanzones alongside Pit Lane.
       </p>
-      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+      <div className="mt-8 grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
         {Object.values(TIERS).map((tier) => {
-          const rows = ROWS.filter((r) => r.tier === tier.id);
-          const seats = rows.reduce((n, r) => n + r.count, 0);
           return (
             <article
               key={tier.id}
-              className={`rounded-md border border-border border-t-[3px] bg-card p-5 ${TIER_ACCENT[tier.id]}`}
+              className={`rounded-md border border-border border-t-[3px] bg-card p-4 sm:p-5 ${TIER_ACCENT[tier.id] ?? ""}`}
             >
-              <h3 className="text-lg font-bold uppercase">{tier.name}</h3>
-              <p className="mt-1 text-3xl font-bold text-primary">₹{tier.price}</p>
-              <p className="mt-3 text-sm text-muted-foreground">
-                Rows {rows[0]?.row}–{rows[rows.length - 1]?.row} · {seats} seats
-              </p>
-              <p className="mt-2 text-sm text-muted-foreground">{tier.blurb}</p>
+              <h3 className="text-sm font-bold uppercase">{tier.name}</h3>
+              <p className="mt-1 text-2xl font-bold text-primary">₹{tier.price}</p>
+              <p className="mt-2 text-xs text-muted-foreground">{tier.blurb}</p>
             </article>
           );
         })}

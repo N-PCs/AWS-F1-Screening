@@ -1,16 +1,17 @@
 import { z } from "zod";
 import {
+  arrayRemove,
+  arrayUnion,
   collection,
-  deleteDoc,
   doc,
   getDoc,
   getDocs,
-  query,
   runTransaction,
   serverTimestamp,
+  setDoc,
   updateDoc,
-  where,
   type Timestamp,
+  type Transaction,
 } from "firebase/firestore";
 import {
   GoogleAuthProvider,
@@ -21,7 +22,7 @@ import {
 } from "firebase/auth";
 import { auth, db, isFirebaseConfigured } from "./firebase";
 import { ADMIN_EMAILS, EVENT } from "./event-config";
-import { priceForSeat } from "./seat-layout";
+import { priceForSeat, seatParts, type RoomId } from "./seat-layout";
 import type { CloudinaryUpload } from "./cloudinary";
 
 export class BackendNotConfigured extends Error {
@@ -45,10 +46,9 @@ export const attendeeSchema = z.object({
     .trim()
     .email("Enter a valid email")
     .max(120)
-    .refine(
-      (email) => email.toLowerCase().endsWith("@vitbhopal.ac.in"),
-      { message: "Only VIT Bhopal emails (@vitbhopal.ac.in) are allowed" }
-    ),
+    .refine((email) => email.toLowerCase().endsWith("@vitbhopal.ac.in"), {
+      message: "Only VIT Bhopal emails (@vitbhopal.ac.in) are allowed",
+    }),
   phone: z
     .string()
     .trim()
@@ -74,6 +74,12 @@ export type SeatHold = { seat: string; holdId: string; expiresAt: number };
 export type Availability = {
   taken: string[];
   held: SeatHold[];
+  /** seats permanently reserved through the AB02-126 waiting list */
+  waitlisted: string[];
+  /** how many people are on the AB02-126 waiting list right now */
+  waitlistTotal: number;
+  /** whether the organiser has opened AB02-126 for normal booking */
+  r2Open: boolean;
   holdTtlMs: number;
   updatedAt: string;
 };
@@ -90,7 +96,7 @@ export type BookingRecord = {
   upiRef: string;
   /** Cloudinary URL of the payment screenshot (admin-only read via Firestore rules) */
   screenshotUrl: string;
-  status: "pending" | "verified" | "rejected";
+  status: "pending_payment" | "pending" | "verified" | "rejected";
 };
 
 /* ---------------- collections ---------------- */
@@ -99,12 +105,70 @@ const SEATS = "seats";
 const BOOKINGS = "bookings";
 const REGS = "registrations";
 const SHOTS = "screenshots";
+const WAITLIST = "waitlist";
+const CONFIG = "config";
+const LOOKUPS = "lookups";
+const AVAIL = "availability";
+
+const availRef = () => doc(db(), AVAIL, "state");
+
+type AvailabilityState = {
+  taken: string[];
+  held: SeatHold[];
+  waitlisted: string[];
+  r2Open: boolean;
+  updatedAt: number;
+};
+
+function emptyAvailability(): AvailabilityState {
+  return { taken: [], held: [], waitlisted: [], r2Open: false, updatedAt: 0 };
+}
+
+function pruneHeld(held: SeatHold[], now: number): SeatHold[] {
+  return held.filter((h) => h.expiresAt > now);
+}
+
+async function readAvailabilityState(tx: Transaction): Promise<AvailabilityState> {
+  const snap = await tx.get(availRef());
+  if (!snap.exists()) return emptyAvailability();
+  const d = snap.data() as Partial<AvailabilityState>;
+  return {
+    taken: d.taken ?? [],
+    held: d.held ?? [],
+    waitlisted: d.waitlisted ?? [],
+    r2Open: Boolean(d.r2Open),
+    updatedAt: d.updatedAt ?? 0,
+  };
+}
+
+async function writeAvailabilityState(
+  tx: Transaction,
+  st: AvailabilityState,
+) {
+  tx.set(availRef(), { ...st, updatedAt: Date.now() });
+}
+
+/**
+ * Public lookup index keyed by `email:<lowercase>` / `reg:<UPPERCASE>` (and
+ * `wl:<code>` for waitlist allocations). Stores only booking/waitlist codes —
+ * no PII. Used by `searchTickets` so visitors can find their own tickets by
+ * email or reg no. without Firestore `list` access, which rules restrict to
+ * admins.
+ */
+function lookupKeys(email: string, regNo: string) {
+  const keys: string[] = [];
+  if (email) keys.push(`email:${email.toLowerCase()}`);
+  if (regNo) keys.push(`reg:${regNo.toUpperCase()}`);
+  return keys;
+}
 
 type SeatDoc = {
-  status: "held" | "booked";
+  status: "held" | "booked" | "waitlisted";
   holdId?: string;
   expiresAt?: number;
   code?: string;
+  /** code of the waitlist entry that reserved this seat */
+  waitlistCode?: string;
 };
 
 function toIso(v: unknown): string {
@@ -114,22 +178,55 @@ function toIso(v: unknown): string {
   return typeof ts?.toDate === "function" ? ts.toDate().toISOString() : String(v);
 }
 
-/* ---------------- availability ---------------- */
-
-export async function getAvailability(): Promise<Availability> {
+/** Rebuild the aggregate from raw seat docs (one-time lazy init / backfill). */
+async function rebuildAvailabilityFromSeats(): Promise<AvailabilityState> {
   requireBackend();
+  const now = Date.now();
   const snap = await getDocs(collection(db(), SEATS));
   const taken: string[] = [];
   const held: SeatHold[] = [];
-  const now = Date.now();
+  const waitlisted: string[] = [];
   snap.forEach((d) => {
     const data = d.data() as SeatDoc;
     if (data.status === "booked") taken.push(d.id);
+    else if (data.status === "waitlisted") waitlisted.push(d.id);
     else if (data.status === "held" && (data.expiresAt ?? 0) > now) {
       held.push({ seat: d.id, holdId: data.holdId ?? "", expiresAt: data.expiresAt ?? 0 });
     }
   });
-  return { taken, held, holdTtlMs: HOLD_TTL_MS, updatedAt: new Date().toISOString() };
+  const cfg = await getDoc(doc(db(), CONFIG, "rooms")).catch(() => null);
+  const r2Open = cfg?.exists() ? Boolean((cfg.data() as Record<string, unknown>)["R2"]) : false;
+  return { taken, held, waitlisted, r2Open, updatedAt: Date.now() };
+}
+
+function toAvailability(st: AvailabilityState, now: number): Availability {
+  const held = pruneHeld(st.held, now);
+  const waitlisted = st.waitlisted ?? [];
+  return {
+    taken: st.taken ?? [],
+    held,
+    waitlisted,
+    waitlistTotal: waitlisted.length,
+    r2Open: Boolean(st.r2Open),
+    holdTtlMs: HOLD_TTL_MS,
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+/* ---------------- availability ---------------- */
+
+export async function getAvailability(): Promise<Availability> {
+  requireBackend();
+  const now = Date.now();
+  const snap = await getDoc(availRef());
+  if (!snap.exists()) {
+    // First run — build the aggregate from the seat docs once.
+    const built = await rebuildAvailabilityFromSeats();
+    await setDoc(availRef(), built);
+    return toAvailability(built, now);
+  }
+  const st = snap.data() as AvailabilityState;
+  return toAvailability(st, now);
 }
 
 /* ---------------- holds ---------------- */
@@ -140,36 +237,52 @@ export async function holdSeats(holdId: string, seats: string[]) {
   if (seats.length > EVENT.maxSeatsPerBooking) {
     throw new Error(`Maximum ${EVENT.maxSeatsPerBooking} seats per booking`);
   }
-  const mine = await getDocs(query(collection(db(), SEATS), where("holdId", "==", holdId)));
-  const stale = mine.docs.filter((d) => !seats.includes(d.id));
   const expiresAt = Date.now() + HOLD_TTL_MS;
 
   await runTransaction(db(), async (tx) => {
     const now = Date.now();
     const current = await Promise.all(seats.map((s) => tx.get(doc(db(), SEATS, s))));
-    const staleSnaps = await Promise.all(stale.map((d) => tx.get(d.ref)));
 
     const clash: string[] = [];
     current.forEach((snap, i) => {
       if (!snap.exists()) return;
       const data = snap.data() as SeatDoc;
-      if (data.status === "booked") clash.push(seats[i] as string);
+      if (data.status === "booked" || data.status === "waitlisted") clash.push(seats[i] as string);
       else if (data.holdId !== holdId && (data.expiresAt ?? 0) > now) {
         clash.push(seats[i] as string);
       }
     });
     if (clash.length) throw new Error(`Seats no longer available: ${clash.join(", ")}`);
 
+    // Find stale seats (mine not in new selection) from aggregate.
+    const st = await readAvailabilityState(tx);
+    const myHeld = st.held.filter((h) => h.holdId === holdId);
+    const staleSeats = myHeld.filter((h) => !seats.includes(h.seat)).map((h) => h.seat);
+
+    // All reads must happen before any writes in a Firestore transaction.
+    const staleSnaps = await Promise.all(
+      staleSeats.map((s) => tx.get(doc(db(), SEATS, s)).then((snap) => ({ seat: s, snap }))),
+    );
+
+    // Write seat docs.
     for (const s of seats) {
       tx.set(doc(db(), SEATS, s), { status: "held", holdId, expiresAt });
     }
-    staleSnaps.forEach((d) => {
-      if (!d.exists()) return;
-      const data = d.data() as SeatDoc;
-      if (data.status === "held" && data.holdId === holdId) {
-        tx.delete(d.ref);
+    // Delete stale seat docs (checked against their pre-write state).
+    for (const { seat: staleSeat, snap } of staleSnaps) {
+      if (snap.exists()) {
+        const data = snap.data() as SeatDoc;
+        if (data.status === "held" && data.holdId === holdId) {
+          tx.delete(doc(db(), SEATS, staleSeat));
+        }
       }
-    });
+    }
+
+    // Update aggregate.
+    const held = pruneHeld(st.held, now);
+    const rest = held.filter((h) => h.holdId !== holdId);
+    for (const s of seats) rest.push({ seat: s, holdId, expiresAt });
+    await writeAvailabilityState(tx, { ...st, held: rest });
   });
 
   return { seats, expiresAt, holdTtlMs: HOLD_TTL_MS };
@@ -178,18 +291,42 @@ export async function holdSeats(holdId: string, seats: string[]) {
 /** Give the seats back immediately (deselect, tab close, expiry). */
 export async function releaseSeats(holdId: string, seats?: string[]) {
   requireBackend();
-  const mine = await getDocs(query(collection(db(), SEATS), where("holdId", "==", holdId)));
-  let released = 0;
-  await Promise.all(
-    mine.docs.map(async (d) => {
-      const data = d.data() as SeatDoc;
-      if (data.status !== "held") return;
-      if (seats && seats.length && !seats.includes(d.id)) return;
-      await deleteDoc(d.ref);
-      released++;
-    }),
+  // Use aggregate to find seats to release (no 512-read query).
+  const st = await getDoc(availRef()).then((s) =>
+    s.exists() ? (s.data() as AvailabilityState) : emptyAvailability(),
   );
-  return { released };
+  const now = Date.now();
+  const held = pruneHeld(st.held, now);
+  const myHeld = held.filter((h) => h.holdId === holdId);
+  const releaseSeatIds = seats?.length
+    ? myHeld.filter((h) => seats.includes(h.seat)).map((h) => h.seat)
+    : myHeld.map((h) => h.seat);
+
+  if (!releaseSeatIds.length) return { released: 0 };
+
+  await runTransaction(db(), async (tx) => {
+    // Read aggregate + seat docs first (all reads before any writes).
+    const fresh = await readAvailabilityState(tx);
+    const seatSnaps = await Promise.all(
+      releaseSeatIds.map((s) => tx.get(doc(db(), SEATS, s))),
+    );
+    for (const snap of seatSnaps) {
+      if (snap.exists()) {
+        const data = snap.data() as SeatDoc;
+        if (data.status === "held" && data.holdId === holdId) {
+          tx.delete(doc(db(), SEATS, snap.id));
+        }
+      }
+    }
+    // Update aggregate.
+    const pruned = pruneHeld(fresh.held, Date.now());
+    const updated = pruned.filter(
+      (h) => !(h.holdId === holdId && (!seats?.length || seats.includes(h.seat))),
+    );
+    await writeAvailabilityState(tx, { ...fresh, held: updated });
+  });
+
+  return { released: releaseSeatIds.length };
 }
 
 const HOLD_KEY = "f1-hold-id";
@@ -238,6 +375,10 @@ export async function createBooking(input: {
   await runTransaction(db(), async (tx) => {
     const now = Date.now();
 
+    // Availability aggregate is part of the transaction's read set, so the
+    // read must happen up front (all reads before all writes).
+    const st = await readAvailabilityState(tx);
+
     // One registration number = one booking. This doc is the uniqueness lock.
     const regRef = doc(db(), REGS, regKey);
     const regSnap = await tx.get(regRef);
@@ -250,7 +391,7 @@ export async function createBooking(input: {
     seatSnaps.forEach((snap, i) => {
       if (!snap.exists()) return;
       const data = snap.data() as SeatDoc;
-      if (data.status === "booked") clash.push(seats[i] as string);
+      if (data.status === "booked" || data.status === "waitlisted") clash.push(seats[i] as string);
       else if (data.holdId !== holdId && (data.expiresAt ?? 0) > now) {
         clash.push(seats[i] as string);
       }
@@ -261,9 +402,6 @@ export async function createBooking(input: {
       tx.set(doc(db(), SEATS, s), { status: "booked", code });
     }
     tx.set(regRef, { code, createdAt: serverTimestamp() });
-    // Link the Cloudinary image to this booking code. Firestore keeps the access
-    // control: only organisers can read this doc, but the image URL itself is
-    // unlisted (random public id) on Cloudinary.
     tx.set(doc(db(), SHOTS, code), {
       screenshotUrl: screenshot.secureUrl,
       cloudinaryPublicId: screenshot.publicId,
@@ -282,6 +420,15 @@ export async function createBooking(input: {
       screenshotUrl: screenshot.secureUrl,
       status: "pending",
     });
+
+    // Update aggregate: held -> taken.
+    const held = pruneHeld(st.held, now).filter((h) => !seats.includes(h.seat));
+    const taken = [...st.taken.filter((t) => !seats.includes(t)), ...seats];
+    await writeAvailabilityState(tx, { ...st, taken, held });
+
+    for (const key of lookupKeys(parsed.email, regKey)) {
+      tx.set(doc(db(), LOOKUPS, key), { bookingCodes: arrayUnion(code) }, { merge: true });
+    }
   });
 
   return { code, amount };
@@ -295,6 +442,395 @@ export async function getBooking(code: string): Promise<BookingRecord> {
     createdAt?: unknown;
   };
   return { ...d, createdAt: toIso(d.createdAt), screenshotUrl: "" } as BookingRecord;
+}
+
+/** Search bookings and waitlist entries by code, email, or registration number. */
+export async function searchTickets(inputQuery: string): Promise<{
+  bookings: BookingRecord[];
+  waitlists: WaitlistRecord[];
+}> {
+  requireBackend();
+  const q = inputQuery.trim();
+  if (!q) return { bookings: [], waitlists: [] };
+
+  const qUpper = q.toUpperCase();
+  const qLower = q.toLowerCase();
+
+  const bookingsMap = new Map<string, BookingRecord>();
+  const waitlistsMap = new Map<string, WaitlistRecord>();
+
+  const readBooking = async (code: string) => {
+    if (bookingsMap.has(code)) return;
+    const snap = await getDoc(doc(db(), BOOKINGS, code)).catch(() => null);
+    if (!snap?.exists()) return;
+    const d = snap.data() as Record<string, unknown>;
+    bookingsMap.set(code, {
+      code: String(d["code"] ?? code),
+      createdAt: toIso(d["createdAt"]),
+      name: String(d["name"] ?? ""),
+      email: String(d["email"] ?? ""),
+      phone: String(d["phone"] ?? ""),
+      regNo: String(d["regNo"] ?? ""),
+      seats: (d["seats"] as string[]) ?? [],
+      amount: Number(d["amount"] ?? 0),
+      upiRef: String(d["upiRef"] ?? ""),
+      screenshotUrl: String(d["screenshotUrl"] ?? ""),
+      status: String(d["status"] ?? "pending") as BookingRecord["status"],
+    });
+  };
+
+  const readWaitlist = async (code: string) => {
+    if (waitlistsMap.has(code)) return;
+    const snap = await getDoc(doc(db(), WAITLIST, code)).catch(() => null);
+    if (!snap?.exists()) return;
+    const d = snap.data() as Record<string, unknown>;
+    waitlistsMap.set(code, {
+      code: String(d["code"] ?? code),
+      seat: String(d["seat"] ?? ""),
+      name: String(d["name"] ?? ""),
+      email: String(d["email"] ?? ""),
+      phone: String(d["phone"] ?? ""),
+      regNo: String(d["regNo"] ?? ""),
+      createdAt: toIso(d["createdAt"]),
+    });
+  };
+
+  // Resolve everything a public lookup doc points at (booking / waitlist codes).
+  const readLookup = async (key: string) => {
+    const snap = await getDoc(doc(db(), LOOKUPS, key)).catch(() => null);
+    if (!snap?.exists()) return;
+    const d = snap.data() as { bookingCodes?: string[]; waitlistCodes?: string[] };
+    await Promise.all([
+      ...(d.bookingCodes ?? []).map(readBooking),
+      ...(d.waitlistCodes ?? []).map(readWaitlist),
+    ]);
+  };
+
+  // 1. Direct code lookup (getDoc is public; works for any F1-/WL- code).
+  if (qUpper.startsWith("F1-") || qUpper.length >= 6) await readBooking(qUpper);
+  if (qUpper.startsWith("WL-") || qUpper.length >= 6) await readWaitlist(qUpper);
+
+  // 2. A booking allocated from a waitlist keeps the old WL- code findable.
+  if (qUpper.startsWith("WL-")) await readLookup(`wl:${qUpper}`);
+
+  // 3. Email lookup index (public getDoc, no Firestore list needed).
+  if (qLower.includes("@")) await readLookup(`email:${qLower}`);
+
+  // 4. Registration number lookup index.
+  if (
+    !qLower.includes("@") &&
+    /^[A-Za-z0-9]+$/.test(qUpper) &&
+    !qUpper.startsWith("F1-") &&
+    !qUpper.startsWith("WL-")
+  ) {
+    await readLookup(`reg:${qUpper}`);
+  }
+
+  return {
+    bookings: Array.from(bookingsMap.values()),
+    waitlists: Array.from(waitlistsMap.values()),
+  };
+}
+
+/* ---------------- AB02-126 waiting list ---------------- */
+
+/**
+ * AB02-126 is locked until 100 people join the waiting list. Joining the list
+ * reserves the seat you pick — no payment. When the list fills up the
+ * organiser opens the room and allocates bookings for those seats first.
+ */
+export const waitlistSchema = attendeeSchema.pick({
+  name: true,
+  email: true,
+  phone: true,
+  regNo: true,
+});
+
+export type WaitlistAttendee = z.infer<typeof waitlistSchema>;
+
+export type WaitlistRecord = {
+  code: string;
+  seat: string;
+  name: string;
+  email: string;
+  phone: string;
+  regNo: string;
+  createdAt: string;
+};
+
+function newWaitlistCode() {
+  const alphabet = "ACDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let out = "WL-";
+  for (let i = 0; i < 6; i++) {
+    out += alphabet.charAt(Math.floor(Math.random() * alphabet.length));
+  }
+  return out;
+}
+
+/** Join the waiting list and reserve one seat in AB02-126 (no payment). */
+export async function joinWaitlist(input: {
+  seat: string;
+  attendee: WaitlistAttendee;
+}): Promise<{ code: string; seat: string }> {
+  requireBackend();
+  const { seat, attendee } = input;
+  const parts = seatParts(seat);
+  if (!parts) throw new Error("That seat does not exist.");
+  if (parts.room !== "R2") throw new Error("The waiting list is only for AB02-126.");
+  const parsed = waitlistSchema.parse(attendee);
+  const regKey = parsed.regNo.toUpperCase();
+
+  const code = newWaitlistCode();
+
+  await runTransaction(db(), async (tx) => {
+    // Capacity check from aggregate (1 read instead of 512).
+    const st = await readAvailabilityState(tx);
+    if ((st.waitlisted ?? []).length >= EVENT.waitlistCapacity) {
+      throw new Error(
+        `The waiting list is full (${EVENT.waitlistCapacity}). Bookings for AB02-126 open soon.`,
+      );
+    }
+
+    // One registration number = one booking or waitlist entry.
+    const regRef = doc(db(), REGS, regKey);
+    const regSnap = await tx.get(regRef);
+    if (regSnap.exists()) {
+      throw new Error(`Registration number ${regKey} is already on a booking or the waitlist.`);
+    }
+
+    const seatSnap = await tx.get(doc(db(), SEATS, seat));
+    const now = Date.now();
+    if (seatSnap.exists()) {
+      const data = seatSnap.data() as SeatDoc;
+      if (data.status === "booked" || data.status === "waitlisted") {
+        throw new Error("That seat is already taken.");
+      }
+      if (data.status === "held" && (data.expiresAt ?? 0) > now) {
+        throw new Error("That seat is on hold for someone else right now.");
+      }
+    }
+
+    // The seat now shows as reserved (waitlisted) on everyone's map.
+    tx.set(doc(db(), SEATS, seat), { status: "waitlisted", waitlistCode: code });
+    tx.set(doc(db(), WAITLIST, code), {
+      code,
+      seat,
+      name: parsed.name,
+      email: parsed.email,
+      phone: parsed.phone,
+      regNo: regKey,
+      createdAt: serverTimestamp(),
+    });
+    tx.set(regRef, { code, kind: "waitlist", createdAt: serverTimestamp() });
+
+    // Update aggregate: waitlisted + remove from held if stale.
+    const held = pruneHeld(st.held, now).filter((h) => h.seat !== seat);
+    const waitlisted = [...(st.waitlisted ?? []).filter((w) => w !== seat), seat];
+    await writeAvailabilityState(tx, { ...st, held, waitlisted });
+
+    for (const key of lookupKeys(parsed.email, regKey)) {
+      tx.set(doc(db(), LOOKUPS, key), { waitlistCodes: arrayUnion(code) }, { merge: true });
+    }
+  });
+
+  return { code, seat };
+}
+
+/** Look up a waitlist entry by its code (e.g. to show "you're on the list"). */
+export async function getWaitlist(code: string): Promise<WaitlistRecord> {
+  requireBackend();
+  const snap = await getDoc(doc(db(), WAITLIST, code));
+  if (!snap.exists()) throw new Error("Waitlist entry not found");
+  const d = snap.data() as Record<string, unknown>;
+  return {
+    code: String(d["code"] ?? code),
+    seat: String(d["seat"] ?? ""),
+    name: String(d["name"] ?? ""),
+    email: String(d["email"] ?? ""),
+    phone: String(d["phone"] ?? ""),
+    regNo: String(d["regNo"] ?? ""),
+    createdAt: toIso(d["createdAt"]),
+  };
+}
+
+export async function getRoomState(): Promise<Record<RoomId, boolean>> {
+  requireBackend();
+  const snap = await getDoc(doc(db(), CONFIG, "rooms"));
+  return {
+    R1: true,
+    R2: snap.exists() ? Boolean((snap.data() as Record<string, unknown>)["R2"]) : false,
+  };
+}
+
+/** Organiser-only: list everyone on the AB02-126 waiting list. */
+export async function adminWaitlistList(): Promise<{ entries: WaitlistRecord[] }> {
+  requireBackend();
+  const snap = await getDocs(collection(db(), WAITLIST));
+  const entries = snap.docs.map((d) => {
+    const data = d.data() as Record<string, unknown>;
+    return {
+      code: String(data["code"] ?? d.id),
+      seat: String(data["seat"] ?? ""),
+      name: String(data["name"] ?? ""),
+      email: String(data["email"] ?? ""),
+      phone: String(data["phone"] ?? ""),
+      regNo: String(data["regNo"] ?? ""),
+      createdAt: toIso(data["createdAt"]),
+    };
+  });
+  entries.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  return { entries };
+}
+
+/** Organiser-only: open or close AB02-126 for normal booking. */
+export async function adminSetRoomOpen(room: RoomId, open: boolean) {
+  requireBackend();
+  const ref = doc(db(), CONFIG, "rooms");
+  const snap = await getDoc(ref);
+  const current = snap.exists() ? (snap.data() as Record<string, unknown>) : {};
+  await setDoc(ref, { ...current, [room]: open });
+
+  // Mirror into availability aggregate so getAvailability is 1-read.
+  await runTransaction(db(), async (tx) => {
+    const st = await readAvailabilityState(tx);
+    const r2Open = room === "R2" ? open : st.r2Open;
+    await writeAvailabilityState(tx, { ...st, r2Open });
+  });
+
+  return { room, open };
+}
+
+/**
+ * Organiser-only: turn a waitlist entry into a real booking. The seat was
+ * already reserved for this person, so it just moves from "waitlisted" to
+ * "booked" behind their booking code. Payment is settled separately (the
+ * existing verify flow).
+ */
+export async function adminAllocateWaitlist(code: string, allocatorEmail: string) {
+  requireBackend();
+  const wlRef = doc(db(), WAITLIST, code);
+  const wlSnap = await getDoc(wlRef);
+  if (!wlSnap.exists()) throw new Error("Waitlist entry not found");
+  const wl = wlSnap.data() as Record<string, unknown>;
+  const seat = String(wl["seat"] ?? "");
+  if (!seat) throw new Error("Waitlist entry has no seat reserved.");
+  const regKey = String(wl["regNo"] ?? "");
+  const email = String(wl["email"] ?? "");
+  const bookingCode = newCode();
+  const amount = priceForSeat(seat);
+
+  await runTransaction(db(), async (tx) => {
+    const st = await readAvailabilityState(tx);
+
+    const seatSnap = await tx.get(doc(db(), SEATS, seat));
+    if (seatSnap.exists()) {
+      const data = seatSnap.data() as SeatDoc;
+      if (data.status === "booked") throw new Error("That seat is already booked.");
+      if (data.status !== "waitlisted") {
+        throw new Error("That seat is no longer reserved for the waitlist.");
+      }
+    }
+    tx.set(doc(db(), SEATS, seat), { status: "booked", code: bookingCode });
+    tx.set(doc(db(), BOOKINGS, bookingCode), {
+      code: bookingCode,
+      createdAt: serverTimestamp(),
+      name: String(wl["name"] ?? ""),
+      email: String(wl["email"] ?? ""),
+      phone: String(wl["phone"] ?? ""),
+      regNo: regKey,
+      seats: [seat],
+      amount,
+      upiRef: "",
+      screenshotUrl: "",
+      status: "pending_payment",
+      allocatedBy: allocatorEmail,
+      allocatedFromWaitlist: code,
+    });
+    if (regKey) tx.update(doc(db(), REGS, regKey), { code: bookingCode, kind: "booking" });
+    tx.delete(wlRef);
+
+    // Update aggregate: waitlisted -> taken.
+    const waitlisted = (st.waitlisted ?? []).filter((w) => w !== seat);
+    const taken = [...st.taken.filter((t) => t !== seat), seat];
+    await writeAvailabilityState(tx, { ...st, taken, waitlisted });
+
+    for (const key of lookupKeys(email, regKey)) {
+      tx.set(doc(db(), LOOKUPS, key), { bookingCodes: arrayUnion(bookingCode) }, { merge: true });
+    }
+    tx.set(
+      doc(db(), LOOKUPS, `wl:${code}`),
+      { bookingCodes: arrayUnion(bookingCode) },
+      { merge: true },
+    );
+  });
+
+  return { code: bookingCode, seat, amount };
+}
+
+/**
+ * Submit payment (UPI reference + screenshot) for an allocated waitlist booking.
+ * Changes status from "pending_payment" to "pending" for organiser verification.
+ */
+export async function submitWaitlistPayment(input: {
+  code: string;
+  upiRef: string;
+  screenshot: CloudinaryUpload;
+}) {
+  requireBackend();
+  const { code, upiRef, screenshot } = input;
+  const cleanUpiRef = upiRef.trim();
+  if (!cleanUpiRef || cleanUpiRef.length < 6) {
+    throw new Error("Enter a valid UPI transaction / reference ID");
+  }
+  const bookingRef = doc(db(), BOOKINGS, code);
+  const snap = await getDoc(bookingRef);
+  if (!snap.exists()) throw new Error("Booking not found");
+  const data = snap.data() as Record<string, unknown>;
+  const currentStatus = String(data["status"] ?? "");
+  if (currentStatus === "verified") {
+    throw new Error("This booking has already been verified.");
+  }
+
+  await runTransaction(db(), async (tx) => {
+    tx.update(bookingRef, {
+      upiRef: cleanUpiRef,
+      screenshotUrl: screenshot.secureUrl,
+      status: "pending",
+      paidAt: serverTimestamp(),
+    });
+    tx.set(doc(db(), SHOTS, code), {
+      screenshotUrl: screenshot.secureUrl,
+      cloudinaryPublicId: screenshot.publicId,
+      createdAt: serverTimestamp(),
+    });
+  });
+
+  return { code, status: "pending" };
+}
+
+/** Organiser-only: remove a waitlist entry and free its seat. */
+export async function adminRemoveWaitlist(code: string) {
+  requireBackend();
+  const wlRef = doc(db(), WAITLIST, code);
+  const wlSnap = await getDoc(wlRef);
+  if (!wlSnap.exists()) throw new Error("Waitlist entry not found");
+  const wl = wlSnap.data() as Record<string, unknown>;
+  const seat = String(wl["seat"] ?? "");
+  const regKey = String(wl["regNo"] ?? "");
+
+  await runTransaction(db(), async (tx) => {
+    // Read aggregate first (all reads before any writes).
+    const st = await readAvailabilityState(tx);
+
+    tx.delete(wlRef);
+    if (regKey) tx.delete(doc(db(), REGS, regKey));
+    if (seat) tx.delete(doc(db(), SEATS, seat));
+
+    // Update aggregate: remove from waitlisted.
+    const waitlisted = (st.waitlisted ?? []).filter((w) => w !== seat);
+    await writeAvailabilityState(tx, { ...st, waitlisted });
+  });
+  return { code };
 }
 
 /* ---------------- organiser (Google sign-in) ---------------- */
@@ -330,17 +866,17 @@ export async function adminList(): Promise<{ bookings: BookingRecord[] }> {
   const bookings = snap.docs.map((d) => {
     const data = d.data() as Record<string, unknown>;
     return {
-      code: String(data['code'] ?? d.id),
-      createdAt: toIso(data['createdAt']),
-      name: String(data['name'] ?? ""),
-      email: String(data['email'] ?? ""),
-      phone: String(data['phone'] ?? ""),
-      regNo: String(data['regNo'] ?? ""),
-      seats: (data['seats'] as string[]) ?? [],
-      amount: Number(data['amount'] ?? 0),
-      upiRef: String(data['upiRef'] ?? ""),
-      screenshotUrl: String(data['screenshotUrl'] ?? ""),
-      status: (String(data['status'] ?? "pending") as BookingRecord["status"]),
+      code: String(data["code"] ?? d.id),
+      createdAt: toIso(data["createdAt"]),
+      name: String(data["name"] ?? ""),
+      email: String(data["email"] ?? ""),
+      phone: String(data["phone"] ?? ""),
+      regNo: String(data["regNo"] ?? ""),
+      seats: (data["seats"] as string[]) ?? [],
+      amount: Number(data["amount"] ?? 0),
+      upiRef: String(data["upiRef"] ?? ""),
+      screenshotUrl: String(data["screenshotUrl"] ?? ""),
+      status: String(data["status"] ?? "pending") as BookingRecord["status"],
     };
   });
   bookings.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -356,6 +892,40 @@ export async function adminScreenshot(code: string): Promise<string> {
   return data.screenshotUrl ?? data.dataUrl ?? "";
 }
 
+/**
+ * Organiser-only: rebuild the public email/reg lookup index from existing
+ * bookings and waitlist entries. Backfills tickets created before the index
+ * existed. Idempotent — safe to run on every admin load.
+ */
+export async function adminRebuildLookups(): Promise<{
+  bookings: number;
+  waitlists: number;
+}> {
+  requireBackend();
+  const [{ bookings }, { entries }] = await Promise.all([adminList(), adminWaitlistList()]);
+  const writes: Promise<unknown>[] = [];
+  for (const b of bookings) {
+    const set = (key: string, field: "bookingCodes") =>
+      setDoc(doc(db(), LOOKUPS, key), { [field]: arrayUnion(b.code) }, { merge: true });
+    for (const key of lookupKeys(b.email, b.regNo)) writes.push(set(key, "bookingCodes"));
+  }
+  for (const w of entries) {
+    const set = (key: string, field: "waitlistCodes") =>
+      setDoc(doc(db(), LOOKUPS, key), { [field]: arrayUnion(w.code) }, { merge: true });
+    for (const key of lookupKeys(w.email, w.regNo)) writes.push(set(key, "waitlistCodes"));
+  }
+  await Promise.all(writes);
+  return { bookings: bookings.length, waitlists: entries.length };
+}
+
+/** Organiser-only: rebuild the availability aggregate from raw seat docs. */
+export async function adminRebuildAvailability(): Promise<AvailabilityState> {
+  requireBackend();
+  const state = await rebuildAvailabilityFromSeats();
+  await setDoc(availRef(), state);
+  return state;
+}
+
 export async function adminSetStatus(code: string, status: BookingRecord["status"]) {
   requireBackend();
   const bookingRef = doc(db(), BOOKINGS, code);
@@ -363,11 +933,20 @@ export async function adminSetStatus(code: string, status: BookingRecord["status
   if (!snap.exists()) throw new Error("Booking not found");
   const seats = ((snap.data() as { seats?: string[] }).seats ?? []) as string[];
 
-  await updateDoc(bookingRef, { status });
-  // Rejecting a booking puts its seats back on sale.
-  if (status === "rejected") {
-    await Promise.all(seats.map((s) => deleteDoc(doc(db(), SEATS, s))));
+  // For reject, free seats atomically with aggregate update.
+  if (status === "rejected" && seats.length) {
+    await runTransaction(db(), async (tx) => {
+      const st = await readAvailabilityState(tx);
+      tx.update(bookingRef, { status });
+      for (const s of seats) tx.delete(doc(db(), SEATS, s));
+
+      const taken = st.taken.filter((t) => !seats.includes(t));
+      await writeAvailabilityState(tx, { ...st, taken });
+    });
+    return { code, status };
   }
+
+  await updateDoc(bookingRef, { status });
   return { code, status };
 }
 
@@ -383,15 +962,26 @@ export async function adminDeleteBooking(code: string) {
   const bookingRef = doc(db(), BOOKINGS, code);
   const snap = await getDoc(bookingRef);
   if (!snap.exists()) throw new Error("Booking not found");
-  const data = snap.data() as { regNo?: string; seats?: string[] };
+  const data = snap.data() as { regNo?: string; seats?: string[]; email?: string };
   const regNo = data.regNo ?? "";
   const seats = data.seats ?? [];
+  const email = data.email ?? "";
 
   await runTransaction(db(), async (tx) => {
+    const st = await readAvailabilityState(tx);
+
     tx.delete(bookingRef);
     tx.delete(doc(db(), SHOTS, code));
     if (regNo) tx.delete(doc(db(), REGS, regNo));
     for (const s of seats) tx.delete(doc(db(), SEATS, s));
+
+    // Update aggregate: remove from taken.
+    const taken = st.taken.filter((t) => !seats.includes(t));
+    await writeAvailabilityState(tx, { ...st, taken });
+
+    for (const key of lookupKeys(email, regNo)) {
+      tx.set(doc(db(), LOOKUPS, key), { bookingCodes: arrayRemove(code) }, { merge: true });
+    }
   });
 
   return { code };

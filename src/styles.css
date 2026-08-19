@@ -61,12 +61,15 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-tier-redbull: var(--tier-redbull);
+  --color-tier-ferrari: var(--tier-ferrari);
   --color-tier-premium: var(--tier-premium);
   --color-tier-standard: var(--tier-standard);
   --color-tier-economy: var(--tier-economy);
   --color-seat-taken: var(--seat-taken);
   --color-room-1: var(--room-1);
   --color-room-2: var(--room-2);
+  --color-waitlist: var(--waitlist);
 }
 
 :root {
@@ -94,6 +97,8 @@
   --ring: oklch(0.585 0.226 26.5);
 
   /* Seat tiers */
+  --tier-redbull: oklch(0.55 0.22 250);
+  --tier-ferrari: oklch(0.68 0.23 45);
   --tier-premium: oklch(0.62 0.21 27);
   --tier-standard: oklch(0.78 0.16 78);
   --tier-economy: oklch(0.72 0.15 175);
@@ -102,6 +107,9 @@
   /* Rooms — AB02-127 (Room 1) and AB02-128 (Room 2) */
   --room-1: oklch(0.72 0.14 200);
   --room-2: oklch(0.66 0.24 320);
+
+  /* Waiting list — seats reserved for AB02-128 once it opens */
+  --waitlist: oklch(0.8 0.16 80);
 
   --chart-1: oklch(0.585 0.226 26.5);
   --chart-2: oklch(0.78 0.16 78);

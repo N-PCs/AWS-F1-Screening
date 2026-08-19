@@ -4,7 +4,7 @@ import { DriversGrid } from "@/components/f1/DriversGrid";
 export const Route = createFileRoute("/drivers")({
   head: () => ({
     meta: [
-      { title: "2026 F1 Drivers Grid | AWS Club VITB" },
+      { title: "2026 F1 Drivers Grid | AWS SBG VITB" },
       {
         name: "description",
         content:

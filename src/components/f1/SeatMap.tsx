@@ -1,10 +1,11 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import {
   ROOM_ROWS,
   ROOM_SEAT_COUNT,
   TIERS,
   roomForId,
   rowBlocks,
+  rowDisplayLabel,
   seatId,
   seatNum,
   tierForSeat,
@@ -19,14 +20,18 @@ type Props = {
   taken: Set<string>;
   /** seats another visitor is holding right now */
   held?: Set<string>;
+  /** seats reserved through the waiting list (permanently off sale until opened) */
+  waitlisted?: Set<string>;
   selected: string[];
   onToggle: (id: string) => void;
   disabled?: boolean | undefined;
 };
 
-export function SeatMap({ room, taken, held, selected, onToggle, disabled }: Props) {
+export function SeatMap({ room, taken, held, waitlisted, selected, onToggle, disabled }: Props) {
+  const [mobileView, setMobileView] = useState<"fit" | "zoom">("fit");
   const selectedSet = new Set(selected);
   const heldSet = held ?? new Set<string>();
+  const waitlistedSet = waitlisted ?? new Set<string>();
   const rows = ROOM_ROWS[room];
   const roomInfo = roomForId(room);
   const bands = rows.reduce<{ tier: TierId; rows: RowDef[] }[]>((acc, def) => {
@@ -37,15 +42,49 @@ export function SeatMap({ room, taken, held, selected, onToggle, disabled }: Pro
   }, []);
 
   return (
-    <div className="overflow-x-auto scroll-smooth overscroll-x-contain">
-      {/* Mobile scroll hint */}
-      <div className="mb-2 flex items-center justify-center gap-2 rounded-md border border-border bg-secondary/50 py-1.5 text-[0.65rem] text-muted-foreground sm:hidden">
-        <span aria-hidden>←</span>
-        <span>Scroll sideways to see all seats</span>
-        <span aria-hidden>→</span>
+    <div className="mx-auto max-w-xl sm:max-w-3xl lg:max-w-full overflow-x-auto scroll-smooth overscroll-x-contain">
+      {/* Mobile view mode toggle */}
+      <div className="mb-3 flex items-center justify-between gap-2 rounded-md border border-border bg-secondary/30 px-2 py-1.5 sm:hidden">
+        <span className="text-[0.65rem] font-semibold text-muted-foreground uppercase tracking-wider">
+          Mobile View
+        </span>
+        <div className="inline-flex rounded-md border border-border bg-background p-0.5">
+          <button
+            type="button"
+            onClick={() => setMobileView("fit")}
+            className={cn(
+              "rounded-xs px-2.5 py-1 text-[0.6rem] font-bold uppercase transition",
+              mobileView === "fit"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            Fit Screen
+          </button>
+          <button
+            type="button"
+            onClick={() => setMobileView("zoom")}
+            className={cn(
+              "rounded-xs px-2.5 py-1 text-[0.6rem] font-bold uppercase transition",
+              mobileView === "zoom"
+                ? "bg-primary text-primary-foreground shadow-xs"
+                : "text-muted-foreground hover:text-foreground",
+            )}
+          >
+            Zoomed
+          </button>
+        </div>
       </div>
 
-      {/* Room banner — room accent makes AB02-127 / AB02-128 instantly distinct */}
+      {mobileView === "zoom" && (
+        <div className="mb-2 flex items-center justify-center gap-2 rounded-md border border-border bg-secondary/50 py-1 text-[0.65rem] text-muted-foreground sm:hidden">
+          <span aria-hidden>←</span>
+          <span> Zoom out to view all seats</span>
+          <span aria-hidden>→</span>
+        </div>
+      )}
+
+      {/* Room banner — room accent makes AB02-126 / AB02-127 instantly distinct */}
       <div
         className={cn(
           "mb-3 flex flex-wrap items-center gap-x-2 sm:gap-x-3 gap-y-1 rounded-sm border px-2 sm:px-3 py-1.5 sm:py-2",
@@ -66,7 +105,7 @@ export function SeatMap({ room, taken, held, selected, onToggle, disabled }: Pro
         </span>
       </div>
 
-      <div className="min-w-[680px] space-y-4 pb-2">
+      <div className="space-y-4 pb-2">
         <div className="mx-auto w-3/4">
           <div
             className={cn(
@@ -78,7 +117,7 @@ export function SeatMap({ room, taken, held, selected, onToggle, disabled }: Pro
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {bands.map((band) => {
             const tier = TIERS[band.tier];
             const seatCount = band.rows.reduce((n, r) => n + r.count, 0);
@@ -86,27 +125,27 @@ export function SeatMap({ room, taken, held, selected, onToggle, disabled }: Pro
               (n, r) =>
                 n +
                 Array.from({ length: r.count }, (_, i) => seatId(room, r.row, i + 1)).filter(
-                  (id) => !taken.has(id) && !heldSet.has(id),
+                  (id) => !taken.has(id) && !heldSet.has(id) && !waitlistedSet.has(id),
                 ).length,
               0,
             );
             return (
               <section key={band.tier} className="space-y-1.5">
-                <header className="flex items-center gap-3">
+                <header className="flex items-center gap-2 sm:gap-3">
                   <span className={cn("h-3 w-1.5 rounded-full", bandBar[band.tier])} aria-hidden />
-                  <h3 className="text-[0.7rem] font-bold tracking-[0.25em] uppercase">
+                  <h3 className="text-[0.65rem] sm:text-[0.7rem] font-bold tracking-[0.2em] sm:tracking-[0.25em] uppercase">
                     {tier.name}
                   </h3>
-                  <span className="text-[0.65rem] tracking-widest text-muted-foreground uppercase">
-                    Rows {band.rows[0]?.row}–{band.rows[band.rows.length - 1]?.row}
+                  <span className="text-[0.6rem] sm:text-[0.65rem] tracking-widest text-muted-foreground uppercase">
+                    Rows {rowDisplayLabel(band.rows[0]?.row ?? "A")}–{rowDisplayLabel(band.rows[band.rows.length - 1]?.row ?? "A")}
                   </span>
                   <span className="h-px flex-1 bg-border" aria-hidden />
-                  <span className="text-[0.65rem] text-muted-foreground">
+                  <span className="text-[0.6rem] sm:text-[0.65rem] text-muted-foreground">
                     {openCount}/{seatCount} open
                   </span>
                   <span
                     className={cn(
-                      "rounded-full border px-2 py-0.5 text-[0.65rem] font-bold tabular-nums",
+                      "rounded-full border px-1.5 sm:px-2 py-0.5 text-[0.6rem] sm:text-[0.65rem] font-bold tabular-nums",
                       bandBadge[band.tier],
                     )}
                   >
@@ -121,9 +160,11 @@ export function SeatMap({ room, taken, held, selected, onToggle, disabled }: Pro
                     def={def}
                     taken={taken}
                     heldSet={heldSet}
+                    waitlistedSet={waitlistedSet}
                     selectedSet={selectedSet}
                     onToggle={onToggle}
                     disabled={disabled}
+                    mobileView={mobileView}
                   />
                 ))}
               </section>
@@ -173,116 +214,176 @@ function SeatRow({
   def,
   taken,
   heldSet,
+  waitlistedSet,
   selectedSet,
   onToggle,
   disabled,
+  mobileView = "fit",
 }: {
   room: RoomId;
   roomName: string;
   def: RowDef;
   taken: Set<string>;
   heldSet: Set<string>;
+  waitlistedSet: Set<string>;
   selectedSet: Set<string>;
   onToggle: (id: string) => void;
   disabled?: boolean | undefined;
+  mobileView?: "fit" | "zoom";
 }) {
-  const [left, right] = rowBlocks(def);
+  const [left, centre, right] = rowBlocks(def);
   const tier = TIERS[def.tier];
+  const displayRow = rowDisplayLabel(def.row);
+  const isFit = mobileView === "fit";
 
   return (
-    <div className="flex items-center gap-2">
-      <span className="w-5 shrink-0 text-center text-[0.65rem] font-bold text-muted-foreground">
-        {def.row}
+    <div className="flex items-center justify-between gap-0.5 sm:gap-1.5 md:gap-2">
+      <span
+        className={cn(
+          "shrink-0 text-right text-[0.55rem] sm:text-xs font-bold tabular-nums text-muted-foreground",
+          isFit ? "w-4 sm:w-8 md:w-10 lg:w-12" : "w-7 sm:w-8",
+        )}
+      >
+        {displayRow}
       </span>
-      <div className="flex flex-1 items-center justify-center gap-0.5">
-        {left.map((n) => (
-          <Seat
-            key={n}
-            id={seatId(room, def.row, n)}
-            label={`${roomName} · ${tier.name} row ${def.row} seat ${n} — ₹${tier.price}`}
-            taken={taken.has(seatId(room, def.row, n))}
-            held={heldSet.has(seatId(room, def.row, n))}
-            selected={selectedSet.has(seatId(room, def.row, n))}
-            onToggle={onToggle}
-            disabled={disabled}
-          />
-        ))}
-        <span className="w-4 shrink-0" aria-hidden />
-        {right.map((n) => (
-          <Seat
-            key={n}
-            id={seatId(room, def.row, n)}
-            label={`${roomName} · ${tier.name} row ${def.row} seat ${n} — ₹${tier.price}`}
-            taken={taken.has(seatId(room, def.row, n))}
-            held={heldSet.has(seatId(room, def.row, n))}
-            selected={selectedSet.has(seatId(room, def.row, n))}
-            onToggle={onToggle}
-            disabled={disabled}
-          />
-        ))}
+      <div className="flex flex-1 items-center justify-center gap-0.5 sm:gap-1 md:gap-1.5 lg:gap-2">
+        {left.map((n) => {
+          const sid = seatId(room, def.row, n);
+          const st = tierForSeat(sid) ?? tier;
+          return (
+            <Seat
+              key={n}
+              id={sid}
+              label={`${roomName} · ${st.name} ${displayRow} seat ${String.fromCharCode(96 + n)} — ₹${st.price}`}
+              taken={taken.has(sid)}
+              held={heldSet.has(sid)}
+              waitlisted={waitlistedSet.has(sid)}
+              selected={selectedSet.has(sid)}
+              onToggle={onToggle}
+              disabled={disabled}
+              mobileView={mobileView}
+            />
+          );
+        })}
+        <span className={cn("shrink-0", isFit ? "w-1 sm:w-4 md:w-6 lg:w-8" : "w-3.5 sm:w-4")} aria-hidden />
+        {centre.map((n) => {
+          const sid = seatId(room, def.row, n);
+          const st = tierForSeat(sid) ?? tier;
+          return (
+            <Seat
+              key={n}
+              id={sid}
+              label={`${roomName} · ${st.name} ${displayRow} seat ${String.fromCharCode(96 + n)} — ₹${st.price}`}
+              taken={taken.has(sid)}
+              held={heldSet.has(sid)}
+              waitlisted={waitlistedSet.has(sid)}
+              selected={selectedSet.has(sid)}
+              onToggle={onToggle}
+              disabled={disabled}
+              mobileView={mobileView}
+            />
+          );
+        })}
+        <span className={cn("shrink-0", isFit ? "w-1 sm:w-4 md:w-6 lg:w-8" : "w-3.5 sm:w-4")} aria-hidden />
+        {right.map((n) => {
+          const sid = seatId(room, def.row, n);
+          const st = tierForSeat(sid) ?? tier;
+          return (
+            <Seat
+              key={n}
+              id={sid}
+              label={`${roomName} · ${st.name} ${displayRow} seat ${String.fromCharCode(96 + n)} — ₹${st.price}`}
+              taken={taken.has(sid)}
+              held={heldSet.has(sid)}
+              waitlisted={waitlistedSet.has(sid)}
+              selected={selectedSet.has(sid)}
+              onToggle={onToggle}
+              disabled={disabled}
+              mobileView={mobileView}
+            />
+          );
+        })}
       </div>
-      <span className="flex w-14 shrink-0 items-center justify-end gap-1">
-        <span className="text-[0.55rem] tabular-nums text-muted-foreground">₹{tier.price}</span>
-        <span className="text-[0.65rem] font-bold text-muted-foreground">{def.row}</span>
+      <span
+        className={cn(
+          "flex shrink-0 items-center justify-end gap-1 text-[0.55rem] sm:text-xs",
+          isFit ? "w-4 sm:w-14 md:w-16 lg:w-20" : "w-10 sm:w-14",
+        )}
+      >
+        <span className={cn("tabular-nums text-muted-foreground", isFit ? "hidden sm:inline" : "inline")}>
+          ₹{tier.price}
+        </span>
+        <span className="font-bold tabular-nums text-muted-foreground">{displayRow}</span>
       </span>
     </div>
   );
 }
 
 const tierClass: Record<string, string> = {
+  redbull:
+    "bg-blue-600/90 border-blue-400 text-white hover:bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.4)]",
+  ferrari:
+    "bg-orange-500/90 border-orange-300 text-slate-950 font-extrabold hover:bg-orange-400 shadow-[0_0_8px_rgba(249,115,22,0.45)]",
   premium: "bg-tier-premium/25 border-tier-premium/70 hover:bg-tier-premium/50",
   standard: "bg-tier-standard/20 border-tier-standard/70 hover:bg-tier-standard/45",
   economy: "bg-tier-economy/20 border-tier-economy/70 hover:bg-tier-economy/45",
 };
+
+const waitlistedClass = "cursor-not-allowed border-waitlist/70 bg-waitlist/20 text-waitlist";
 
 function Seat({
   id,
   label,
   taken,
   held,
+  waitlisted,
   selected,
   onToggle,
   disabled,
+  mobileView = "fit",
 }: {
   id: string;
   label: string;
   taken: boolean;
   held?: boolean;
+  waitlisted?: boolean;
   selected: boolean;
   onToggle: (id: string) => void;
   disabled?: boolean | undefined;
+  mobileView?: "fit" | "zoom";
 }) {
   const tier = tierForSeat(id)?.id ?? "premium";
-  const [popping, setPopping] = useState(false);
-
-  const handleClick = useCallback(() => {
-    onToggle(id);
-    setPopping(true);
-    // Remove the animation class after it completes
-    const timer = setTimeout(() => setPopping(false), 350);
-    return () => clearTimeout(timer);
-  }, [id, onToggle]);
-
+  const isFit = mobileView === "fit";
   return (
     <button
       type="button"
       aria-label={
-        taken ? `${label} — already booked` : held ? `${label} — on hold by another visitor` : label
+        taken
+          ? `${label} — already booked`
+          : held
+            ? `${label} — on hold by another visitor`
+            : waitlisted
+              ? `${label} — reserved for the waiting list`
+              : label
       }
       aria-pressed={selected}
-      disabled={taken || held || disabled}
-      onClick={handleClick}
+      disabled={taken || held || waitlisted || disabled}
+      onClick={() => onToggle(id)}
       className={cn(
-        "h-5 w-5 rounded-t-md border text-[0.45rem] font-bold transition-all duration-150",
+        "rounded-t-xs sm:rounded-t-md border font-bold transition-colors touch-manipulation",
+        isFit
+          ? "h-4.5 w-3.5 text-[0.45rem] sm:h-5 sm:w-6 sm:text-[0.55rem] md:h-5.5 md:w-7 md:text-xs lg:h-6 lg:w-8 lg:text-xs"
+          : "h-5.5 w-5 text-[0.55rem] sm:h-5 sm:w-6 sm:text-[0.55rem] md:h-5.5 md:w-7 md:text-xs lg:h-6 lg:w-8 lg:text-xs",
         taken
           ? "cursor-not-allowed border-border bg-seat-taken text-muted-foreground/50"
           : held
             ? "cursor-not-allowed border-dashed border-accent/70 bg-accent/15 text-muted-foreground"
-            : tierClass[tier],
+            : waitlisted
+              ? waitlistedClass
+              : tierClass[tier],
         selected &&
-          "border-foreground bg-foreground text-background ring-2 ring-primary ring-offset-1 ring-offset-background",
+        "border-foreground bg-foreground text-background ring-2 ring-primary ring-offset-1 ring-offset-background",
         disabled && !taken && "opacity-60",
-        popping && "seat-pop",
       )}
     >
       {seatNum(id)}
@@ -295,16 +396,25 @@ export function SeatLegend() {
     <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-5 gap-y-1.5 sm:gap-y-2 text-[0.65rem] sm:text-xs">
       {Object.values(TIERS).map((t) => (
         <span key={t.id} className="flex items-center gap-1.5 sm:gap-2">
-          <span className={cn("h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border", tierClass[t.id])} aria-hidden />
+          <span
+            className={cn("h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border", tierClass[t.id])}
+            aria-hidden
+          />
           {t.name} ₹{t.price}
         </span>
       ))}
       <span className="flex items-center gap-1.5 sm:gap-2">
-        <span className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border border-foreground bg-foreground" aria-hidden />
+        <span
+          className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border border-foreground bg-foreground"
+          aria-hidden
+        />
         Selected
       </span>
       <span className="flex items-center gap-1.5 sm:gap-2">
-        <span className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border border-border bg-seat-taken" aria-hidden />
+        <span
+          className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border border-border bg-seat-taken"
+          aria-hidden
+        />
         Booked
       </span>
       <span className="flex items-center gap-1.5 sm:gap-2">
@@ -313,6 +423,13 @@ export function SeatLegend() {
           aria-hidden
         />
         On hold
+      </span>
+      <span className="flex items-center gap-1.5 sm:gap-2">
+        <span
+          className="h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border border-waitlist/70 bg-waitlist/20"
+          aria-hidden
+        />
+        Waitlist reserved
       </span>
     </div>
   );

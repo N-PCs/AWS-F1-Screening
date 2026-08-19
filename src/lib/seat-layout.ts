@@ -1,13 +1,14 @@
 /**
  * EDIT ME — exact AB-02 seat layout, split across two rooms.
  *
- * Each room has 10 rows (A..J) with varying seat counts, split around a
- * centre aisle. Seat ids are room-prefixed so both rooms can share row letters:
- *   - Room 1 (AB02-127): R1-A1 … R1-J26
- *   - Room 2 (AB02-128): R2-A1 … R2-J26
- * Current total: 532 seats (266 per room).
+ * Each room has 16 rows (A..P), 16 seats per row, split into three
+ * blocks: 4 left | gap | 8 centre | gap | 4 right.
+ * Seat ids are room-prefixed so both rooms can share row letters:
+ *   - Room 1 (AB02-127): R1-A1 … R1-P16
+ *   - Room 2 (AB02-126): R2-A1 … R2-P16
+ * Current total: 512 seats (256 per room).
  */
-export type TierId = "premium" | "standard" | "economy";
+export type TierId = "redbull" | "ferrari" | "premium" | "standard" | "economy";
 
 export type Tier = {
   id: TierId;
@@ -20,6 +21,20 @@ export type Tier = {
 };
 
 export const TIERS: Record<TierId, Tier> = {
+  redbull: {
+    id: "redbull",
+    name: "Red Bull Fanzone",
+    price: 249,
+    tone: "tier-redbull",
+    blurb: "R1, R2 & R3 left block. Pure Red Bull Racing energy.",
+  },
+  ferrari: {
+    id: "ferrari",
+    name: "Ferrari Fanzone",
+    price: 249,
+    tone: "tier-ferrari",
+    blurb: "R1, R2 & R3 right block. Tifosi passion in full voice.",
+  },
   premium: {
     id: "premium",
     name: "Pit Lane",
@@ -30,7 +45,7 @@ export const TIERS: Record<TierId, Tier> = {
   standard: {
     id: "standard",
     name: "Grandstand",
-    price: 149,
+    price: 129,
     tone: "tier-standard",
     blurb: "Middle of the auditorium — the best all-round view.",
   },
@@ -49,7 +64,7 @@ export type Room = {
   id: RoomId;
   /** "Room 1" / "Room 2" — human label */
   label: string;
-  /** AB02-127 / AB02-128 — the actual room number in AB-02 */
+  /** AB02-126 / AB02-127 — the actual room number in AB-02 */
   name: string;
   /** tailwind token used to tint this room's booking flow */
   tone: string;
@@ -57,36 +72,48 @@ export type Room = {
 
 export const ROOMS: Room[] = [
   { id: "R1", label: "Room 1", name: "AB02-127", tone: "room-1" },
-  { id: "R2", label: "Room 2", name: "AB02-128", tone: "room-2" },
+  { id: "R2", label: "Room 2", name: "AB02-126", tone: "room-2" },
 ];
 
 export type RowDef = { row: string; count: number; tier: TierId };
 
-/** Rows in a single room (266 seats). */
+/** Rows in a single room (256 seats). */
 export const ROOM_ROWS: Record<RoomId, RowDef[]> = {
   R1: [
-    { row: "A", count: 27, tier: "premium" },
-    { row: "B", count: 27, tier: "premium" },
-    { row: "C", count: 26, tier: "premium" },
-    { row: "D", count: 27, tier: "standard" },
-    { row: "E", count: 27, tier: "standard" },
-    { row: "F", count: 27, tier: "standard" },
-    { row: "G", count: 27, tier: "standard" },
-    { row: "H", count: 26, tier: "economy" },
-    { row: "I", count: 26, tier: "economy" },
-    { row: "J", count: 26, tier: "economy" },
+    { row: "A", count: 16, tier: "premium" },
+    { row: "B", count: 16, tier: "premium" },
+    { row: "C", count: 16, tier: "premium" },
+    { row: "D", count: 16, tier: "premium" },
+    { row: "E", count: 16, tier: "premium" },
+    { row: "F", count: 16, tier: "standard" },
+    { row: "G", count: 16, tier: "standard" },
+    { row: "H", count: 16, tier: "standard" },
+    { row: "I", count: 16, tier: "standard" },
+    { row: "J", count: 16, tier: "standard" },
+    { row: "K", count: 16, tier: "standard" },
+    { row: "L", count: 16, tier: "standard" },
+    { row: "M", count: 16, tier: "standard" },
+    { row: "N", count: 16, tier: "economy" },
+    { row: "O", count: 16, tier: "economy" },
+    { row: "P", count: 16, tier: "economy" },
   ],
   R2: [
-    { row: "A", count: 27, tier: "premium" },
-    { row: "B", count: 27, tier: "premium" },
-    { row: "C", count: 26, tier: "premium" },
-    { row: "D", count: 27, tier: "standard" },
-    { row: "E", count: 27, tier: "standard" },
-    { row: "F", count: 27, tier: "standard" },
-    { row: "G", count: 27, tier: "standard" },
-    { row: "H", count: 26, tier: "economy" },
-    { row: "I", count: 26, tier: "economy" },
-    { row: "J", count: 26, tier: "economy" },
+    { row: "A", count: 16, tier: "premium" },
+    { row: "B", count: 16, tier: "premium" },
+    { row: "C", count: 16, tier: "premium" },
+    { row: "D", count: 16, tier: "premium" },
+    { row: "E", count: 16, tier: "premium" },
+    { row: "F", count: 16, tier: "standard" },
+    { row: "G", count: 16, tier: "standard" },
+    { row: "H", count: 16, tier: "standard" },
+    { row: "I", count: 16, tier: "standard" },
+    { row: "J", count: 16, tier: "standard" },
+    { row: "K", count: 16, tier: "standard" },
+    { row: "L", count: 16, tier: "standard" },
+    { row: "M", count: 16, tier: "standard" },
+    { row: "N", count: 16, tier: "economy" },
+    { row: "O", count: 16, tier: "economy" },
+    { row: "P", count: 16, tier: "economy" },
   ],
 };
 
@@ -117,9 +144,22 @@ export function seatParts(id: string): SeatParts | null {
   return { room, row: m[2] as string, num: Number(m[3]) };
 }
 
-/** The plain seat number shown on the seat button (drops room + row). */
+/** The display label shown on the seat button — lowercase letter (a–p). */
 export function seatNum(id: string): string {
-  return seatParts(id)?.num.toString() ?? id;
+  const num = seatParts(id)?.num;
+  if (num == null) return id;
+  return String.fromCharCode(96 + num); // 1→a, 2→b, …, 16→p
+}
+
+/**
+ * Human-readable seat ID for tickets and summaries: R{rowNumber}C{colNumber}.
+ * e.g. internal "R1-A1" → "R1C1", "R2-P16" → "R16C16".
+ */
+export function seatDisplayId(id: string): string {
+  const parts = seatParts(id);
+  if (!parts) return id;
+  const rowNum = parts.row.charCodeAt(0) - 64; // A→1, B→2, …, P→16
+  return `R${rowNum}C${parts.num}`;
 }
 
 export function roomForSeat(id: string): Room | null {
@@ -130,8 +170,30 @@ export function roomForSeat(id: string): Room | null {
 export function tierForSeat(id: string): Tier | null {
   const parts = seatParts(id);
   if (!parts) return null;
-  const def = (ROOM_ROWS[parts.room] ?? []).find((r) => r.row === parts.row);
-  return def ? TIERS[def.tier] : null;
+  const { row, num } = parts;
+
+  // Red Bull Fanzone: R1, R2 & R3 (rows A, B & C), Left block only (seats 1..4) -> ₹249
+  if ((row === "A" || row === "B" || row === "C") && num >= 1 && num <= 4) {
+    return TIERS.redbull;
+  }
+
+  // Ferrari Fanzone: R1, R2 & R3 (rows A, B & C), Right block only (seats 13..16) -> ₹249
+  if ((row === "A" || row === "B" || row === "C") && num >= 13 && num <= 16) {
+    return TIERS.ferrari;
+  }
+
+  // Pit Lane: remaining front row seats (rows A, B, C, D, E) -> ₹199
+  if (row === "A" || row === "B" || row === "C" || row === "D" || row === "E") {
+    return TIERS.premium;
+  }
+
+  // Grandstand: middle rows R6..R13 (rows F, G, H, I, J, K, L, M) -> ₹99
+  if (["F", "G", "H", "I", "J", "K", "L", "M"].includes(row)) {
+    return TIERS.standard;
+  }
+
+  // Back Straight: rear rows R14..R16 (rows N, O, P) -> ₹85
+  return TIERS.economy;
 }
 
 export function priceForSeat(id: string): number {
@@ -142,9 +204,16 @@ export function totalPrice(ids: string[]): number {
   return ids.reduce((sum, id) => sum + priceForSeat(id), 0);
 }
 
-/** Seats in a row, split into left/right blocks around the centre aisle. */
-export function rowBlocks(def: RowDef): [number[], number[]] {
-  const half = Math.floor(def.count / 2);
+/** Convert row letter (A–P) to display label (R1–R16). */
+export function rowDisplayLabel(row: string): string {
+  return `R${row.charCodeAt(0) - 64}`;
+}
+
+/**
+ * Seats in a row, split into three blocks: 4 left | 8 centre | 4 right.
+ * Matches the physical AB-02 auditorium aisle layout.
+ */
+export function rowBlocks(def: RowDef): [number[], number[], number[]] {
   const all = Array.from({ length: def.count }, (_, i) => i + 1);
-  return [all.slice(0, half), all.slice(half)];
+  return [all.slice(0, 4), all.slice(4, 12), all.slice(12, 16)];
 }

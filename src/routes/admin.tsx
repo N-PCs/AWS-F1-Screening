@@ -13,29 +13,37 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ROOMS, TIERS, TOTAL_SEATS, roomForSeat, tierForSeat } from "@/lib/seat-layout";
-import { ADMIN_EMAILS } from "@/lib/event-config";
+import { ROOMS, TIERS, TOTAL_SEATS, roomForSeat, seatDisplayId, tierForSeat } from "@/lib/seat-layout";
+import { ADMIN_EMAILS, EVENT } from "@/lib/event-config";
 import { isFirebaseConfigured } from "@/lib/firebase";
 import {
+  adminAllocateWaitlist,
   adminDeleteBooking,
   adminList,
+  adminRebuildAvailability,
+  adminRebuildLookups,
+  adminRemoveWaitlist,
   adminScreenshot,
+  adminSetRoomOpen,
   adminSetStatus,
   adminSignIn,
   adminSignOut,
+  adminWaitlistList,
+  getRoomState,
   watchAdmin,
   type BookingRecord,
+  type WaitlistRecord,
 } from "@/lib/booking-api";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
-      { title: "Organiser Access — AWS Club VITB Screening" },
+      { title: "Organiser Access — AWS SBG VITB Screening" },
       {
         name: "description",
-        content: "Restricted registrations dashboard for AWS Club VITB screening organisers.",
+        content: "Restricted registrations dashboard for AWS SBG VITB screening organisers.",
       },
-      { property: "og:title", content: "Organiser Access — AWS Club VITB Screening" },
+      { property: "og:title", content: "Organiser Access — AWS SBG VITB Screening" },
       {
         property: "og:description",
         content: "Restricted registrations dashboard for screening organisers.",
@@ -54,6 +62,9 @@ function AdminPage() {
   const [bookings, setBookings] = useState<BookingRecord[]>([]);
   const [filter, setFilter] = useState("");
   const [deleteCode, setDeleteCode] = useState<string | null>(null);
+  const [waitlist, setWaitlist] = useState<WaitlistRecord[]>([]);
+  const [r2Open, setR2Open] = useState(false);
+  const [roomBusy, setRoomBusy] = useState(false);
 
   useEffect(() => {
     const stop = watchAdmin((user) => {
@@ -73,8 +84,22 @@ function AdminPage() {
   async function load() {
     setBusy(true);
     try {
-      const data = await adminList();
+      const [data, wl, rooms] = await Promise.all([
+        adminList(),
+        adminWaitlistList(),
+        getRoomState(),
+      ]);
       setBookings(data.bookings);
+      setWaitlist(wl.entries);
+      setR2Open(Boolean(rooms.R2));
+      // Keep the public email/reg lookup index in sync so tickets created
+      // before it existed are still findable on /tickets.
+      if (data.bookings.length || wl.entries.length) {
+        await adminRebuildLookups().catch(() => {});
+      }
+      // Also rebuild the availability aggregate so the seat map is accurate
+      // for tickets created before this index existed.
+      await adminRebuildAvailability().catch(() => {});
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not load registrations");
     } finally {
@@ -120,6 +145,59 @@ function AdminPage() {
     }
   }
 
+  async function toggleRoom() {
+    setRoomBusy(true);
+    try {
+      const res = await adminSetRoomOpen("R2", !r2Open);
+      setR2Open(res.open);
+
+      if (res.open) {
+        const { entries } = await adminWaitlistList();
+        for (const entry of entries) {
+          try {
+            await adminAllocateWaitlist(entry.code, email ?? "");
+            toast.success(`Waitlist ${entry.code} → booking allocated for ${entry.name}.`);
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : `Allocation failed for ${entry.code}`);
+          }
+        }
+      }
+
+      toast.success(`AB02-126 ${res.open ? "opened for booking." : "locked again."}`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Update failed");
+    } finally {
+      setRoomBusy(false);
+    }
+  }
+
+  /** Turn a waitlist entry into a real booking — the seat is already reserved for them. */
+  async function allocateWaitlist(code: string) {
+    setRoomBusy(true);
+    try {
+      const res = await adminAllocateWaitlist(code, email ?? "");
+      toast.success(`Waitlist ${code} → booking ${res.code} (${seatDisplayId(res.seat)}, ₹${res.amount}).`);
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Allocation failed");
+    } finally {
+      setRoomBusy(false);
+    }
+  }
+
+  async function removeWaitlist(code: string) {
+    setRoomBusy(true);
+    try {
+      await adminRemoveWaitlist(code);
+      toast.success(`Waitlist ${code} removed. Seat released.`);
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Removal failed");
+    } finally {
+      setRoomBusy(false);
+    }
+  }
+
   const visible = useMemo(() => {
     const q = filter.trim().toLowerCase();
     if (!q) return bookings;
@@ -133,7 +211,7 @@ function AdminPage() {
 
   const stats = useMemo(() => {
     const active = bookings.filter((b) => b.status !== "rejected");
-    const perTier: Record<string, number> = { premium: 0, standard: 0, economy: 0 };
+    const perTier: Record<string, number> = { redbull: 0, ferrari: 0, premium: 0, standard: 0, economy: 0 };
     const perRoom: Record<string, number> = {};
     let seats = 0;
     let revenue = 0;
@@ -171,7 +249,7 @@ function AdminPage() {
       b.email,
       b.phone,
       b.regNo,
-      b.seats.join(" "),
+      b.seats.map(seatDisplayId).join(" "),
       String(b.amount),
       b.upiRef,
       b.status,
@@ -184,6 +262,26 @@ function AdminPage() {
     const a = document.createElement("a");
     a.href = url;
     a.download = `f1-screening-registrations-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+async function downloadWaitlistCSV() {
+    const { entries } = await adminWaitlistList();
+    const header = ["Seat", "Registration No", "Waitlist Code", "Created At"];
+    const rows = entries.map((e) => [
+      seatDisplayId(e.seat),
+      e.regNo,
+      e.code,
+      e.createdAt ?? "",
+    ]);
+    const csv = [header, ...rows]
+      .map((r) => r.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(","))
+      .join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `f1-screening-waitlist-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -254,6 +352,106 @@ function AdminPage() {
         {ROOMS.map((r) => `${r.name}: ${stats.perRoom[r.name] ?? 0} sold`).join(" · ")}
       </p>
 
+      {/* ── AB02-126 waiting list ── */}
+      <section className="mt-8 overflow-hidden rounded-md border border-waitlist/40">
+        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border bg-card px-4 py-3">
+          <div>
+            <h2 className="text-sm font-bold uppercase tracking-widest">AB02-126 waiting list</h2>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {waitlist.length} / {EVENT.waitlistCapacity} entries ·{" "}
+              {r2Open ? (
+                <span className="font-semibold text-tier-economy">
+                  room is OPEN — waitlisted seats stay reserved until you allocate them
+                </span>
+              ) : (
+                <span className="font-semibold text-waitlist">room locked for now</span>
+              )}
+            </p>
+          </div>
+<Button variant="outline" disabled={roomBusy || busy} onClick={() => void toggleRoom()}>
+            {r2Open ? "Lock AB02-126" : "Open AB02-126 for booking"}
+          </Button>
+        {/* Download waitlist CSV */}
+        <div className="mt-2">
+          <Button variant="outline" onClick={() => downloadWaitlistCSV()} disabled={roomBusy || busy}>
+            Download waitlist CSV
+          </Button>
+        </div>
+      </header>
+
+      <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead className="text-left text-xs tracking-widest uppercase">
+              <tr>
+                <th className="px-3 py-2">Code</th>
+                <th className="px-3 py-2">Person</th>
+                <th className="px-3 py-2">Contact</th>
+                <th className="px-3 py-2">Seat</th>
+                <th className="px-3 py-2">Added</th>
+                <th className="px-3 py-2">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-border">
+              {waitlist.map((w) => (
+                <tr key={w.code} className="align-top">
+                  <td className="px-3 py-3 font-mono text-xs">
+                    {w.code}
+                    <span className="mt-1 block text-muted-foreground">{w.createdAt}</span>
+                  </td>
+                  <td className="px-3 py-3">
+                    <span className="font-semibold">{w.name}</span>
+                    <span className="block text-xs text-muted-foreground">{w.regNo}</span>
+                  </td>
+                  <td className="px-3 py-3 text-xs">
+                    <span className="block">{w.email}</span>
+                    <span className="block text-muted-foreground">{w.phone}</span>
+                  </td>
+                  <td className="px-3 py-3 text-xs font-mono">
+                    {seatDisplayId(w.seat)}
+                    <span className="block text-muted-foreground">
+                      {tierForSeat(w.seat)?.name} · ₹{tierForSeat(w.seat)?.price}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 text-xs">{w.createdAt}</td>
+                  <td className="px-3 py-3">
+                    <div className="flex flex-wrap gap-1">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={roomBusy}
+                        onClick={() => void allocateWaitlist(w.code)}
+                        className="border-tier-economy/60 text-tier-economy hover:text-tier-economy"
+                      >
+                        Allocate booking
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={roomBusy}
+                        onClick={() => void removeWaitlist(w.code)}
+                        className="text-destructive hover:text-destructive"
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+              {waitlist.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-3 py-8 text-center text-muted-foreground">
+                    Nobody on the waiting list yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        <p className="border-t border-border px-4 py-3 text-xs text-muted-foreground">
+          "Allocate booking" locks the reserved seat and moves the candidate to the overall Registrations list in unpaid status (`pending_payment`). The student completes payment on the Ticket Portal, uploads a screenshot, and you verify it here. "Remove" frees the seat and registration number.
+        </p>
+      </section>
+
       <Input
         placeholder="Search name, email, reg no., seat, UPI ref…"
         value={filter}
@@ -262,7 +460,7 @@ function AdminPage() {
       />
 
       <div className="mt-4 overflow-x-auto rounded-md border border-border">
-        <table className="w-full min-w-[900px] text-sm">
+        <table className="w-full text-sm">
           <thead className="bg-card text-left text-xs tracking-widest uppercase">
             <tr>
               <th className="px-3 py-2">Code</th>
@@ -289,7 +487,7 @@ function AdminPage() {
                   <span className="block">{b.email}</span>
                   <span className="block text-muted-foreground">{b.phone}</span>
                 </td>
-                <td className="px-3 py-3 text-xs">{b.seats.join(", ")}</td>
+                <td className="px-3 py-3 text-xs">{b.seats.map(seatDisplayId).join(", ")}</td>
                 <td className="px-3 py-3">₹{b.amount}</td>
                 <td className="px-3 py-3 text-xs">
                   <span className="block font-mono">{b.upiRef}</span>
@@ -302,16 +500,23 @@ function AdminPage() {
                         ? "font-bold text-tier-economy"
                         : b.status === "rejected"
                           ? "font-bold text-destructive"
-                          : "font-bold text-tier-standard"
+                          : b.status === "pending_payment"
+                            ? "font-bold text-purple-400"
+                            : "font-bold text-tier-standard"
                     }
                   >
-                    {b.status}
+                    {b.status === "pending_payment" ? "unpaid (allocated)" : b.status}
                   </span>
                   <div className="mt-2 flex gap-1">
                     <Button
                       size="sm"
                       variant="outline"
-                      disabled={busy}
+                      disabled={busy || b.status === "pending_payment" || !b.screenshotUrl}
+                      title={
+                        b.status === "pending_payment" || !b.screenshotUrl
+                          ? "Student must submit payment & screenshot before verification"
+                          : "Verify booking"
+                      }
                       onClick={() => void setStatus(b.code, "verified")}
                     >
                       Verify

@@ -93,20 +93,24 @@ export function SiteFooter() {
           {/* Club Info & Credits */}
           <div className="flex flex-col gap-1.5">
             <div className="flex items-center gap-2">
+              <img src="awssbg.png" style={{height:"35px", width:"35px"}}></img>
               <span className="font-display font-black tracking-widest text-sm uppercase text-foreground">
-                {EVENT.club}
+                 {EVENT.club}
               </span>
             </div>
             <p className="text-xs text-muted-foreground">
-              This website was made with 💜 by{" "}
+              This website was made with ❤️ by{" "}
               <a
-                href="https://github.com/N-PCs/AWS-F1-Screening"
+                href="https://github.com/N-PCs"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="font-semibold text-white italic hover:underline transition-colors"
               >
                 N-PCs
-              </a>{" "}
+              </a>{"  "} X <a href="https://github.com/naiteekpapriwal"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-semibold text-white italic hover:underline transition-colors"> Naiteek Papriwal</a>{" "}
               & Tech Team
             </p>
           </div>

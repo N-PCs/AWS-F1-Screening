@@ -14,7 +14,7 @@
 
 <br />
 
-A full-stack ticket booking system for the **F1 Grand Prix Screening** hosted by **AWS Club VITB** at VIT Bhopal. Real-time seat reservation with ACID Firestore transactions, Cloudinary-powered payment screenshot uploads, and a secure organiser verification dashboard.
+A full-stack ticket booking system for the **F1 Grand Prix Screening** hosted by **AWS SBG VITB** at VIT Bhopal. Real-time seat reservation with ACID Firestore transactions, Cloudinary-powered payment screenshot uploads, and a secure organiser verification dashboard.
 
 **Live → [f1gp-aws.vercel.app](https://f1gp-aws.vercel.app)**
 
@@ -28,7 +28,7 @@ A full-stack ticket booking system for the **F1 Grand Prix Screening** hosted by
 - **One Registration, One Booking** — Database-level uniqueness lock per registration number — no duplicate claims possible.
 - **VIT Bhopal Only** — Sign-in restricted to `@vitbhopal.ac.in` Google accounts.
 - **Cloudinary Screenshot Uploads** — Client-side compression + unsigned upload to Cloudinary; Firestore stores only the URL, not the image, keeping docs tiny and free-tier friendly.
-- **Admin Dashboard** — Google-authenticated organiser panel to verify/reject bookings, view screenshot thumbnails, delete registrants, and export CSV with Cloudinary links.
+- **Admin Dashboard** — Google-authenticated organiser panel to verify/reject bookings, view screenshot thumbnails, delete registrants, and export CSV with Cloudinary links. **When AB02-127 opens, all waitlisted entries are automatically allocated to bookings with pending_payment status.**
 - **F1-Themed UI** — Glassmorphic design with Tailwind CSS v4, shadcn/ui + Radix primitives, Lucide icons, and Sonner toast alerts.
 
 ---
@@ -37,41 +37,68 @@ A full-stack ticket booking system for the **F1 Grand Prix Screening** hosted by
 
 ```mermaid
 flowchart TD
-    User([Student]) --> Browser[Browser]
+    User([Student]) --> Browser["Browser (Client Frontend)"]
 
-    subgraph Browser
-        Auth[Sign in with Google\n@vitbhopal.ac.in]
-        SeatGrid[Interactive 500-Seat Grid\nRooms AB02-127 & AB02-128]
-        Checkout[Checkout + UPI Screenshot\ncompressed via canvas]
-        Confirmation[Confirmation Page /booking/:code]
+    subgraph Browser UI
+        Auth["Sign in with Google\n@vitbhopal.ac.in"]
+        SeatGrid["Interactive 500-Seat Grid\nRooms AB02-127 & AB02-128"]
+        Checkout["Checkout + UPI Screenshot\ncompressed via canvas"]
+        Confirmation["Confirmation Page\n/booking/:code"]
+        Waitlist["Join Waiting List\n(AB02-127 only, no payment)"]
     end
 
-    Browser -->|Sign in / Verify domain| FirebaseAuth[Firebase Auth]
+    Browser --> Auth
+    Auth -->|Verify Domain| FirebaseAuth["Firebase Auth"]
+    
+    Browser --> SeatGrid
+    SeatGrid -->|Select Seats| HoldSeat["Seat Hold\nFirestore lock 8 min"]
 
-    subgraph Server
-        HoldSeat[Seat Hold\nFirestore lock 8 min]
-        CreateBooking[createBooking\nACID Transaction]
-        Organiser[Verify / Reject Booking]
+    Browser --> Waitlist
+    Waitlist -->|Join waiting list| WaitlistAdmin["Admin: Open AB02-127\nAuto-allocate waitlist"]
+
+    Browser --> Checkout
+    Checkout -->|Upload screenshot| Cloudinary[("Cloudinary\nUnsigned Upload")]
+    Cloudinary -->|Return secureUrl| Browser
+    Browser -->|Form + screenshotUrl| CreateBooking["createBooking\nACID Transaction"]
+
+    subgraph Firebase & Database
+        Firestore[("Firestore Database\nSeats + Bookings + RLS")]
     end
 
-    Browser -->|Select seats| HoldSeat
-    Browser -->|Upload screenshot| Cloudinary[(Cloudinary\nUnsigned Upload)]
-    Cloudinary -->|secureUrl| Browser
-    Browser -->|Form + screenshotUrl| CreateBooking
+    HoldSeat -->|Hold seats| Firestore
+    CreateBooking -->|Lock reg no + write| Firestore
 
-    HoldSeat -->|hold seats| Firestore[(Firestore\nSeats + Bookings + RLS)]
-    CreateBooking -->|lock reg no + write booking| Firestore
+    subgraph Admin Operations
+        Admin([Organiser]) --> Organiser["Verify / Reject Booking"]
+    end
 
-    Admin([Organiser]) --> Organiser
-    Organiser -->|verify → stays booked / reject → release seats| Firestore
-    Organiser -->|export CSV with screenshot links| Firestore
+    Organiser -->|Verify → stays booked\nReject → release seats| Firestore
+    Organiser -->|Export CSV with\nscreenshot links| Firestore
 
-    style User fill:#FBF9F4,stroke:#18181b,stroke-width:2px
-    style FirebaseAuth fill:#FFCA28,color:#18181b,stroke:#18181b
-    style Firestore fill:#FFCA28,color:#18181b,stroke:#18181b
-    style Cloudinary fill:#3448C5,color:#fff,stroke:#18181b
-    style Server fill:#8B5CF6,color:#fff,stroke:#18181b
+    Admin -->|Trigger Open| WaitlistAdmin
+    WaitlistAdmin -->|Auto-allocate| NewBookings["New Bookings\npending_payment status"]
+    NewBookings -->|Sync state| Firestore
+    
+    NewBookings -->|Appear in Ticket Portal| Student2([Student User])
+    Student2 -->|Pay via UPI QR| CompletePayment["Complete Payment\nEnter UTR + screenshot"]
+    CompletePayment -->|Verified → stays booked| Firestore
+
+    %% Custom High-Contrast Theme with Neon Yellow & Black Borders
+    classDef blueBox fill:#0288D1,stroke:#000000,stroke-width:2px,color:#FFF;
+    classDef neonYellowBox fill:#FFFF00,stroke:#000000,stroke-width:2px,color:#000;
+    classDef pinkBox fill:#FF1493,stroke:#000000,stroke-width:2px,color:#FFF;
+    classDef purpleBox fill:#7B1FA2,stroke:#000000,stroke-width:2px,color:#FFF;
+
+    %% Direct Node Assignments
+    class User,Admin,Student2 blueBox;
+    class Browser,Auth,SeatGrid,Checkout,Confirmation,Waitlist neonYellowBox;
+    class FirebaseAuth,HoldSeat,CreateBooking,Organiser,WaitlistAdmin,NewBookings,CompletePayment pinkBox;
+    class Cloudinary,Firestore purpleBox;
 ```
+
+
+
+
 
 ### Student Booking Flow
 
@@ -119,8 +146,10 @@ sequenceDiagram
     DB-->>App: Grant / Deny admin access
 
     Organiser->>App: Open /admin
-    App->>DB: list bookings + screenshot metadata
-    DB-->>App: Bookings + thumbnails
+    App->>DB: list bookings + waitlist + screenshot metadata
+    DB-->>App: Bookings + thumbnails + waitlist entries
+
+    Note over Organiser,App: **If AB02-127 is closed, click "Open AB02-127 for booking"**\n**All waitlist entries are auto-allocated to bookings**
 
     Organiser->>App: Preview payment screenshot
     App->>CD: Load secureUrl
@@ -184,6 +213,7 @@ sequenceDiagram
 AWS-F1-Screening/
 ├── firebase/
 │   ├── firestore.rules           # Security rules (auth, transactions, admin gating)
+│   ├── firestoreexample.rules    # Example rules for understanding patterns
 │   └── README.md                 # Firebase + Cloudinary setup walkthrough
 ├── src/
 │   ├── components/

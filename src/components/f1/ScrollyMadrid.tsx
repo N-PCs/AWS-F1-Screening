@@ -4,9 +4,9 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { useGSAP } from "@gsap/react";
 import { MapPin } from "lucide-react";
 
-import img1 from "@/assets/1.webp";
-import img2 from "@/assets/2.webp";
-import img3 from "@/assets/3.webp";
+import img2 from "@/assets/1.webp";
+import img3 from "@/assets/2.webp";
+import img1 from "/random/madring.webp";
 import img4 from "@/assets/4.webp";
 import img5 from "@/assets/5.webp";
 import img6 from "@/assets/6.webp";
@@ -29,6 +29,14 @@ export function ScrollyMadrid() {
         scrub: true,
       },
     });
+
+    // start the MADRID text small and grow it across the whole scroll timeline
+    gsap.set(".madring-text", { scale: 0.4, transformOrigin: "50% 50%" });
+    tl.to(
+      ".madring-text",
+      { scale: 1.2, duration: 7, ease: "none" },
+      0
+    );
 
     // The entire animation duration is arbitrarily set to 7 so we can easily map the 7 crossfades.
     // The text block remains fixed in size.
