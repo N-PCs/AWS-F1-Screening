@@ -1,6 +1,20 @@
 import React from "react";
 import { FlagIcon } from "./FlagIcon";
 
+const TEAM_LOGOS: Record<string, string> = {
+  "Mercedes": "/carlogo/mercedeslogo.avif",
+  "Ferrari": "/carlogo/ferrarilogo.avif",
+  "McLaren": "/carlogo/mclarenlogo.avif",
+  "Red Bull Racing": "/carlogo/redbullracinglogo.avif",
+  "Racing Bulls": "/carlogo/racingbull.avif",
+  "Alpine": "/carlogo/alpinelogo.avif",
+  "Haas F1 Team": "/carlogo/haasf1logo.avif",
+  "Audi": "/carlogo/audilogo.avif",
+  "Williams": "/carlogo/williamslogo.avif",
+  "Aston Martin": "/carlogo/astonmartinlogo.avif",
+  "Cadillac": "/carlogo/cadillaclogo.avif",
+};
+
 export type DriverData = {
   id: string;
   firstName: string;
@@ -266,8 +280,16 @@ export const DriversGrid: React.FC = () => {
               </span>
             </div>
 
-            <div className="mt-auto pt-2">
+            <div className="mt-auto pt-2 flex items-center gap-4">
               <FlagIcon country={driver.country} className="w-5 h-5" />
+              {TEAM_LOGOS[driver.team] && (
+                <img
+                  src={TEAM_LOGOS[driver.team]}
+                  alt={`${driver.team} logo`}
+                  className="w-10 h-10 object-contain opacity-0 group-hover:opacity-100 transition-opacity duration-300 drop-shadow-md"
+                  loading="lazy"
+                />
+              )}
             </div>
           </div>
 
