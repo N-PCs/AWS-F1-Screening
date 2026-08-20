@@ -237,8 +237,8 @@ const GLOSSARY_ITEMS = [
 ];
 
 const FEATURED_DRIVERS = [
-  { name: "Lando NORRIS", team: "McLaren", num: "4", image: "/drivers/landonorris.avif", color: "from-amber-500/20 text-amber-400" },
-  { name: "Max VERSTAPPEN", team: "Red Bull Racing", num: "1", image: "/drivers/maxversteppen.avif", color: "from-blue-600/20 text-blue-400" },
+  { name: "Lando NORRIS", team: "McLaren", num: "1", image: "/drivers/landonorris.avif", color: "from-amber-500/20 text-amber-400" },
+  { name: "Max VERSTAPPEN", team: "Red Bull Racing", num: "3", image: "/drivers/maxversteppen.avif", color: "from-blue-600/20 text-blue-400" },
   { name: "Charles LECLERC", team: "Ferrari", num: "16", image: "/drivers/charlesleclerc.avif", color: "from-red-600/20 text-red-400" },
   { name: "Lewis HAMILTON", team: "Ferrari", num: "44", image: "/drivers/lewishamilton.avif", color: "from-red-600/20 text-red-400" },
   { name: "George RUSSELL", team: "Mercedes", num: "63", image: "/drivers/georgerussell.avif", color: "from-emerald-500/20 text-emerald-400" },
