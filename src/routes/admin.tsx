@@ -291,7 +291,7 @@ async function downloadWaitlistCSV() {
       <div className="mx-auto max-w-sm px-4 py-20">
         <h1 className="text-2xl font-bold uppercase">Organiser access</h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Sign in with your organiser Google account. Only {ADMIN_EMAILS.join(" and ")} can read
+          Sign in with your organiser Google account. Only authorized organiser emails can read
           registrations.
         </p>
         {!isFirebaseConfigured && (

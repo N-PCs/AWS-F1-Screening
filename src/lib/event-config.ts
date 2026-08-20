@@ -7,7 +7,14 @@
 export const ALLOWED_DOMAIN = "vitbhopal.ac.in";
 
 /** Only these Google accounts can open /admin and read registrations. */
-export const ADMIN_EMAILS = ["neel.24bce10303@vitbhopal.ac.in", "neelpandeyofficial@gmail.com"];
+export const ADMIN_EMAILS = [
+  "neel.24bce10303@vitbhopal.ac.in",
+  "neelpandeyofficial@gmail.com",
+  "arsh.24bce10568@vitbhopal.ac.in",
+  "aditya.n7224@gmail.com",
+  "aws@vitbhopal.ac.in",
+  "aditya.24bcg10063@vitbhopal.ac.in",
+];
 
 export const EVENT = {
   club: "AWS SBG VITB",
