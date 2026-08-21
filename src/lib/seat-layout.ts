@@ -1,12 +1,12 @@
 /**
  * EDIT ME — exact AB-02 seat layout, split across two rooms.
  *
- * Each room has 16 rows (A..P), 17 seats per row, split into three
- * blocks: 4 left | gap | 9 centre | gap | 4 right.
+ * Each room has 16 rows (A..P), 18 seats per row, split into four
+ * sections/blocks: 4 left | 8 middle | 2 chairs | 4 right.
  * Seat ids are room-prefixed so both rooms can share row letters:
- *   - Room 1 (AB02-127): R1-A1 … R1-P17
- *   - Room 2 (AB02-126): R2-A1 … R2-P17
- * Current total: 544 seats (272 per room).
+ *   - Room 1 (AB02-127): R1-A1 … R1-P18
+ *   - Room 2 (AB02-126): R2-A1 … R2-P18
+ * Current total: 576 seats (288 per room).
  */
 export type TierId = "redbull" | "ferrari" | "generalfanzone" | "aisle" | "premium" | "standard" | "economy";
 
@@ -26,28 +26,28 @@ export const TIERS: Record<TierId, Tier> = {
     name: "Red Bull Fanzone",
     price: 249,
     tone: "tier-redbull",
-    blurb: "R1, R2 & R3 left block. Pure Red Bull Racing energy.",
+    blurb: "R1, R2 & R3 left block (seats 1..4). Pure Red Bull Racing energy.",
   },
   ferrari: {
     id: "ferrari",
     name: "Ferrari Fanzone",
     price: 249,
     tone: "tier-ferrari",
-    blurb: "R1, R2 & R3 right block. Tifosi passion in full voice.",
+    blurb: "R1, R2 & R3 right block (seats 15..18). Tifosi passion in full voice.",
   },
   generalfanzone: {
     id: "generalfanzone",
     name: "General Fanzone",
     price: 249,
     tone: "tier-generalfanzone",
-    blurb: "R1C6 to R1C12 & R2C6 to R2C12. Premium front centre seats.",
+    blurb: "R1 & R2 middle & chairs (seats 6..14). Premium front centre seats.",
   },
   aisle: {
     id: "aisle",
     name: "Normal Seats",
     price: 99,
     tone: "tier-aisle",
-    blurb: "Seats e & m — flat ₹99 across every row.",
+    blurb: "Seats e & n (seats 5 & 14) — flat ₹99 across every row.",
   },
   premium: {
     id: "premium",
@@ -91,43 +91,43 @@ export const ROOMS: Room[] = [
 
 export type RowDef = { row: string; count: number; tier: TierId };
 
-/** Rows in a single room (272 seats). */
+/** Rows in a single room (288 seats). */
 export const ROOM_ROWS: Record<RoomId, RowDef[]> = {
   R1: [
-    { row: "A", count: 17, tier: "premium" },
-    { row: "B", count: 17, tier: "premium" },
-    { row: "C", count: 17, tier: "premium" },
-    { row: "D", count: 17, tier: "premium" },
-    { row: "E", count: 17, tier: "premium" },
-    { row: "F", count: 17, tier: "standard" },
-    { row: "G", count: 17, tier: "standard" },
-    { row: "H", count: 17, tier: "standard" },
-    { row: "I", count: 17, tier: "standard" },
-    { row: "J", count: 17, tier: "standard" },
-    { row: "K", count: 17, tier: "standard" },
-    { row: "L", count: 17, tier: "standard" },
-    { row: "M", count: 17, tier: "standard" },
-    { row: "N", count: 17, tier: "economy" },
-    { row: "O", count: 17, tier: "economy" },
-    { row: "P", count: 17, tier: "economy" },
+    { row: "A", count: 18, tier: "premium" },
+    { row: "B", count: 18, tier: "premium" },
+    { row: "C", count: 18, tier: "premium" },
+    { row: "D", count: 18, tier: "premium" },
+    { row: "E", count: 18, tier: "premium" },
+    { row: "F", count: 18, tier: "standard" },
+    { row: "G", count: 18, tier: "standard" },
+    { row: "H", count: 18, tier: "standard" },
+    { row: "I", count: 18, tier: "standard" },
+    { row: "J", count: 18, tier: "standard" },
+    { row: "K", count: 18, tier: "standard" },
+    { row: "L", count: 18, tier: "standard" },
+    { row: "M", count: 18, tier: "standard" },
+    { row: "N", count: 18, tier: "economy" },
+    { row: "O", count: 18, tier: "economy" },
+    { row: "P", count: 18, tier: "economy" },
   ],
   R2: [
-    { row: "A", count: 17, tier: "premium" },
-    { row: "B", count: 17, tier: "premium" },
-    { row: "C", count: 17, tier: "premium" },
-    { row: "D", count: 17, tier: "premium" },
-    { row: "E", count: 17, tier: "premium" },
-    { row: "F", count: 17, tier: "standard" },
-    { row: "G", count: 17, tier: "standard" },
-    { row: "H", count: 17, tier: "standard" },
-    { row: "I", count: 17, tier: "standard" },
-    { row: "J", count: 17, tier: "standard" },
-    { row: "K", count: 17, tier: "standard" },
-    { row: "L", count: 17, tier: "standard" },
-    { row: "M", count: 17, tier: "standard" },
-    { row: "N", count: 17, tier: "economy" },
-    { row: "O", count: 17, tier: "economy" },
-    { row: "P", count: 17, tier: "economy" },
+    { row: "A", count: 18, tier: "premium" },
+    { row: "B", count: 18, tier: "premium" },
+    { row: "C", count: 18, tier: "premium" },
+    { row: "D", count: 18, tier: "premium" },
+    { row: "E", count: 18, tier: "premium" },
+    { row: "F", count: 18, tier: "standard" },
+    { row: "G", count: 18, tier: "standard" },
+    { row: "H", count: 18, tier: "standard" },
+    { row: "I", count: 18, tier: "standard" },
+    { row: "J", count: 18, tier: "standard" },
+    { row: "K", count: 18, tier: "standard" },
+    { row: "L", count: 18, tier: "standard" },
+    { row: "M", count: 18, tier: "standard" },
+    { row: "N", count: 18, tier: "economy" },
+    { row: "O", count: 18, tier: "economy" },
+    { row: "P", count: 18, tier: "economy" },
   ],
 };
 
@@ -162,20 +162,20 @@ export function seatParts(id: string): SeatParts | null {
 function isRightBlockSeat(room: RoomId, row: string, num: number): boolean {
   const def = ROOM_ROWS[room]?.find((r) => r.row === row);
   if (!def) return false;
-  const [, , right] = rowBlocks(def);
+  const [, , , right] = rowBlocks(def);
   return right.includes(num);
 }
 
-/** The display label shown on the seat button — lowercase letter (a–q). */
+/** The display label shown on the seat button — lowercase letter (a–r). */
 export function seatNum(id: string): string {
   const num = seatParts(id)?.num;
   if (num == null) return id;
-  return String.fromCharCode(96 + num); // 1→a, 2→b, …, 17→q
+  return String.fromCharCode(96 + num); // 1→a, 2→b, …, 18→r
 }
 
 /**
  * Human-readable seat ID for tickets and summaries: R{rowNumber}C{colNumber}.
- * e.g. internal "R1-A1" → "R1C1", "R2-P16" → "R16C16".
+ * e.g. internal "R1-A1" → "R1C1", "R2-P18" → "R16C18".
  */
 export function seatDisplayId(id: string): string {
   const parts = seatParts(id);
@@ -194,14 +194,14 @@ export function tierForSeat(id: string): Tier | null {
   if (!parts) return null;
   const { room, row, num } = parts;
 
-  // General Fanzone: Row R1 (Row 'A') seats 6..12 & Row R2 (Row 'B') seats 6..12 -> ₹249
-  if ((row === "A" || row === "B") && num >= 6 && num <= 12) {
-    return TIERS.generalfanzone;
+  // Aisle Special / Normal Seats: seat 5 (label 'e') and seat 14 (label 'n') across ALL rows → flat ₹99
+  if (num === 5 || num === 14) {
+    return TIERS.aisle;
   }
 
-  // Aisle Special: seat 5 (label 'e') and seat 13 (label 'm') across ALL rows → flat ₹99
-  if (num === 5 || num === 13) {
-    return TIERS.aisle;
+  // General Fanzone: Row R1 (Row 'A') & Row R2 (Row 'B'), middle & chairs seats 6..14 -> ₹249
+  if ((row === "A" || row === "B") && num >= 6 && num <= 14) {
+    return TIERS.generalfanzone;
   }
 
   // Red Bull Fanzone: R1, R2 & R3 (rows A, B & C), Left block only (seats 1..4) -> ₹249
@@ -216,17 +216,17 @@ export function tierForSeat(id: string): Tier | null {
     }
   }
 
-  // Pit Lane: remaining front row seats (rows A, B, C, D, E) -> ₹199
+  // Pit Lane: remaining front row seats (rows A, B, C, D, E) -> ₹179
   if (row === "A" || row === "B" || row === "C" || row === "D" || row === "E") {
     return TIERS.premium;
   }
 
-  // Grandstand: middle rows R6..R13 (rows F, G, H, I, J, K, L, M) -> ₹99
+  // Grandstand: middle rows R6..R13 (rows F, G, H, I, J, K, L, M) -> ₹129
   if (["F", "G", "H", "I", "J", "K", "L", "M"].includes(row)) {
     return TIERS.standard;
   }
 
-  // Back Straight: rear rows R14..R16 (rows N, O, P) -> ₹85
+  // Back Straight: rear rows R14..R16 (rows N, O, P) -> ₹99
   return TIERS.economy;
 }
 
@@ -244,16 +244,14 @@ export function rowDisplayLabel(row: string): string {
 }
 
 /**
- * Seats in a row, split into three blocks.
- * Base layout: 4 left | 8 centre | 4 right (16 seats).
- * For 17-seat rows the extra seat goes to the centre block: 4 left | 9 centre | 4 right.
- * This keeps seats 5 ('e') and 13 ('m') in a straight vertical line across all rows.
+ * Seats in a row, split into four sections.
+ * Layout per row (18 seats total):
+ *   - 4 left (seats 1..4)
+ *   - 8 middle (seats 5..12)
+ *   - 2 chairs (seats 13..14)
+ *   - 4 right (seats 15..18)
  */
-export function rowBlocks(def: RowDef): [number[], number[], number[]] {
+export function rowBlocks(def: RowDef): [number[], number[], number[], number[]] {
   const all = Array.from({ length: def.count }, (_, i) => i + 1);
-  if (def.count <= 16) {
-    return [all.slice(0, 4), all.slice(4, 12), all.slice(12)];
-  }
-  // 17-seat rows: extra seat in centre → 4 | 9 | 4
-  return [all.slice(0, 4), all.slice(4, 13), all.slice(13)];
+  return [all.slice(0, 4), all.slice(4, 12), all.slice(12, 14), all.slice(14)];
 }

@@ -236,7 +236,7 @@ function SeatRow({
   disabled?: boolean | undefined;
   mobileView?: "fit" | "zoom";
 }) {
-  const [left, centre, right] = rowBlocks(def);
+  const [left, middle, chairs, right] = rowBlocks(def);
   const tier = TIERS[def.tier];
   const displayRow = rowDisplayLabel(def.row);
   const isFit = mobileView === "fit";
@@ -271,10 +271,28 @@ function SeatRow({
           );
         })}
         <span
-          className="shrink-0 w-px"
+          className="shrink-0 w-1 sm:w-2"
           aria-hidden
         />
-        {centre.map((n) => {
+        {middle.map((n) => {
+          const sid = seatId(room, def.row, n);
+          const st = tierForSeat(sid) ?? tier;
+          return (
+            <Seat
+              key={n}
+              id={sid}
+              label={`${roomName} · ${st.name} ${displayRow} seat ${String.fromCharCode(96 + n)} — ₹${st.price}`}
+              taken={taken.has(sid)}
+              held={heldSet.has(sid)}
+              waitlisted={waitlistedSet.has(sid)}
+              selected={selectedSet.has(sid)}
+              onToggle={onToggle}
+              disabled={disabled}
+              mobileView={mobileView}
+            />
+          );
+        })}
+        {chairs.map((n) => {
           const sid = seatId(room, def.row, n);
           const st = tierForSeat(sid) ?? tier;
           return (
@@ -293,7 +311,7 @@ function SeatRow({
           );
         })}
         <span
-          className="shrink-0 w-px"
+          className="shrink-0 w-1 sm:w-2"
           aria-hidden
         />
         {right.map((n) => {
