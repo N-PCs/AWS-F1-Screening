@@ -24,11 +24,13 @@ import {
   adminRebuildLookups,
   adminRemoveWaitlist,
   adminScreenshot,
+  adminSetPrebookOpen,
   adminSetRoomOpen,
   adminSetStatus,
   adminSignIn,
   adminSignOut,
   adminWaitlistList,
+  getAvailability,
   getRoomState,
   watchAdmin,
   type BookingRecord,
@@ -64,6 +66,7 @@ function AdminPage() {
   const [deleteCode, setDeleteCode] = useState<string | null>(null);
   const [waitlist, setWaitlist] = useState<WaitlistRecord[]>([]);
   const [r2Open, setR2Open] = useState(false);
+  const [prebookOpen, setPrebookOpen] = useState(false);
   const [roomBusy, setRoomBusy] = useState(false);
 
   useEffect(() => {
@@ -84,14 +87,18 @@ function AdminPage() {
   async function load() {
     setBusy(true);
     try {
-      const [data, wl, rooms] = await Promise.all([
+      const [data, wl, rooms, avail] = await Promise.all([
         adminList(),
         adminWaitlistList(),
         getRoomState(),
+        getAvailability().catch(() => null),
       ]);
       setBookings(data.bookings);
       setWaitlist(wl.entries);
       setR2Open(Boolean(rooms.R2));
+      if (avail) {
+        setPrebookOpen(Boolean(avail.prebookOpen));
+      }
       // Keep the public email/reg lookup index in sync so tickets created
       // before it existed are still findable on /tickets.
       if (data.bookings.length || wl.entries.length) {
@@ -104,6 +111,23 @@ function AdminPage() {
       toast.error(err instanceof Error ? err.message : "Could not load registrations");
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function togglePrebook() {
+    setRoomBusy(true);
+    try {
+      const res = await adminSetPrebookOpen(!prebookOpen);
+      setPrebookOpen(res.open);
+      toast.success(
+        res.open
+          ? "Prebooking ENABLED! Users will now upload ID card screenshots without QR/UTR."
+          : "Prebooking DISABLED! Users can now book normally with UPI QR and UTR.",
+      );
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to toggle prebooking mode");
+    } finally {
+      setRoomBusy(false);
     }
   }
 
@@ -318,7 +342,19 @@ async function downloadWaitlistCSV() {
           <h1 className="mt-1 text-3xl font-bold uppercase">Registrations</h1>
           <p className="mt-1 text-xs text-muted-foreground">{email}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant={prebookOpen ? "default" : "outline"}
+            onClick={() => void togglePrebook()}
+            disabled={roomBusy || busy}
+            className={
+              prebookOpen
+                ? "bg-amber-500 hover:bg-amber-600 text-black font-bold uppercase tracking-wider text-xs"
+                : "border-amber-500/50 text-amber-400 hover:bg-amber-500/10 font-bold uppercase tracking-wider text-xs"
+            }
+          >
+            {prebookOpen ? "Disable Prebooking Mode" : "Enable Prebooking Mode"}
+          </Button>
           <Button variant="outline" onClick={() => void load()} disabled={busy}>
             Refresh
           </Button>
@@ -336,6 +372,21 @@ async function downloadWaitlistCSV() {
           </Button>
         </div>
       </header>
+
+      {/* Prebooking Mode Active Indicator Banner */}
+      {prebookOpen && (
+        <div className="mt-4 rounded-md border border-amber-500/40 bg-amber-500/10 p-4 text-xs sm:text-sm text-amber-200 flex items-center justify-between flex-wrap gap-2">
+          <div>
+            <strong className="font-bold text-amber-400 uppercase tracking-wider block sm:inline">
+              Prebooking Mode Active:
+            </strong>{" "}
+            Students will not see QR codes or UTR input. They are instructed to upload a screenshot of their ID card to prebook seats.
+          </div>
+          <span className="inline-flex items-center rounded-full bg-amber-500/20 px-2.5 py-0.5 text-xs font-bold text-amber-300">
+            ID Card Mode ON
+          </span>
+        </div>
+      )}
 
       <div className="mt-6 grid gap-3 sm:grid-cols-4">
         <Stat label="Bookings" value={String(bookings.length)} />

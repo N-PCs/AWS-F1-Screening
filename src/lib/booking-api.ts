@@ -80,6 +80,8 @@ export type Availability = {
   waitlistTotal: number;
   /** whether the organiser has opened AB02-126 for normal booking */
   r2Open: boolean;
+  /** whether prebooking mode (ID card upload without QR/UTR) is enabled */
+  prebookOpen: boolean;
   holdTtlMs: number;
   updatedAt: string;
 };
@@ -117,11 +119,12 @@ type AvailabilityState = {
   held: SeatHold[];
   waitlisted: string[];
   r2Open: boolean;
+  prebookOpen: boolean;
   updatedAt: number;
 };
 
 function emptyAvailability(): AvailabilityState {
-  return { taken: [], held: [], waitlisted: [], r2Open: false, updatedAt: 0 };
+  return { taken: [], held: [], waitlisted: [], r2Open: false, prebookOpen: false, updatedAt: 0 };
 }
 
 function pruneHeld(held: SeatHold[], now: number): SeatHold[] {
@@ -195,8 +198,10 @@ async function rebuildAvailabilityFromSeats(): Promise<AvailabilityState> {
     }
   });
   const cfg = await getDoc(doc(db(), CONFIG, "rooms")).catch(() => null);
-  const r2Open = cfg?.exists() ? Boolean((cfg.data() as Record<string, unknown>)["R2"]) : false;
-  return { taken, held, waitlisted, r2Open, updatedAt: Date.now() };
+  const cfgData = cfg?.exists() ? (cfg.data() as Record<string, unknown>) : {};
+  const r2Open = Boolean(cfgData["R2"]);
+  const prebookOpen = Boolean(cfgData["prebookOpen"]);
+  return { taken, held, waitlisted, r2Open, prebookOpen, updatedAt: Date.now() };
 }
 
 function toAvailability(st: AvailabilityState, now: number): Availability {
@@ -208,6 +213,7 @@ function toAvailability(st: AvailabilityState, now: number): Availability {
     waitlisted,
     waitlistTotal: waitlisted.length,
     r2Open: Boolean(st.r2Open),
+    prebookOpen: Boolean(st.prebookOpen),
     holdTtlMs: HOLD_TTL_MS,
     updatedAt: new Date().toISOString(),
   };
@@ -714,6 +720,23 @@ export async function adminSetRoomOpen(room: RoomId, open: boolean) {
   });
 
   return { room, open };
+}
+
+/** Organiser-only: enable or disable Prebooking mode (ID Card upload instead of UPI/QR). */
+export async function adminSetPrebookOpen(open: boolean) {
+  requireBackend();
+  const ref = doc(db(), CONFIG, "rooms");
+  const snap = await getDoc(ref);
+  const current = snap.exists() ? (snap.data() as Record<string, unknown>) : {};
+  await setDoc(ref, { ...current, prebookOpen: open });
+
+  // Mirror into availability aggregate so getAvailability is 1-read.
+  await runTransaction(db(), async (tx) => {
+    const st = await readAvailabilityState(tx);
+    await writeAvailabilityState(tx, { ...st, prebookOpen: open });
+  });
+
+  return { open };
 }
 
 /**

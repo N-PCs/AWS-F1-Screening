@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Lock, TicketCheck } from "lucide-react";
+import { Lock, TicketCheck, X, Sparkles, ShieldAlert } from "lucide-react";
 import { AuthGate } from "@/components/f1/AuthGate";
 import { SeatLegend, SeatMap } from "@/components/f1/SeatMap";
 import { UtrGuideTrigger } from "@/components/f1/UtrGuideModal";
@@ -93,6 +93,7 @@ function BookPage() {
     upiRef: "",
   });
 
+  const [prebookNoticeDismissed, setPrebookNoticeDismissed] = useState(false);
   const [wlOpen, setWlOpen] = useState(false);
   const [wlStep, setWlStep] = useState<"info" | "join" | "done">("info");
   const [wlBusy, setWlBusy] = useState(false);
@@ -313,6 +314,8 @@ function BookPage() {
     }
   }, [secondsLeft, holdExpiresAt, submitting, availability]);
 
+  const prebookOpen = Boolean(availability.data?.prebookOpen);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setErrors({});
@@ -321,19 +324,40 @@ function BookPage() {
       toast.error("Pick at least one seat first.", { id: "submit-no-seats" });
       return;
     }
-    const parsed = attendeeSchema.safeParse(form);
+
+    // In prebook mode, upiRef is auto-filled if blank
+    const formData = {
+      ...form,
+      upiRef: prebookOpen && !form.upiRef.trim() ? "PREBOOK-ID" : form.upiRef,
+    };
+
+    const parsed = attendeeSchema.safeParse(formData);
     if (!parsed.success) {
       const next: Record<string, string> = {};
       for (const issue of parsed.error.issues) {
+        // Ignore upiRef error if in prebook mode
+        if (prebookOpen && issue.path[0] === "upiRef") continue;
         next[String(issue.path[0])] = issue.message;
       }
-      setErrors(next);
-      toast.error("Please fix the highlighted fields.", { id: "submit-validation" });
-      return;
+      if (Object.keys(next).length > 0) {
+        setErrors(next);
+        toast.error("Please fix the highlighted fields.", { id: "submit-validation" });
+        return;
+      }
     }
+
+    const validatedAttendee = {
+      name: form.name.trim(),
+      email: form.email.trim(),
+      phone: form.phone.trim(),
+      regNo: form.regNo.trim(),
+      upiRef: prebookOpen && !form.upiRef.trim() ? "PREBOOK-ID" : form.upiRef.trim(),
+    };
+
     if (!file) {
-      setErrors({ screenshot: "Upload your UPI payment screenshot" });
-      toast.error("Payment screenshot is required.", { id: "submit-no-screenshot" });
+      const msg = prebookOpen ? "Upload a screenshot of your ID card" : "Upload your UPI payment screenshot";
+      setErrors({ screenshot: msg });
+      toast.error(msg, { id: "submit-no-screenshot" });
       return;
     }
     if (!file.type.startsWith("image/")) {
@@ -357,12 +381,12 @@ function BookPage() {
       const screenshot = await uploadImage(screenshotBlob);
       const result = await createBooking({
         seats: selected,
-        attendee: parsed.data,
+        attendee: validatedAttendee,
         screenshot,
         holdId: holdIdRef.current,
       });
       setHoldExpiresAt(null);
-      toast.success("Seats confirmed. See you at the race!");
+      toast.success(prebookOpen ? "Prebooking confirmed! See you at the race!" : "Seats confirmed. See you at the race!");
       await navigate({ to: "/booking/$code", params: { code: result.code } });
     } catch (err) {
       const message = err instanceof Error ? err.message : "Booking failed";
@@ -653,45 +677,99 @@ function BookPage() {
                 </div>
 
                 <div className="border-t border-border pt-4">
-                  <h2 className="text-base sm:text-lg font-bold uppercase">Pay ₹{amount} by UPI</h2>
-                  <div className="mt-3 flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:gap-4">
-                    <QrPanel />
-                    <div className="text-xs sm:text-sm text-center sm:text-left">
-                      <p className="font-semibold">{UPI.payeeName}</p>
-                      <p className="font-mono text-[0.65rem] sm:text-xs break-all text-muted-foreground">
-                        {UPI.id}
-                      </p>
-                      <p className="mt-1.5 sm:mt-2 text-[0.65rem] sm:text-xs text-muted-foreground">
-                        Scan, pay the exact amount, then upload the screenshot below.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="mt-3 sm:mt-4 space-y-3">
+                  {prebookOpen ? (
                     <div>
-                      <Field
-                        id="upiRef"
-                        label="UPI transaction / reference ID"
-                        value={form.upiRef}
-                        error={errors["upiRef"]}
-                        onChange={(v) => setForm({ ...form, upiRef: v })}
-                      />
-                      <UtrGuideTrigger />
-                    </div>
-                    <div>
-                      <Label htmlFor="screenshot">Payment screenshot</Label>
-                      <Input
-                        id="screenshot"
-                        type="file"
-                        accept="image/*"
-                        className="mt-1.5"
-                        onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                      />
-                      {errors["screenshot"] && (
-                        <p className="mt-1 text-xs text-destructive">{errors["screenshot"]}</p>
+                      {/* Floating / Inline Prebook Popup Badge with Close Button */}
+                      {!prebookNoticeDismissed && (
+                        <div className="relative overflow-hidden rounded-lg border border-amber-500/50 bg-gradient-to-r from-amber-950/40 via-amber-900/30 to-black p-4 text-xs text-amber-100 shadow-xl backdrop-blur-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                          <button
+                            type="button"
+                            onClick={() => setPrebookNoticeDismissed(true)}
+                            className="absolute top-2.5 right-2.5 rounded-md p-1 text-amber-400/70 transition hover:bg-amber-500/20 hover:text-amber-200"
+                            title="Close notification"
+                          >
+                            <X className="h-4 w-4" aria-hidden />
+                          </button>
+                          <div className="flex items-start gap-2.5 pr-6">
+                            <Sparkles className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
+                            <div>
+                              <p className="font-bold text-amber-300 uppercase tracking-wider text-[0.7rem]">
+                                Prebooking Offer Active
+                              </p>
+                              <p className="mt-1 leading-relaxed text-amber-200/90 text-xs">
+                                Our club bank account is currently not accepting payments via UPI. You can <strong>prebook your seats for FREE now</strong> by submitting a screenshot of your <strong>College ID card</strong>!
+                              </p>
+                            </div>
+                          </div>
+                        </div>
                       )}
+
+                      <div className="mt-4 space-y-3 rounded-md border border-border bg-background/50 p-4">
+                        <h3 className="font-bold uppercase text-xs tracking-wider flex items-center gap-1.5 text-amber-400">
+                          <TicketCheck className="h-4 w-4" />
+                          Prebook Pass Verification
+                        </h3>
+                        <div>
+                          <Label htmlFor="screenshot" className="text-xs font-semibold">ID Card Screenshot</Label>
+                          <p className="text-[0.7rem] text-muted-foreground mb-1.5">
+                            Upload a clear photo or screenshot of your college ID card to lock in your seats.
+                          </p>
+                          <Input
+                            id="screenshot"
+                            type="file"
+                            accept="image/*"
+                            className="mt-1 text-xs"
+                            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                          />
+                          {errors["screenshot"] && (
+                            <p className="mt-1 text-xs text-destructive">{errors["screenshot"]}</p>
+                          )}
+                        </div>
+                      </div>
                     </div>
-                  </div>
+                  ) : (
+                    <>
+                      <h2 className="text-base sm:text-lg font-bold uppercase">Pay ₹{amount} by UPI</h2>
+                      <div className="mt-3 flex flex-col items-center gap-3 sm:flex-row sm:items-start sm:gap-4">
+                        <QrPanel />
+                        <div className="text-xs sm:text-sm text-center sm:text-left">
+                          <p className="font-semibold">{UPI.payeeName}</p>
+                          <p className="font-mono text-[0.65rem] sm:text-xs break-all text-muted-foreground">
+                            {UPI.id}
+                          </p>
+                          <p className="mt-1.5 sm:mt-2 text-[0.65rem] sm:text-xs text-muted-foreground">
+                            Scan, pay the exact amount, then upload the screenshot below.
+                          </p>
+                        </div>
+                      </div>
+
+                      <div className="mt-3 sm:mt-4 space-y-3">
+                        <div>
+                          <Field
+                            id="upiRef"
+                            label="UPI transaction / reference ID"
+                            value={form.upiRef}
+                            error={errors["upiRef"]}
+                            onChange={(v) => setForm({ ...form, upiRef: v })}
+                          />
+                          <UtrGuideTrigger />
+                        </div>
+                        <div>
+                          <Label htmlFor="screenshot">Payment screenshot</Label>
+                          <Input
+                            id="screenshot"
+                            type="file"
+                            accept="image/*"
+                            className="mt-1.5"
+                            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                          />
+                          {errors["screenshot"] && (
+                            <p className="mt-1 text-xs text-destructive">{errors["screenshot"]}</p>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
 
                 <Button
@@ -701,7 +779,9 @@ function BookPage() {
                 >
                   {submitting
                     ? "Confirming…"
-                    : `Confirm ${selected.length || ""} seat${selected.length === 1 ? "" : "s"}`}
+                    : prebookOpen
+                      ? `Prebook ${selected.length || ""} seat${selected.length === 1 ? "" : "s"}`
+                      : `Confirm ${selected.length || ""} seat${selected.length === 1 ? "" : "s"}`}
                 </Button>
                 <p className="text-[0.65rem] sm:text-xs text-muted-foreground">
                   Picking a seat locks it for you for a few minutes — nobody else can book it while your

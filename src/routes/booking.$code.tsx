@@ -158,7 +158,16 @@ function BookingPage() {
                 .join(", ")}
             />
             <Row label="Amount" value={`₹${query.data.amount}`} />
-            <Row label="UPI reference" value={query.data.upiRef || "Pending Payment"} />
+            <Row
+              label="UPI reference"
+              value={
+                query.data.upiRef === "PREBOOK-ID" ? (
+                  <span className="font-semibold text-amber-400">Prebook Pass (College ID Uploaded)</span>
+                ) : (
+                  query.data.upiRef || "Pending Payment"
+                )
+              }
+            />
             <Row
               label="Payment status"
               value={
@@ -182,6 +191,19 @@ function BookingPage() {
               }
             />
           </dl>
+
+          {/* Notice for Prebook Pass holders about UPI QR/UTR payment when prebooking mode turns off */}
+          {query.data.upiRef === "PREBOOK-ID" && !isVerified && (
+            <div className="mt-5 rounded-md border border-amber-500/40 bg-amber-500/10 p-4 text-xs text-amber-200">
+              <p className="font-bold text-amber-400 uppercase tracking-wider flex items-center gap-1.5">
+                <Sparkles className="h-4 w-4" />
+                Prebook Registration Info
+              </p>
+              <p className="mt-1.5 leading-relaxed">
+                You have successfully prebooked your seat using your College ID card photo. When organisers re-enable normal UPI payments, the UPI QR code and UTR payment submission form will be available here on your ticket page so you can scan, pay, and get your official verified PDF pass!
+              </p>
+            </div>
+          )}
 
           {/* Allocated Pending Payment Form Section */}
           {isPendingPayment && (

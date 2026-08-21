@@ -345,7 +345,12 @@ function BookingTicketCard({
           </span>
           <p className="font-semibold text-foreground">₹{booking.amount}</p>
           <p className="text-xs text-muted-foreground">
-            UPI Ref: {booking.upiRef || "Pending Payment"}
+            UPI Ref:{" "}
+            {booking.upiRef === "PREBOOK-ID" ? (
+              <span className="font-semibold text-amber-400">Prebook Pass (ID Uploaded)</span>
+            ) : (
+              booking.upiRef || "Pending Payment"
+            )}
           </p>
         </div>
 
