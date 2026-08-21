@@ -82,6 +82,7 @@ function BookPage() {
   const [holdExpiresAt, setHoldExpiresAt] = useState<number | null>(null);
   const [holdBusy, setHoldBusy] = useState(false);
   const holdIdRef = useRef<string>("");
+  const utrGuideShownRef = useRef<boolean>(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [file, setFile] = useState<File | null>(null);
   const [activeRoom, setActiveRoom] = useState<RoomId>("R1");
@@ -675,6 +676,13 @@ function BookPage() {
                         value={form.upiRef}
                         error={errors["upiRef"]}
                         onChange={(v) => setForm({ ...form, upiRef: v })}
+                        onFocus={() => {
+                          if (!utrGuideShownRef.current) {
+                            utrGuideShownRef.current = true;
+                            const triggerBtn = document.getElementById("utr-guide-trigger-btn");
+                            if (triggerBtn) triggerBtn.click();
+                          }
+                        }}
                       />
                       <UtrGuideTrigger />
                     </div>
@@ -687,6 +695,9 @@ function BookPage() {
                         className="mt-1.5"
                         onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                       />
+                      <p className="mt-1 text-[0.7rem] text-amber-500 font-medium">
+                        * Note: Your uploaded screenshot must clearly display the UTR / UPI transaction ID.
+                      </p>
                       {errors["screenshot"] && (
                         <p className="mt-1 text-xs text-destructive">{errors["screenshot"]}</p>
                       )}
@@ -1021,6 +1032,7 @@ function Field({
   error,
   type = "text",
   readOnly,
+  onFocus,
 }: {
   id: string;
   label: string;
@@ -1029,6 +1041,7 @@ function Field({
   error?: string | undefined;
   type?: string;
   readOnly?: boolean;
+  onFocus?: () => void;
 }) {
   return (
     <div>
@@ -1038,6 +1051,7 @@ function Field({
         type={type}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onFocus={onFocus}
         className={`mt-1.5${readOnly ? " cursor-not-allowed opacity-70" : ""}`}
         readOnly={readOnly}
         tabIndex={readOnly ? -1 : undefined}

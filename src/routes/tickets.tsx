@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -227,6 +227,7 @@ function BookingTicketCard({
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+  const utrGuideShownRef = useRef<boolean>(false);
 
   const handlePaySubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -404,6 +405,13 @@ function BookingTicketCard({
                   placeholder="e.g. 423456789012"
                   value={upiRef}
                   onChange={(e) => setUpiRef(e.target.value)}
+                  onFocus={() => {
+                    if (!utrGuideShownRef.current) {
+                      utrGuideShownRef.current = true;
+                      const triggerBtn = document.getElementById("utr-guide-trigger-btn");
+                      if (triggerBtn) triggerBtn.click();
+                    }
+                  }}
                   className="text-xs"
                 />
                 <UtrGuideTrigger />
@@ -419,6 +427,9 @@ function BookingTicketCard({
                   onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                   className="text-xs"
                 />
+                <p className="mt-1 text-[0.7rem] text-amber-500 font-medium">
+                  * Note: Your uploaded screenshot must clearly display the UTR / UPI transaction ID.
+                </p>
               </div>
             </div>
 

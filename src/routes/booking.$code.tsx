@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -46,6 +46,7 @@ function BookingPage() {
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+  const utrGuideShownRef = useRef<boolean>(false);
 
   const isPendingPayment = query.data?.status === "pending_payment";
   const isVerified = query.data?.status === "verified";
@@ -219,6 +220,13 @@ function BookingPage() {
                       placeholder="e.g. 423456789012"
                       value={upiRef}
                       onChange={(e) => setUpiRef(e.target.value)}
+                      onFocus={() => {
+                        if (!utrGuideShownRef.current) {
+                          utrGuideShownRef.current = true;
+                          const triggerBtn = document.getElementById("utr-guide-trigger-btn");
+                          if (triggerBtn) triggerBtn.click();
+                        }
+                      }}
                       className="text-xs"
                     />
                     <UtrGuideTrigger />
@@ -234,6 +242,9 @@ function BookingPage() {
                       onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                       className="text-xs"
                     />
+                    <p className="mt-1 text-[0.7rem] text-amber-500 font-medium">
+                      * Note: Your uploaded screenshot must clearly display the UTR / UPI transaction ID.
+                    </p>
                   </div>
                 </div>
 

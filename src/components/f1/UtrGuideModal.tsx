@@ -7,6 +7,7 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 interface UtrGuideModalProps {
@@ -29,6 +30,17 @@ export function UtrGuideModal({ open, onOpenChange }: UtrGuideModalProps) {
         </DialogHeader>
 
         <div className="space-y-6 pt-2">
+          {/* OK / Understood Button at Top */}
+          <div>
+            <Button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="w-full font-bold uppercase tracking-wider bg-primary hover:bg-primary/90 text-primary-foreground py-2.5 text-sm"
+            >
+              OK, I Got It — Enter UTR
+            </Button>
+          </div>
+
           {/* Image First as requested */}
           <div className="rounded-xl border border-border bg-card/60 p-2 sm:p-3 overflow-hidden shadow-sm">
             <p className="text-[0.65rem] font-bold uppercase tracking-widest text-primary mb-2 px-1">
@@ -223,6 +235,7 @@ export function UtrGuideTrigger({ className }: { className?: string }) {
   return (
     <>
       <button
+        id="utr-guide-trigger-btn"
         type="button"
         onClick={() => setOpen(true)}
         className={cn(
