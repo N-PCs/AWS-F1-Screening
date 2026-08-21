@@ -694,10 +694,13 @@ function BookPage() {
                             <Sparkles className="h-4 w-4 text-amber-400 shrink-0 mt-0.5" />
                             <div>
                               <p className="font-bold text-amber-300 uppercase tracking-wider text-[0.7rem]">
-                                Prebooking Offer Active
+                                Prebooking Active — Pay Later
                               </p>
                               <p className="mt-1 leading-relaxed text-amber-200/90 text-xs">
-                                Our club bank account is currently not accepting payments via UPI. You can <strong>prebook your seats for FREE now</strong> by submitting a screenshot of your <strong>College ID card</strong>!
+                                Our club bank account is currently not accepting payments via UPI. You can <strong>prebook your seats now</strong> by uploading a screenshot of your <strong>College ID card</strong>.
+                              </p>
+                              <p className="mt-1.5 leading-relaxed text-amber-300/90 text-[0.7rem] bg-amber-500/10 p-2 rounded border border-amber-500/20">
+                                <strong>Pay Later Option:</strong> Once normal payment mode is turned back on by organisers, you can visit the <strong>My Tickets</strong> section (or your ticket link) to scan the UPI QR code and submit your UTR reference number!
                               </p>
                             </div>
                           </div>

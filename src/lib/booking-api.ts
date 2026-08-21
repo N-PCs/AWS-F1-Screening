@@ -960,9 +960,12 @@ export async function adminRebuildLookups(): Promise<{
 /** Organiser-only: rebuild the availability aggregate from raw seat docs. */
 export async function adminRebuildAvailability(): Promise<AvailabilityState> {
   requireBackend();
+  const currentSnap = await getDoc(availRef()).catch(() => null);
+  const currentPrebook = currentSnap?.exists() ? Boolean((currentSnap.data() as AvailabilityState).prebookOpen) : false;
   const state = await rebuildAvailabilityFromSeats();
-  await setDoc(availRef(), state);
-  return state;
+  const mergedState = { ...state, prebookOpen: state.prebookOpen || currentPrebook };
+  await setDoc(availRef(), mergedState);
+  return mergedState;
 }
 
 export async function adminSetStatus(code: string, status: BookingRecord["status"]) {
