@@ -170,6 +170,12 @@ function BookPage() {
   const waitlistTotal = availability.data?.waitlistTotal ?? 0;
   const waitlistFull = waitlistTotal >= EVENT.waitlistCapacity;
 
+  // Main Audi (R1) complete booking check (taken seats starting with "R1-")
+  const r1TakenCount = useMemo(() => {
+    return [...taken].filter((id) => id.startsWith("R1-")).length;
+  }, [taken]);
+  const r1Full = r1TakenCount >= ROOM_SEAT_COUNT;
+
   // Never show AB02-126 while it is locked for booking.
   const displayRoom: RoomId = !r2Open && activeRoom === "R2" ? "R1" : activeRoom;
 
@@ -390,6 +396,12 @@ function BookPage() {
 
   /** Reserve a seat on the waiting list — no payment asked. */
   async function submitWaitlist() {
+    if (!r1Full) {
+      toast.error("Waitlist option is locked until Main Auditorium (AB02-127) is fully booked.", {
+        id: "wl-r1-not-full",
+      });
+      return;
+    }
     setWlErrors({});
     const parsed = waitlistSchema.safeParse(wlForm);
     if (!parsed.success) {
@@ -783,16 +795,21 @@ function BookPage() {
                   </p>
                 </div>
               ) : (
-                <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
                   <Button
                     onClick={() => setWlStep("join")}
-                    disabled={waitlistFull || wlBusy}
+                    disabled={!r1Full || waitlistFull || wlBusy}
                     className="font-bold tracking-wide uppercase"
                   >
                     Join the waiting list
                   </Button>
-                  {waitlistFull && (
-                    <p className="self-center text-xs text-waitlist">
+                  {!r1Full && (
+                    <p className="text-xs text-amber-500 font-medium">
+                      Waitlist option is locked until Main Auditorium (AB02-127) is fully booked.
+                    </p>
+                  )}
+                  {r1Full && waitlistFull && (
+                    <p className="text-xs text-waitlist">
                       The list is full — AB02-126 bookings open soon.
                     </p>
                   )}
@@ -868,7 +885,7 @@ function BookPage() {
                 </p>
                 <Button
                   onClick={() => void submitWaitlist()}
-                  disabled={wlBusy || waitlistFull || !wlPicked}
+                  disabled={!r1Full || wlBusy || waitlistFull || !wlPicked}
                   className="shrink-0 font-bold tracking-wide uppercase"
                 >
                   {wlBusy ? "Reserving…" : "Reserve my seat — no payment"}

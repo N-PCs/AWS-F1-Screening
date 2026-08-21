@@ -22,7 +22,7 @@ import {
 } from "firebase/auth";
 import { auth, db, isFirebaseConfigured } from "./firebase";
 import { ADMIN_EMAILS, EVENT } from "./event-config";
-import { priceForSeat, seatParts, type RoomId } from "./seat-layout";
+import { priceForSeat, seatParts, ROOM_SEAT_COUNT, type RoomId } from "./seat-layout";
 import type { CloudinaryUpload } from "./cloudinary";
 
 export class BackendNotConfigured extends Error {
@@ -592,6 +592,15 @@ export async function joinWaitlist(input: {
   await runTransaction(db(), async (tx) => {
     // Capacity check from aggregate (1 read instead of 512).
     const st = await readAvailabilityState(tx);
+
+    // Ensure main audi (R1) is completely booked before allowing waitlist entries.
+    const r1TakenCount = (st.taken ?? []).filter((id) => id.startsWith("R1-")).length;
+    if (r1TakenCount < ROOM_SEAT_COUNT) {
+      throw new Error(
+        "The waitlist option is locked until the Main Auditorium (AB02-127) is fully booked.",
+      );
+    }
+
     if ((st.waitlisted ?? []).length >= EVENT.waitlistCapacity) {
       throw new Error(
         `The waiting list is full (${EVENT.waitlistCapacity}). Bookings for AB02-126 open soon.`,
