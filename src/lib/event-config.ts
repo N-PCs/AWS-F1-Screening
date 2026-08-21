@@ -32,7 +32,7 @@ export const EVENT = {
 
 export const UPI = {
   /** EDIT ME — your UPI ID */
-  id: "awssbg1@indianbnk",
+  id: "startupvit@indianbk",
   payeeName: "AWS SBG VITB",
   /**
    * EDIT ME — put your QR image at public/upi-qr.png (or set a full URL).
