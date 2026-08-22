@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Lock, TicketCheck } from "lucide-react";
+import { Lock, Sparkles, TicketCheck } from "lucide-react";
 import { AuthGate } from "@/components/f1/AuthGate";
 import { SeatLegend, SeatMap } from "@/components/f1/SeatMap";
 import { UtrGuideTrigger } from "@/components/f1/UtrGuideModal";
@@ -24,6 +24,7 @@ import {
   ROOMS,
   ROOM_SEAT_COUNT,
   TIERS,
+  R2_TIERS,
   TOTAL_SEATS,
   roomForId,
   roomForSeat,
@@ -167,7 +168,7 @@ function BookPage() {
     () => new Set(availability.data?.waitlisted ?? []),
     [waitlistedKey],
   );
-  const r2Open = Boolean(availability.data?.r2Open);
+  const r2Open = true; // AB02-126 is now always open for direct booking
   const waitlistTotal = availability.data?.waitlistTotal ?? 0;
   const waitlistFull = waitlistTotal >= EVENT.waitlistCapacity;
 
@@ -490,11 +491,17 @@ function BookPage() {
               }
               aria-pressed={isActive}
               className={cn(
-                "rounded-md border-2 bg-card p-3 sm:p-4 text-left transition",
+                "relative rounded-md border-2 bg-card p-3 sm:p-4 text-left transition",
                 isActive ? roomActive[room.tone] : "border-border hover:border-foreground/40",
                 locked && !isActive && "border-waitlist/40 bg-waitlist/5",
               )}
             >
+              {room.id === "R2" && (
+                <span className="absolute -top-2.5 right-2 sm:right-3 inline-flex items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-[0.55rem] sm:text-[0.6rem] font-bold uppercase tracking-wider text-primary-foreground shadow-sm animate-pulse">
+                  <Sparkles className="h-2.5 w-2.5" aria-hidden />
+                  New — More seats!
+                </span>
+              )}
               <span
                 className={cn(
                   "flex items-center gap-1.5 sm:gap-2 text-[0.6rem] sm:text-[0.65rem] font-bold tracking-[0.25em] uppercase",
@@ -532,7 +539,7 @@ function BookPage() {
           )}
         >
           <div className="mb-4 border-b border-border pb-3 sm:pb-4">
-            <SeatLegend />
+            <SeatLegend room={displayRoom} />
           </div>
           <SeatMap
             room={displayRoom}
@@ -606,7 +613,7 @@ function BookPage() {
                   <span className="text-primary">₹{amount}</span>
                 </div>
                 <p className="mt-2 sm:mt-3 text-[0.65rem] sm:text-xs text-muted-foreground">
-                  {Object.values(TIERS)
+                  {Object.values(displayRoom === "R2" ? R2_TIERS : TIERS)
                     .map((t) => `${t.name} ₹${t.price}`)
                     .join(" · ")}
                 </p>

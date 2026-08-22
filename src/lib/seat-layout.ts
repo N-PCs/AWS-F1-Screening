@@ -72,6 +72,26 @@ export const TIERS: Record<TierId, Tier> = {
   },
 };
 
+/**
+ * AB02-126 (R2) has its own pricing.
+ * Same tier names & tones, different prices:
+ *   Pit Lane ₹199, Grandstand ₹149, all Fanzones ₹279, Back Straight ₹99.
+ */
+export const R2_TIERS: Record<TierId, Tier> = {
+  redbull:        { ...TIERS.redbull, price: 279 },
+  ferrari:        { ...TIERS.ferrari, price: 279 },
+  generalfanzone: { ...TIERS.generalfanzone, price: 279 },
+  aisle:          { ...TIERS.aisle, price: 99 },
+  premium:        { ...TIERS.premium, price: 199 },
+  standard:       { ...TIERS.standard, price: 149 },
+  economy:        { ...TIERS.economy, price: 99 },
+};
+
+/** Look up a tier, returning R2-specific pricing when the seat is in AB02-126. */
+function tierByRoom(tierId: TierId, room: RoomId): Tier {
+  return room === "R2" ? R2_TIERS[tierId] : TIERS[tierId];
+}
+
 export type RoomId = "R1" | "R2";
 
 export type Room = {
@@ -196,38 +216,38 @@ export function tierForSeat(id: string): Tier | null {
 
   // Aisle Special / Normal Seats: seat 5 (label 'e') and seat 14 (label 'n') across ALL rows → flat ₹99
   if (num === 5 || num === 14) {
-    return TIERS.aisle;
+    return tierByRoom("aisle", room);
   }
 
-  // General Fanzone: Row R1 (Row 'A') & Row R2 (Row 'B'), middle & chairs seats 6..14 -> ₹249
+  // General Fanzone: Row R1 (Row 'A') & Row R2 (Row 'B'), middle & chairs seats 6..14
   if ((row === "A" || row === "B") && num >= 6 && num <= 14) {
-    return TIERS.generalfanzone;
+    return tierByRoom("generalfanzone", room);
   }
 
-  // Red Bull Fanzone: R1, R2 & R3 (rows A, B & C), Left block only (seats 1..4) -> ₹249
+  // Red Bull Fanzone: R1, R2 & R3 (rows A, B & C), Left block only (seats 1..4)
   if ((row === "A" || row === "B" || row === "C") && num >= 1 && num <= 4) {
-    return TIERS.redbull;
+    return tierByRoom("redbull", room);
   }
 
-  // Ferrari Fanzone: R1, R2 & R3 (rows A, B & C), Right block only -> ₹249
+  // Ferrari Fanzone: R1, R2 & R3 (rows A, B & C), Right block only
   if (row === "A" || row === "B" || row === "C") {
     if (isRightBlockSeat(room, row, num)) {
-      return TIERS.ferrari;
+      return tierByRoom("ferrari", room);
     }
   }
 
-  // Pit Lane: remaining front row seats (rows A, B, C, D, E) -> ₹179
+  // Pit Lane: remaining front row seats (rows A, B, C, D, E)
   if (row === "A" || row === "B" || row === "C" || row === "D" || row === "E") {
-    return TIERS.premium;
+    return tierByRoom("premium", room);
   }
 
-  // Grandstand: middle rows R6..R13 (rows F, G, H, I, J, K, L, M) -> ₹129
+  // Grandstand: middle rows R6..R13 (rows F, G, H, I, J, K, L, M)
   if (["F", "G", "H", "I", "J", "K", "L", "M"].includes(row)) {
-    return TIERS.standard;
+    return tierByRoom("standard", room);
   }
 
-  // Back Straight: rear rows R14..R16 (rows N, O, P) -> ₹99
-  return TIERS.economy;
+  // Back Straight: rear rows R14..R16 (rows N, O, P)
+  return tierByRoom("economy", room);
 }
 
 export function priceForSeat(id: string): number {

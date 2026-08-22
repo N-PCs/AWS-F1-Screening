@@ -3,6 +3,7 @@ import {
   ROOM_ROWS,
   ROOM_SEAT_COUNT,
   TIERS,
+  R2_TIERS,
   roomForId,
   rowBlocks,
   rowDisplayLabel,
@@ -14,6 +15,11 @@ import {
   type TierId,
 } from "@/lib/seat-layout";
 import { cn } from "@/lib/utils";
+
+/** Return the tier table appropriate for a given room. */
+function tiersForRoom(room: RoomId): Record<TierId, { name: string; price: number; id: TierId }> {
+  return room === "R2" ? R2_TIERS : TIERS;
+}
 
 type Props = {
   room: RoomId;
@@ -119,7 +125,8 @@ export function SeatMap({ room, taken, held, waitlisted, selected, onToggle, dis
 
         <div className="space-y-3 sm:space-y-4">
           {bands.map((band) => {
-            const tier = TIERS[band.tier];
+            const roomTiers = tiersForRoom(room);
+            const tier = roomTiers[band.tier];
             const seatCount = band.rows.reduce((n, r) => n + r.count, 0);
             const openCount = band.rows.reduce(
               (n, r) =>
@@ -237,7 +244,7 @@ function SeatRow({
   mobileView?: "fit" | "zoom";
 }) {
   const [left, middle, chairs, right] = rowBlocks(def);
-  const tier = TIERS[def.tier];
+  const tier = tiersForRoom(room)[def.tier];
   const displayRow = rowDisplayLabel(def.row);
   const isFit = mobileView === "fit";
 
@@ -439,10 +446,11 @@ function Seat({
   );
 }
 
-export function SeatLegend() {
+export function SeatLegend({ room = "R1" }: { room?: RoomId }) {
+  const tiers = tiersForRoom(room);
   return (
     <div className="flex flex-wrap items-center gap-x-3 sm:gap-x-5 gap-y-1.5 sm:gap-y-2 text-[0.65rem] sm:text-xs">
-      {Object.values(TIERS).map((t) => (
+      {Object.values(tiers).map((t) => (
         <span key={t.id} className="flex items-center gap-1.5 sm:gap-2">
           <span
             className={cn("h-3.5 w-3.5 sm:h-4 sm:w-4 rounded-t-md border", tierClass[t.id])}
